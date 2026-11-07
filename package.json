@@ -1,0 +1,25 @@
+{
+  "name": "volleycrew",
+  "private": true,
+  "engines": {
+    "node": ">=24 <27"
+  },
+  "scripts": {
+    "setup": "python3 scripts/dev.py setup",
+    "dev": "python3 scripts/dev.py dev",
+    "db:up": "docker compose -f compose.dev.yaml up -d --wait",
+    "db:stop": "docker compose -f compose.dev.yaml stop",
+    "db:migrate": "python3 scripts/dev.py migrate",
+    "lint": "python3 scripts/dev.py lint && npm --prefix volleycrew/frontend run lint",
+    "format": "python3 scripts/dev.py format && npm --prefix volleycrew/frontend run format",
+    "typecheck": "npm --prefix volleycrew/frontend run typecheck",
+    "test:backend": "python3 scripts/dev.py test",
+    "test:frontend": "npm --prefix volleycrew/frontend run test",
+    "test:e2e": "npm --prefix volleycrew/frontend run test:e2e",
+    "api:generate": "python3 scripts/dev.py openapi && npm --prefix volleycrew/frontend run api:generate",
+    "api:check": "python3 scripts/dev.py openapi --check && npm --prefix volleycrew/frontend run api:check",
+    "build": "npm --prefix volleycrew/frontend run build",
+    "prototype": "python3 -m http.server 4173 --bind 127.0.0.1",
+    "auth:bootstrap": "python3 scripts/dev.py bootstrap"
+  }
+}

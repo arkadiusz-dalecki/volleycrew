@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Volleycrew · Wariant A na telefonie</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #e9ede6; color: #244237; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .preview-header { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 22px 32px; border-bottom: 1px solid #dce2d6; }
+    h1 { font-size: 16px; letter-spacing: -.3px; margin: 0; }
+    .preview-header p { font-size: 11px; color: #7a8873; margin: 6px 0 0; }
+    .preview-controls { display: flex; align-items: center; gap: 12px; }
+    select, a { font: inherit; font-size: 11px; color: #365342; }
+    select { padding: 9px; border: 1px solid #ced8c5; border-radius: 8px; background: #f7f9f3; }
+    a { text-underline-offset: 4px; }
+    main { display: flex; align-items: center; flex-direction: column; padding: 23px 16px 18px; }
+    .device-stage { position: relative; flex-shrink: 0; }
+    .device { position: absolute; top: 0; left: 0; transform-origin: top left; padding: 8px; background: #273a31; border: 1px solid #53644f; border-radius: 36px; box-shadow: 0 18px 65px #263e2920, 0 2px 7px #263e2920; }
+    iframe { display: block; width: 390px; height: 844px; border: 0; border-radius: 28px; background: #f6f7f3; }
+    .preview-note { color: #85917c; font-size: 11px; text-align: center; line-height: 1.7; margin: 17px 0 0; }
+    @media(max-width:600px) { .preview-header { padding: 18px; align-items: flex-start; } .preview-controls { flex-direction: column; align-items: flex-end; gap: 10px; } .preview-header p { max-width: 180px; line-height: 1.6; } }
+  </style>
+</head>
+<body>
+  <header class="preview-header">
+    <div><h1>Volleycrew · Wariant A</h1><p>Interaktywny podgląd na telefonie</p></div>
+    <div class="preview-controls">
+      <label><span hidden>Rozmiar ekranu telefonu</span><select id="device-size" aria-label="Rozmiar ekranu telefonu"><option value="390,844">Telefon · 390 × 844</option><option value="360,800">Mały telefon · 360 × 800</option><option value="430,932">Duży telefon · 430 × 932</option></select></label>
+      <a href="./?variant=A&focused=1" target="_blank" rel="noopener">Otwórz bez ramki ↗</a>
+    </div>
+  </header>
+  <main>
+    <div class="device-stage"><div class="device"><iframe src="./?variant=A&focused=1" title="Volleycrew — działający wariant A na telefonie"></iframe></div></div>
+    <p class="preview-note">Przewijaj ekran telefonu i korzystaj z zakładek.<br>Przycisk „Widok zawodnika” przełącza na organizatora.</p>
+  </main>
+  <script>
+    const frame = document.querySelector('iframe');
+    const device = document.querySelector('.device');
+    const stage = document.querySelector('.device-stage');
+    const size = document.getElementById('device-size');
+    function fitDevice() {
+      const [width, height] = size.value.split(',').map(Number);
+      frame.style.width = width + 'px';
+      frame.style.height = height + 'px';
+      const scale = Math.min(1, (window.innerWidth - 34) / (width + 18), Math.max(350, window.innerHeight - document.querySelector('header').offsetHeight - 101) / (height + 18));
+      device.style.transform = `scale(${scale})`;
+      stage.style.width = (width + 18) * scale + 'px';
+      stage.style.height = (height + 18) * scale + 'px';
+    }
+    size.addEventListener('change', fitDevice);
+    window.addEventListener('resize', fitDevice);
+    fitDevice();
+  </script>
+</body>
+</html>

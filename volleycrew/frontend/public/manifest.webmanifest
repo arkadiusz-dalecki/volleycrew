@@ -1,0 +1,12 @@
+{
+  "id": "./",
+  "name": "Volleycrew",
+  "short_name": "Volleycrew",
+  "lang": "pl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f7f3",
+  "theme_color": "#204f40",
+  "icons": [{"src":"icons/volleycrew.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}

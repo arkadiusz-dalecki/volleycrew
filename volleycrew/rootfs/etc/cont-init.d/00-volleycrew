@@ -1,0 +1,7 @@
+#!/command/with-contenv bash
+set -euo pipefail
+cd /app/backend
+rm -f /run/volleycrew-options-ready
+python -m app.runtime prepare
+nginx -t -q
+touch /run/volleycrew-options-ready
