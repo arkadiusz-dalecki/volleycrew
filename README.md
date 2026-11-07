@@ -98,7 +98,7 @@ Testy integracyjne wymagają nazwy bazy zakończonej `_test`, wykonują migracj�
 Testy przeglądarkowe z działającą lokalną bazą (domyślnie na porcie 55432):
 
 ```sh
-npm --prefix volleycrew/frontend exec playwright install chromium webkit
+npm --prefix volleycrew/frontend exec -- playwright install chromium webkit
 VOLLEYCREW_E2E_DATABASE_URL=postgresql+asyncpg://volleycrew:volleycrew_dev@127.0.0.1:55432/volleycrew_test npm run test:e2e
 ```
 

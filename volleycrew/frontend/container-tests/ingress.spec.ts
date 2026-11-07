@@ -12,6 +12,10 @@ for (const prefix of [
     page.on("requestfinished", (request) => pending.delete(request));
     page.on("requestfailed", (request) => pending.delete(request));
     async function settled() {
+      // A zero count alone can precede React's effect-triggered requests.
+      // Full reloads must wait for those requests too: WebKit reports an
+      // interrupted fetch during document teardown as a page error.
+      await page.waitForLoadState("networkidle");
       await expect.poll(() => pending.size).toBe(0);
     }
     const errors: string[] = [];
@@ -29,6 +33,9 @@ for (const prefix of [
     await page.getByLabel("PIN", { exact: true }).fill("123456");
     await page.getByRole("button", { name: "Wejdź na boisko" }).click();
     await expect(page).toHaveURL(new RegExp(`${prefix}/profile$`));
+    await expect(
+      page.getByRole("heading", { name: "Mój profil", exact: true }),
+    ).toBeVisible();
     await settled();
     await page.reload();
     await expect(
@@ -42,6 +49,7 @@ for (const prefix of [
     });
     await nav.getByRole("link", { name: "Kalendarz", exact: true }).click();
     await expect(page).toHaveURL(new RegExp(`${prefix}/calendar$`));
+    await expect(page.locator(".calendar-card")).toBeVisible();
     await settled();
     await page.reload();
     await expect(page.locator(".calendar-card")).toBeVisible();
