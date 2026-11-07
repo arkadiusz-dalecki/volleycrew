@@ -91,6 +91,11 @@ test("invite, remembered session, masked login, profile, reset and blocking", as
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
+  const createdInviteResponse = adminPage.waitForResponse(
+    (response) =>
+      response.url().endsWith("/api/v1/admin/invites") &&
+      response.request().method() === "POST",
+  );
   await adminPage
     .getByRole("button", { name: "Utwórz link z zaproszeniem" })
     .click();
@@ -100,10 +105,18 @@ test("invite, remembered session, masked login, profile, reset and blocking", as
   const inviteUrl = await adminPage
     .getByLabel("Link do przekazania")
     .inputValue();
-  await adminPage
+  const createdInvite = await (await createdInviteResponse).json();
+  const inviteRow = adminPage.getByTestId(`invite-${createdInvite.id}`);
+  const revoked = adminPage.waitForResponse(
+    (response) =>
+      response.url().endsWith(`/invites/${createdInvite.id}/revoke`) &&
+      response.request().method() === "POST",
+  );
+  await inviteRow
     .getByRole("button", { name: "Unieważnij", exact: true })
-    .first()
     .click();
+  expect((await revoked).ok()).toBe(true);
+  await expect(inviteRow.getByText(/Unieważnione/)).toBeVisible();
   await page.goto(inviteUrl);
   await page.getByLabel("Imię", { exact: true }).fill("Test");
   await page.getByLabel("Nazwisko", { exact: true }).fill("Odrzucony");

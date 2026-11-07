@@ -171,7 +171,7 @@ export function AdminSettings() {
           ) : (
             <ul className="invite-list">
               {invites.data.map((invite) => (
-                <li key={invite.id}>
+                <li key={invite.id} data-testid={`invite-${invite.id}`}>
                   <span>
                     {new Date(invite.created_at).toLocaleDateString("pl-PL")} ·{" "}
                     {invite.revoked_at ? "Unieważnione" : "Aktywne"}
