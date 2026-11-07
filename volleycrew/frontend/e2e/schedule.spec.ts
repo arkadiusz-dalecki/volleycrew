@@ -98,6 +98,7 @@ test("single exception, schedule preview, reconfirmation, stale organizer tab an
   await organizer.screenshot({
     path: info.outputPath("schedule-preview.png"),
     fullPage: true,
+    scale: "css",
   });
   await organizer
     .getByRole("button", { name: "Zatwierdź harmonogram" })
@@ -118,6 +119,7 @@ test("single exception, schedule preview, reconfirmation, stale organizer tab an
   await page.screenshot({
     path: info.outputPath("reconfirmation.png"),
     fullPage: true,
+    scale: "css",
   });
   expect(
     await page.evaluate(

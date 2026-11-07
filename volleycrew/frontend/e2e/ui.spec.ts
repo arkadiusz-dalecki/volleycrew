@@ -38,6 +38,7 @@ test("UI routes, contrast and touch targets across viewport widths", async ({
           `${route.split("?")[0].replaceAll("/", "_") || "meeting"}-${width}.png`,
         ),
         fullPage: true,
+        scale: "css",
       });
     }
   }

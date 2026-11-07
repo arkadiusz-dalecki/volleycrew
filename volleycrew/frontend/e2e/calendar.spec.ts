@@ -25,6 +25,7 @@ test("calendar future navigation, cancelled meeting, persistent detail and recov
     await page.screenshot({
       path: info.outputPath(`calendar-${width}.png`),
       fullPage: true,
+      scale: "css",
     });
   }
   await agenda
@@ -68,6 +69,7 @@ test("calendar future navigation, cancelled meeting, persistent detail and recov
   await page.screenshot({
     path: info.outputPath("meeting-detail.png"),
     fullPage: true,
+    scale: "css",
   });
   await page.goto("/calendar?month=2000-01");
   await expect(

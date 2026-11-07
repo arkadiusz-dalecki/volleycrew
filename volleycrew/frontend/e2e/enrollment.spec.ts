@@ -57,6 +57,7 @@ test("distant signup, reserve, organizer proposal and explicit acceptance on ano
     await page.screenshot({
       path: info.outputPath(`reserve-${width}.png`),
       fullPage: true,
+      scale: "css",
     });
   }
   const organizer = await admin.newPage();
@@ -79,6 +80,7 @@ test("distant signup, reserve, organizer proposal and explicit acceptance on ano
   await organizer.screenshot({
     path: info.outputPath("organizer-offer.png"),
     fullPage: true,
+    scale: "css",
   });
   await page.reload();
   await expect(

@@ -125,6 +125,7 @@ test("attendance, court swap, signature PDF and private correction", async ({
     await page.screenshot({
       path: info.outputPath(`court-${width}.png`),
       fullPage: true,
+      scale: "css",
     });
   }
   expect(await audit(page)).toEqual([]);
@@ -192,6 +193,7 @@ test("attendance, court swap, signature PDF and private correction", async ({
     await page.screenshot({
       path: info.outputPath(`signature-preview-${width}.png`),
       fullPage: true,
+      scale: "css",
     });
   }
   await page
@@ -409,6 +411,7 @@ test("attendance, court swap, signature PDF and private correction", async ({
     await playerPage.screenshot({
       path: info.outputPath(`ranking-${width}.png`),
       fullPage: true,
+      scale: "css",
     });
   }
   await playerPage

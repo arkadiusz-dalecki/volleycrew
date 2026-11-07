@@ -14,6 +14,7 @@ test("shell calls the real API and navigation survives reload", async ({
   await page.screenshot({
     path: testInfo.outputPath("meeting.png"),
     fullPage: true,
+    scale: "css",
   });
   expect(
     await page.evaluate(

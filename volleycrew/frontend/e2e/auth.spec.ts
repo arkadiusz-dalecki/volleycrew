@@ -28,6 +28,7 @@ test("invite, remembered session, masked login, profile, reset and blocking", as
   await page.screenshot({
     path: info.outputPath("profile.png"),
     fullPage: true,
+    scale: "css",
   });
   await page.getByRole("button", { name: "Wyloguj" }).click();
   await expect(
@@ -37,7 +38,11 @@ test("invite, remembered session, masked login, profile, reset and blocking", as
     page.getByText(`Michał N*****k — ${nickname}-nowy`, { exact: true }),
   ).toBeVisible();
   expect(await page.locator("body").innerText()).not.toContain("Nowak");
-  await page.screenshot({ path: info.outputPath("login.png"), fullPage: true });
+  await page.screenshot({
+    path: info.outputPath("login.png"),
+    fullPage: true,
+    scale: "css",
+  });
   await page
     .getByText(`Michał N*****k — ${nickname}-nowy`, { exact: true })
     .click();
@@ -80,6 +85,7 @@ test("invite, remembered session, masked login, profile, reset and blocking", as
   await adminPage.screenshot({
     path: info.outputPath("admin.png"),
     fullPage: true,
+    scale: "css",
   });
   expect(
     await page.evaluate(
