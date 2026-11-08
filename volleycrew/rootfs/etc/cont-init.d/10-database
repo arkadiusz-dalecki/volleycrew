@@ -1,6 +1,6 @@
 #!/command/with-contenv bash
 set -euo pipefail
 cd /app/backend
-test -f /run/volleycrew-options-ready
+test -f /run/volleycrew-db-ready
 # This script's with-contenv interpreter loads the files from the preceding step.
 exec python -m app.runtime initialize

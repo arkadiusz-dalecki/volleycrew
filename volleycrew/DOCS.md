@@ -4,7 +4,7 @@
 
 ## Instalacja bez SSH
 
-1. Przygotuj **osobny PostgreSQL** i pustą bazę `volleycrew`, z osobnym właścicielem/użytkownikiem `volleycrew` i hasłem. Aplikacja nie tworzy serwera ani bazy. Nie używaj bazy ani serwera maybe-finance. Docelowa wersja: PostgreSQL 17; klient backupu w pakiecie ma wersję 17. Serwer nowszej głównej wersji wymaga ponownego sprawdzenia i zgodnego klienta backupu.
+1. Od wersji **0.2.0 Volleycrew zawiera własny PostgreSQL 17**. Nie instaluj osobnego serwera: pozostaw `DATABASE_MODE: auto` oraz puste `POSTGRES_HOST` i `POSTGRES_PASSWORD`. Baza, użytkownik i losowe hasło powstaną automatycznie w trwałym `/data`. Istniejący host zachowuje tryb zewnętrzny.
 2. Dodaj `https://github.com/arkadiusz-dalecki/volleycrew` w ustawieniach repozytoriów sklepu aplikacji HA. Kod pakietu musi najpierw znajdować się w tym repozytorium; lokalne pliki na Macu nie są automatycznie dostępne w HA. Dostęp do prywatnego repo konfigurujesz po swojej stronie.
 3. Odśwież sklep, wybierz **Volleycrew** i zainstaluj. HA buduje obraz na urządzeniu. Na Pi 4 pierwsza instalacja może potrwać; dokładny RAM i czas trzeba zmierzyć na Twoim urządzeniu. Nie ma pola `image` wskazującego gotowy obraz Volleycrew ani potrzeby publikacji własnego obrazu GHCR.
 4. Wypełnij opcje poniżej. Przygotuj własny adres HTTPS aplikacji i skieruj istniejący tunel/proxy na port **8200**. Konfiguracja Cloudflare pozostaje po Twojej stronie. Nie kieruj publicznego tunelu na port Ingress **8099**.
@@ -20,10 +20,11 @@ Aplikacja nie prosi o dostęp do API HA, Dockera ani plików konfiguracji domu. 
 
 | Opcja | Wartość |
 | --- | --- |
-| `POSTGRES_HOST` | Adres osobnego serwera PostgreSQL, osiągalny z aplikacji HA |
-| `POSTGRES_PORT` | Zwykle `5432` |
-| `POSTGRES_DB`, `POSTGRES_USER` | Osobna baza i jej właściciel, domyślnie `volleycrew`; bez uprawnień superusera |
-| `POSTGRES_PASSWORD` | Hasło tego użytkownika; znaki specjalne są kodowane w URL połączenia |
+| `DATABASE_MODE` | `auto`: pusty host → własna baza, podany host → zewnętrzna. Także `embedded` i `external`. Zmiana utrwalonego trybu wymaga jawnej migracji danych |
+| `POSTGRES_HOST` | Puste dla własnej bazy. Dla zewnętrznej: adres serwera osiągalnego z HA |
+| `POSTGRES_PORT` | Tylko zewnętrzna baza, zwykle `5432`; własna używa prywatnego 5432 |
+| `POSTGRES_DB`, `POSTGRES_USER` | Opcje zewnętrzne. Własna baza używa `volleycrew` i roli bez superusera |
+| `POSTGRES_PASSWORD` | Puste dla własnej bazy: trwałe hasło jest generowane automatycznie. W trybie zewnętrznym hasło użytkownika |
 | `POSTGRES_SSL` | `prefer` domyślnie; `require` wymaga szyfrowania, `verify-full` dodatkowo weryfikuje certyfikat i nazwę hosta. `disable` tylko dla świadomie wybranego połączenia lokalnego |
 | `PUBLIC_URL` | Adres HTTPS Volleycrew, bez ścieżki, query i fragmentu, np. `https://volleycrew.example.pl` |
 | `ADDITIONAL_ORIGINS` | Lista dodatkowych **originów**, np. `["https://ha.example.pl"]`. Wpisz adres HA, jeśli używasz Ingress. Bez ścieżki i końcowego `/` |
@@ -42,15 +43,19 @@ Jeśli nie znasz adresu swojego proxy, początkowo pozostaw listę zaufania pust
 
 Pakiet zapisuje spójny `pg_dump` w formacie custom, metadane, klucz oraz opcje w prywatnym archiwum `/data/backups/volleycrew-….tar.gz` z uprawnieniami 600. Klucz i konfiguracja są wrażliwe — archiwum nie jest samodzielnie szyfrowane.
 
+W trybie własnej bazy PostgreSQL słucha tylko na `127.0.0.1:5432` w kontenerze; port nie jest publikowany. `/data/postgresql` zawiera trwały klaster. `/data/postgres-password` zawiera losowe hasło z prawami 0600. Nie kasuj tych plików w celu naprawy startu.
+
+Każdy poprawny backup zapisuje atomowo także `/data/postgres-recovery.tar.gz`: kompletne logiczne archiwum do odtworzenia przez HA. HA zatrzymuje aplikację na czas swojej kopii (backup cold) i zapisuje pełne, spójne pliki klastra. Standardowe przywrócenie HA odtwarza ten klaster. Jeśli odtwarzany zestaw zawiera wyłącznie logiczne archiwum odzyskiwania, klaster jest tworzony ponownie i dane odtwarzane przed migracjami i API. Profile, PIN-y i sesje pozostają zachowane. Niekompletne archiwum blokuje start zamiast zastąpienia danych pustą bazą. Główna wersja PostgreSQL pozostaje 17; jej zmiana wymaga jawnej migracji.
+
 Kopie powstają:
 
 - codziennie o `BACKUP_HOUR`; po błędzie jest jedna ponowna próba godzinę później;
 - przed zmianą wersji aplikacji lub schematu, zanim wystartuje API; nieudana kopia blokuje aktualizację;
-- przed gorącą kopią aplikacji wykonywaną przez HA (`backup_pre`). Dzięki temu kopia HA obejmuje także aktualny zrzut **zewnętrznej** DB, nie tylko pliki aplikacji.
+- HA tworzy osobno kopię aplikacji po jej zatrzymaniu: obejmuje spójny klaster własnego PostgreSQL i konfigurację. Zewnętrzna baza nie znajduje się w katalogu aplikacji — dla external dodatkowo wykonaj świeży backup logiczny przed kopią HA albo użyj backupu serwera zewnętrznego.
 
-Włącz automatyczne kopie HA obejmujące Volleycrew i skonfiguruj w HA **szyfrowane miejsce poza tym hostem**. Zachowaj klucz odzyskiwania kopii HA. Ten krok wykonujesz samodzielnie; samo istnienie `/data/backups` nie jest kopią poza hostem. Nie polegaj na kopii aplikacji, która nie wykonała poprawnie `backup_pre`.
+Włącz automatyczne kopie HA obejmujące Volleycrew i skonfiguruj w HA **szyfrowane miejsce poza tym hostem**. Zachowaj klucz odzyskiwania kopii HA. Ten krok wykonujesz samodzielnie; samo istnienie `/data/backups` nie jest kopią poza hostem. Nie kasuj jedynej poprawnej kopii. W trybie zewnętrznym sama kopia HA nie zastępuje kopii serwera bazy.
 
-Retencja jest ręczna: pakiet nie kasuje kopii automatycznie. Sprawdzaj log wykonania i ilość miejsca. Dla aktualizacji wykonaj również ręczną kopię HA przed naciśnięciem **Aktualizuj**, tak aby mieć poprzednią wersję opcji i kompletny zestaw do odzyskania. `backup_pre` kończy się błędem, gdy DB nie da się skopiować.
+Retencja jest ręczna: pakiet nie kasuje kopii automatycznie. Sprawdzaj log wykonania i ilość miejsca. Dla aktualizacji wykonaj również ręczną kopię HA przed naciśnięciem **Aktualizuj**, tak aby mieć poprzednią wersję opcji i kompletny zestaw do odzyskania. Przed aktualizacją brak poprawnej kopii logicznej blokuje start nowej wersji.
 
 Dodatkowa komenda operatora wewnątrz działającego kontenera:
 
@@ -66,12 +71,16 @@ Nowe wydanie zmienia `version` w `config.yaml`. Po opublikowaniu kodu odśwież 
 
 Cofnięcie obrazu jest bezpieczne tylko wtedy, gdy poprzedni kod wspiera bieżący schemat. W przeciwnym razie zatrzymaj aplikację i odtwórz **zgodny zestaw: poprzedni obraz/kod, poprzednia baza i konfiguracja**. Nie wykonuj automatycznego `alembic downgrade` na produkcyjnych danych.
 
-## Odtwarzanie do nowego serwera
+## Odtwarzanie HA z własną bazą
+
+Przywróć pełną kopię aplikacji w HA i uruchom zgodną wersję. Pakiet odtworzy bazę z archiwum odzyskiwania bez ręcznej konfiguracji serwera. Kopia musi zawierać cały stan aplikacji poza plikami klastra wykluczonymi przez manifest. Próba na rzeczywistym HA pozostaje obowiązkowym odbiorem po instalacji; kontenery sprawdzają niezależny pusty wolumen.
+
+## Przenośne odtwarzanie do nowego serwera
 
 1. Zatrzymaj aplikację, odzyskaj archiwum `.tar.gz` z kopii HA i przygotuj pustą docelową bazę na wybranym serwerze, należącą do własnego użytkownika Volleycrew. Nie nadpisuj działającej bazy ani maybe-finance.
 2. Użyj obrazu odpowiadającego wersji/schematowi z `manifest.json` archiwum. Operator może zbudować go z odpowiedniej wersji repozytorium na maszynie z Dockerem. Binariów `pg_dump`/`pg_restore` nie trzeba instalować osobno w tym obrazie.
 3. Przygotuj prywatny plik `.env.restore` z `VOLLEYCREW_RESTORE_DATABASE_URL=postgresql+asyncpg://…` wskazującym **wyłącznie pusty cel**. Nie przekazuj hasła jako argumentu programu ani w logu; uprawnienia pliku ustaw na 600. Hasło w URL musi być poprawnie zakodowane.
-4. Przykład na maszynie operatora z Dockerem, dla wcześniej zbudowanego obrazu `volleycrew:0.1.1`:
+4. Przykład na maszynie operatora z Dockerem, dla wcześniej zbudowanego obrazu `volleycrew:0.2.0`:
 
 ```sh
 mkdir -p restore-data
@@ -80,7 +89,7 @@ chmod 600 .env.restore
 docker run --rm --env-file .env.restore \
   -e VOLLEYCREW_STATE_DIR=/data \
   -v "$PWD/restore-data:/data" -v "$PWD/backup:/restore:ro" \
-  --entrypoint python volleycrew:0.1.1 \
+  --entrypoint python volleycrew:0.2.0 \
   -m app.backup restore /restore/volleycrew-KOPIA.tar.gz --confirm-empty-target
 ```
 

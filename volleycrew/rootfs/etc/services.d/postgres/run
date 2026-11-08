@@ -1,0 +1,3 @@
+#!/command/with-contenv bash
+cd /app/backend
+exec python -m app.embedded serve

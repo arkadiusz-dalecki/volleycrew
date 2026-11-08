@@ -1,0 +1,5 @@
+#!/command/with-contenv bash
+set -euo pipefail
+cd /app/backend
+test -f /run/volleycrew-options-ready
+exec python -m app.embedded stop

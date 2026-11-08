@@ -5,6 +5,7 @@ import hashlib
 import json
 import logging
 import os
+import shutil
 import subprocess
 import tarfile
 import tempfile
@@ -98,6 +99,24 @@ def create_backup(settings: Settings, reason: str = "manual") -> Path:
             partial.replace(target)
         finally:
             partial.unlink(missing_ok=True)
+    mode = settings.state_dir / "database-mode"
+    if mode.exists() and mode.read_text().strip() == "embedded":
+        recovery = settings.state_dir / "postgres-recovery.tar.gz"
+        # A fixed, atomically replaced archive avoids a pointer to a file that
+        # HA's concurrent directory traversal might not have captured.
+        with tempfile.NamedTemporaryFile(
+            dir=settings.state_dir, prefix=".recovery-", delete=False
+        ) as stream:
+            temporary = Path(stream.name)
+            try:
+                with target.open("rb") as source:
+                    shutil.copyfileobj(source, stream)
+                stream.flush()
+                os.fsync(stream.fileno())
+            except BaseException:
+                temporary.unlink(missing_ok=True)
+                raise
+        temporary.replace(recovery)
     log.info("Backup completed: %s; copy it outside this host", target.name)
     # Retention is intentionally manual until the off-host destination/policy is chosen.
     return target

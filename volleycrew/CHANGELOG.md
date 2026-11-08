@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.0
+
+Własny PostgreSQL 17: bez osobnego serwera i ręcznego hasła bazy. Pusty host wybiera własną bazę, istniejący zachowuje zewnętrzną. Trwałe dane, prywatny listener, automatyczny backup i restore HA przed migracjami; blokada niejawnej zmiany trybu. Testy kontenerowe obejmują restart, awarię, aktualizację i odtworzenie. Walidacja pokazuje nazwy nieprawidłowych pól bez ich wartości.
+
 ## 0.1.1
 
 Naprawa instalacji w Home Assistant: baza Debian jest przypięta bezpośrednio w Dockerfile. Usunięto przestarzały `build.yaml`, którego walidator odrzucał referencje obrazów z digestem. Parametr `BUILD_FROM` przekazywany przez Supervisor nie może już podmienić bazy na Alpine. CI odtwarza ten parametr dla obu architektur.

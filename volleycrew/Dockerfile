@@ -7,8 +7,10 @@ RUN npm run build
 
 # Pin the runtime directly: Supervisor may supply an Alpine BUILD_FROM fallback.
 FROM ghcr.io/hassio-addons/debian-base:9.3.0@sha256:01448978e65c3320030d97e9c9d59ed93e4173d54696ab4bc3eabe4439bff1ee
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends python3 python3-venv nginx postgresql-client-17 \
+RUN mkdir -p /etc/postgresql-common \
+    && echo "create_main_cluster = false" > /etc/postgresql-common/createcluster.conf \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends python3 python3-venv nginx postgresql-17 postgresql-client-17 \
     && rm -rf /var/lib/apt/lists/* /etc/nginx/sites-enabled/* \
     && python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH" VOLLEYCREW_STATE_DIR=/data VOLLEYCREW_ENV_FILE=/dev/null \
@@ -29,7 +31,7 @@ RUN for helper in base-app-banner base-app-log-level base-app-timezone; do \
 RUN chmod +x /etc/cont-init.d/* /etc/services.d/*/run /etc/services.d/*/finish /usr/local/bin/volleycrew-* \
     && mkdir -p /run/nginx /data
 ARG BUILD_ARCH
-ARG BUILD_VERSION=0.1.1
+ARG BUILD_VERSION=0.2.0
 RUN printf "%s" "$BUILD_VERSION" > /app/VERSION
 LABEL io.hass.name="Volleycrew" io.hass.description="Tuesday volleyball group" \
       io.hass.type="addon" io.hass.arch="${BUILD_ARCH}" io.hass.version="${BUILD_VERSION}" \

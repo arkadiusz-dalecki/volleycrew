@@ -9,6 +9,7 @@ import time
 from datetime import timedelta
 from pathlib import Path
 
+from pydantic import ValidationError
 from sqlalchemy import select, text
 
 from app.core.clock import SystemClock
@@ -118,6 +119,16 @@ def main() -> None:
             asyncio.run(initialize(float(os.environ.get("VOLLEYCREW_DB_WAIT_SECONDS", "60"))))
         else:
             raise ValueError("Use prepare or initialize")
+    except ValidationError as exc:
+        # Report field names only: values and validation messages can contain credentials.
+        fields = sorted(
+            {
+                str(error["loc"][0]) if error["loc"] else "options"
+                for error in exc.errors(include_input=False, include_url=False)
+            }
+        )
+        log.error("Invalid configuration fields: %s", ", ".join(fields))
+        raise SystemExit(1) from None
     except Exception as exc:
         # Driver exceptions and Pydantic errors can contain secrets. Do not print them.
         log.error("Startup failed (%s); verify options, database and schema", type(exc).__name__)

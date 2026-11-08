@@ -1,3 +1,5 @@
+> Od 0.2.0 pakiet Home Assistant zawiera własny PostgreSQL 17. Dla zwykłej instalacji pozostaw DATABASE_MODE=auto i pusty POSTGRES_HOST; serwer, baza i dane dostępowe powstaną automatycznie. Development nadal korzysta z osobnej bazy testowej.
+
 # Volleycrew
 
 Aplikacja do organizacji spotkań siatkarskich. Docelowo instalowana jako aplikacja Home Assistant, z budowaniem lokalnie w HA, tak jak maybe-finance.

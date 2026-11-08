@@ -1,6 +1,6 @@
 name: Volleycrew
 description: Zapisy, obecność, drużyny i ranking grupy siatkarskiej
-version: "0.1.1"
+version: "0.2.0"
 slug: volleycrew
 url: https://github.com/arkadiusz-dalecki/volleycrew
 arch:
@@ -22,12 +22,13 @@ ports:
 ports_description:
   8200/tcp: Wejście dla własnego reverse proxy / Cloudflare Tunnel
 watchdog: http://[HOST]:8200/api/v1/health/live
-backup: hot
-backup_pre: /usr/local/bin/volleycrew-backup create
+backup: cold
 backup_exclude:
+  - .recovery-*
   - backups/*.partial
   - backups/.snapshot-*
 options:
+  DATABASE_MODE: auto
   POSTGRES_HOST: ""
   POSTGRES_PORT: 5432
   POSTGRES_DB: volleycrew
@@ -41,12 +42,13 @@ options:
   BOOTSTRAP_TOKEN: ""
   BACKUP_HOUR: 3
 schema:
-  POSTGRES_HOST: str
-  POSTGRES_PORT: port
-  POSTGRES_DB: str
-  POSTGRES_USER: str
-  POSTGRES_PASSWORD: password
-  POSTGRES_SSL: list(disable|prefer|require|verify-full)
+  DATABASE_MODE: list(auto|embedded|external)
+  POSTGRES_HOST: str?
+  POSTGRES_PORT: port?
+  POSTGRES_DB: str?
+  POSTGRES_USER: str?
+  POSTGRES_PASSWORD: password?
+  POSTGRES_SSL: list(disable|prefer|require|verify-full)?
   PUBLIC_URL: url
   ADDITIONAL_ORIGINS:
     - url
