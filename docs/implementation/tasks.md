@@ -164,3 +164,7 @@ pozostałe ryzyka oraz następne gotowe zadanie. Zaktualizuj postęp.
 ## Uzupełnienie E3/E5/E9 — kalendarz administratora
 
 Zlecone 2026-11-08: widoczna data na karcie, najbliższe spotkanie w bocznym panelu, planowanie w kalendarzu zamiast ustawień, pojedynczy termin i cotygodniowa seria od–do. Odbiór: uprawnienia, brak kolizji, zachowanie zapisów i wyjątków, powrót wcześniejszej reguły po serii, sprawdzenie desktop/mobile/WebKit. [Raport](calendar-management-report.md).
+
+## Uzupełnienie E2/E9 — poprawki mobilne i instalacja
+
+Zlecone 2026-11-08 po zrzutach z iPhone: formularz pojedynczego terminu bez wychodzących pól/ramki, usunięcie podpisu spotkania, rozwijany wybór konta z pamięcią ostatniego logowania, przełącznik widoku administrator/użytkownik, przycisk dodania aplikacji na iOS i Android. Zakres i dowody: [raport](mobile-improvements-report.md).

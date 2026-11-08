@@ -1,10 +1,10 @@
+import { useAdminView } from "../auth/ViewMode";
 import { ResultCard } from "../results/ResultCard";
 import { RoomPanel } from "../room/RoomPanel";
 import { ConfirmedCourt } from "../room/Court";
 import { MeetingActions } from "../schedule/MeetingActions";
 import { ParticipationCard } from "./ParticipationCard";
 import { OfferManager } from "./OfferManager";
-import { useSession } from "../auth/useSession";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import {
@@ -67,8 +67,8 @@ function Roster({
 }
 
 export function MeetingPage() {
+  const adminView = useAdminView();
   const { id } = useParams();
-  const session = useSession();
   const opener = useOpenMeeting();
   const meeting = useQuery({
     queryKey: id ? ["meeting", id] : ["next-meeting"],
@@ -100,7 +100,6 @@ export function MeetingPage() {
       )}
       <div className="page-heading">
         <h1>{id ? "Spotkanie" : "Najbliższe spotkanie"}</h1>
-        <p>Dobra ekipa, trochę ruchu i dwie godziny dla siebie.</p>
       </div>
       {meeting.isPending ? (
         <section className="card" role="status">
@@ -206,20 +205,18 @@ export function MeetingPage() {
                   <ParticipationCard key={item.id} meeting={item} />
                 )}
               </section>
-              {session.data?.role === "admin" &&
-                item.persisted &&
-                item.status === "scheduled" && (
-                  <OfferManager
-                    meetingId={item.id}
-                    termVersion={item.term_version}
-                  />
-                )}
-              {session.data?.role === "admin" && item.persisted && (
+              {adminView && item.persisted && item.status === "scheduled" && (
+                <OfferManager
+                  meetingId={item.id}
+                  termVersion={item.term_version}
+                />
+              )}
+              {adminView && item.persisted && (
                 <MeetingActions key={item.id} meeting={item} />
               )}
               {item.persisted &&
                 item.status !== "cancelled" &&
-                (session.data?.role === "admin" ? (
+                (adminView ? (
                   <RoomPanel key={`room-${item.id}`} meetingId={item.id} />
                 ) : (
                   <ConfirmedCourt
@@ -227,11 +224,9 @@ export function MeetingPage() {
                     meetingId={item.id}
                   />
                 ))}
-              {item.persisted &&
-                item.status === "completed" &&
-                session.data?.role !== "admin" && (
-                  <ResultCard meetingId={item.id} />
-                )}
+              {item.persisted && item.status === "completed" && !adminView && (
+                <ResultCard meetingId={item.id} />
+              )}
               {!!item.awaiting_confirmation.length && (
                 <Roster
                   title="Oczekują na potwierdzenie"

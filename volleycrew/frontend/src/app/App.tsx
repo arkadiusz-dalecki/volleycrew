@@ -1,3 +1,9 @@
+import {
+  ViewModeProvider,
+  ViewModeSwitch,
+  useAdminView,
+} from "../features/auth/ViewMode";
+import { InstallApp, InstallProvider } from "../features/install/InstallApp";
 import { PreviewProfiles } from "../features/auth/PreviewProfiles";
 import { AppEnvironment, ConnectionNotice } from "../components/AppEnvironment";
 import {
@@ -102,6 +108,7 @@ function EmptyPage({
 }
 
 function PrivateApp() {
+  const adminView = useAdminView();
   const next = useQuery({
     queryKey: ["next-meeting"],
     queryFn: async ({ signal }) =>
@@ -140,7 +147,7 @@ function PrivateApp() {
         <Brand />
         <p className="nav-caption">TWOJA EKIPA</p>
         <Navigation />
-        {session.data?.role === "admin" && (
+        {adminView && (
           <Link className="admin-link" to="/admin/settings">
             <Settings size={18} /> Ustawienia ekipy
           </Link>
@@ -216,6 +223,7 @@ function PrivateApp() {
           </div>
         </header>
         <main id="main" className="content" tabIndex={-1}>
+          <ViewModeSwitch />
           <ConnectionNotice />
           <PreviewProfiles />
           {logoutError && (
@@ -273,6 +281,7 @@ function PrivateApp() {
           <footer className="app-footer">
             <span>VOLLEYCREW · GRAMY RAZEM</span>
             <ServiceStatus />
+            <InstallApp />
           </footer>
         </main>
       </div>
@@ -282,25 +291,36 @@ function PrivateApp() {
 }
 
 export function App() {
+  const session = useSession();
   return (
-    <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      {import.meta.env.DEV && (
-        <Route path="/preview/login" element={<LoginPage preview />} />
-      )}
-      <Route path="/join" element={<RegisterPage key="join" />} />
-      <Route path="/join/:token" element={<RegisterPage key="join-legacy" />} />
-      <Route path="/setup" element={<RegisterPage bootstrap key="setup" />} />
-      <Route path="/reset-pin" element={<ResetPinPage />} />
-      <Route path="/reset-pin/:token" element={<ResetPinPage />} />
-      <Route
-        path="*"
-        element={
-          <Protected>
-            <PrivateApp />
-          </Protected>
-        }
-      />
-    </Routes>
+    <InstallProvider>
+      <ViewModeProvider key={session.data?.id ?? "anonymous"}>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          {import.meta.env.DEV && (
+            <Route path="/preview/login" element={<LoginPage preview />} />
+          )}
+          <Route path="/join" element={<RegisterPage key="join" />} />
+          <Route
+            path="/join/:token"
+            element={<RegisterPage key="join-legacy" />}
+          />
+          <Route
+            path="/setup"
+            element={<RegisterPage bootstrap key="setup" />}
+          />
+          <Route path="/reset-pin" element={<ResetPinPage />} />
+          <Route path="/reset-pin/:token" element={<ResetPinPage />} />
+          <Route
+            path="*"
+            element={
+              <Protected>
+                <PrivateApp />
+              </Protected>
+            }
+          />
+        </Routes>
+      </ViewModeProvider>
+    </InstallProvider>
   );
 }

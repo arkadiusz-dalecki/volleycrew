@@ -28,8 +28,8 @@ for (const prefix of [
     await page.goto(prefix + "/profile");
     await expect(page).toHaveURL(new RegExp(`${prefix}/login$`));
     await page
-      .getByText("Arkadiusz T*****y — Container", { exact: true })
-      .click();
+      .getByLabel("Twój profil")
+      .selectOption({ label: "Arkadiusz T*****y — Container" });
     await page.getByLabel("PIN", { exact: true }).fill("123456");
     await page.getByRole("button", { name: "Wejdź na boisko" }).click();
     await expect(page).toHaveURL(new RegExp(`${prefix}/profile$`));

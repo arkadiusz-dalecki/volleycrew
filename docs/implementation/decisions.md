@@ -59,3 +59,7 @@ Użytkownik nie ma PostgreSQL i zlecił bazę wewnątrz Volleycrew. To zastępuj
 ## Kalendarz administratora — 2026-11-08
 
 Użytkownik zlecił wyeksponowanie daty spotkania, stałe wyświetlanie najbliższego terminu w bocznym panelu oraz przeniesienie planowania z ustawień do kalendarza. Kalendarz udostępnia administratorowi dodanie pojedynczego terminu i planowanie cotygodniowej serii od–do. Przesunięcie jednego istniejącego spotkania (np. wtorek → środa) pozostaje indywidualnym wyjątkiem. Przyjęte zachowanie serii: zastępuje dotychczasowy harmonogram w wskazanym okresie; po dacie końcowej wraca poprzednia reguła. Dodatkowe pojedyncze spotkania pozostają niezależne. Szczegóły i odbiór: [raport](calendar-management-report.md).
+
+## Poprawki mobilne, logowanie i podgląd administratora — 2026-11-08
+
+Użytkownik zlecił poprawę formularza pojedynczego spotkania na telefonie, usunięcie podpisu pod „Najbliższe spotkanie”, rozwijaną listę logowania z domyślnym „Wybierz użytkownika” i zapamiętaniem ostatnio zalogowanego profilu oraz przełącznik użytkownik/administrator. Podgląd działa na własnym koncie administratora, bez podszywania się pod innego gracza i bez zmiany uprawnień API. Użytkownik zlecił również przycisk instalacji na iOS/Android. Android korzysta z dostępnego systemowego promptu, iOS z instrukcji dodania przez menu Safari, zgodnie z ograniczeniami platformy.

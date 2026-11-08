@@ -66,7 +66,7 @@ export function CreateMeeting({ date }: { date: string }) {
           setNotice("");
         }}
       >
-        <fieldset disabled={busy}>
+        <fieldset className="plain-fieldset" disabled={busy}>
           <div className="form-row">
             <label className="form-field">
               Data spotkania

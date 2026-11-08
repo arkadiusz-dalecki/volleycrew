@@ -1,3 +1,4 @@
+import { useAdminView } from "./ViewMode";
 import { HistoryPanel } from "../room/HistoryPanel";
 import { useState } from "react";
 import { Link } from "react-router-dom";
@@ -10,6 +11,7 @@ import { useSession } from "./useSession";
 import { priorityLabel } from "./labels";
 
 export function ProfilePage() {
+  const adminView = useAdminView();
   const { data: me } = useSession();
   const [firstName, setFirstName] = useState(me?.first_name ?? "");
   const [lastName, setLastName] = useState(me?.last_name ?? "");
@@ -74,7 +76,7 @@ export function ProfilePage() {
         <h1>Mój profil</h1>
         <p>Twoje dane i ustawienia dostępu do ekipy.</p>
       </div>
-      {me.role === "admin" && (
+      {adminView && (
         <Link className="button profile-admin-link" to="/admin/settings">
           Ustawienia ekipy
         </Link>
