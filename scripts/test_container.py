@@ -29,6 +29,16 @@ def docker(*args, check=True):
     return (result.stdout + (result.stderr if args[0] == "logs" or not check else "")).strip()
 
 
+def migration_head(container):
+    return docker(
+        "exec",
+        container,
+        "python",
+        "-c",
+        "from app.core.database import expected_revision; print(expected_revision())",
+    )
+
+
 def wait(url, *, status=200, seconds=100, container=None):
     deadline = time.monotonic() + seconds
     while time.monotonic() < deadline:
@@ -546,7 +556,7 @@ http {
                 "SELECT count(*) FROM auth_sessions WHERE revoked_at IS NULL; "
                 "SELECT version_num FROM alembic_version;",
             )
-            assert check.splitlines() == ["3", "0", "0007_results"], check
+            assert check.splitlines() == ["3", "0", migration_head(app)], check
             for table in [
                 "players",
                 "schedule_versions",

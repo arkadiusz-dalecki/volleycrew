@@ -81,3 +81,7 @@ Gałąź `feat/calendar-management-and-court-layouts`, bazująca na `origin/main
 - Zrzuty do przeglądu: [akcje kalendarza](images/calendar-meeting-actions.png), [boisko przed poprawką](images/court-unequal-before.png), [boisko po poprawce](images/court-unequal-after.png).
 
 CI GitHub ma dodatkowo sprawdzić PostgreSQL 17 oraz produkcyjne obrazy obu CPU; wyniki lokalne nie zastępują tych prób. Fizyczna instalacja HA i odbiór telefonu pozostają po stronie użytkownika.
+
+### Poprawka CI po utworzeniu PR #4
+
+Check pakietu amd64 zbudował obraz i przeszedł próby UI/Ingress, ale zakończył się na asercji restore oczekującej wpisanego na stałe `0007_results`; odtworzona baza poprawnie miała `0008_additional_meetings`. Takie samo nieaktualne oczekiwanie było w teście własnego PostgreSQL. Oba testy porównują teraz bazę z `expected_revision()` uruchomionym wewnątrz testowanego obrazu — tym samym źródłem wersji, którego używa aplikacja. Kontrola nadal wymaga dokładnej zgodności, bez aktualizowania ręcznie numeru po każdej migracji.
