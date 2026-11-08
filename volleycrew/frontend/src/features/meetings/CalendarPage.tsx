@@ -13,7 +13,14 @@ import { api, unwrap } from "../../lib/api/client";
 import { dateLabel, hour, localDate, shiftMonth, statusLabel } from "./dates";
 import { useOpenMeeting } from "./useOpenMeeting";
 
+import { useSession } from "../auth/useSession";
+import { ScheduleEditor } from "../schedule/ScheduleEditor";
+import { MeetingActions } from "../schedule/MeetingActions";
+import { CreateMeeting } from "../schedule/CreateMeeting";
+
 export function CalendarPage() {
+  const session = useSession();
+  const [action, setAction] = useState<"single" | "series" | null>(null);
   const [params, setParams] = useSearchParams();
   const rawMonth = params.get("month") ?? "";
   const month =
@@ -22,6 +29,7 @@ export function CalendarPage() {
     rawMonth <= "9997-12"
       ? rawMonth
       : localDate(new Date().toISOString()).slice(0, 7);
+  const [notice, setNotice] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
   const opener = useOpenMeeting();
   const start = `${month}-01`,
@@ -77,114 +85,156 @@ export function CalendarPage() {
         <h1>Kalendarz</h1>
         <p>Zarezerwuj sobie czas na grę. Wybierz miesiąc i sprawdź terminy.</p>
       </div>
+      {session.data?.role === "admin" && (
+        <div className="calendar-admin">
+          <div className="row-actions">
+            <button
+              className="button primary"
+              aria-expanded={action === "single"}
+              onClick={() => setAction(action === "single" ? null : "single")}
+            >
+              Dodaj spotkanie
+            </button>
+            <button
+              className="button"
+              aria-expanded={action === "series"}
+              onClick={() => setAction(action === "series" ? null : "series")}
+            >
+              Zaplanuj serię
+            </button>
+          </div>
+          <p className="form-note">
+            Termin zmienisz lub odwołasz bezpośrednio na kafelku spotkania.
+          </p>
+          {action === "single" && (
+            <CreateMeeting
+              key={selected ?? month}
+              date={
+                selected ??
+                (month === localDate(new Date().toISOString()).slice(0, 7)
+                  ? localDate(new Date().toISOString())
+                  : `${month}-01`)
+              }
+            />
+          )}
+          {action === "series" && <ScheduleEditor />}
+        </div>
+      )}
       <div className="calendar-layout">
-        <section className="card calendar-card">
-          <div className="calendar-toolbar">
-            <button
-              className="button calendar-arrow"
-              aria-label="Poprzedni miesiąc"
-              disabled={month === "1970-01"}
-              onClick={() => move(-1)}
-            >
-              <ChevronLeft size={20} />
-            </button>
-            <h2 aria-live="polite">{title}</h2>
-            <button
-              className="button calendar-arrow"
-              aria-label="Następny miesiąc"
-              disabled={month === "9997-12"}
-              onClick={() => move(1)}
-            >
-              <ChevronRight size={20} />
-            </button>
+        <div className="calendar-month-column">
+          <div className="section-title calendar-column-heading">
+            <h2>Wybierz dzień</h2>
           </div>
-          <div className="calendar-jump">
-            <label>
-              Miesiąc
-              <input
-                type="month"
-                value={month}
-                min="1970-01"
-                max="9997-12"
-                onChange={(e) => {
-                  if (e.target.validity.valid && e.target.value) {
-                    setSelected(null);
-                    setParams({ month: e.target.value });
-                  }
+          <section className="card calendar-card">
+            <div className="calendar-toolbar">
+              <button
+                className="button calendar-arrow"
+                aria-label="Poprzedni miesiąc"
+                disabled={month === "1970-01"}
+                onClick={() => move(-1)}
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <h2 aria-live="polite">{title}</h2>
+              <button
+                className="button calendar-arrow"
+                aria-label="Następny miesiąc"
+                disabled={month === "9997-12"}
+                onClick={() => move(1)}
+              >
+                <ChevronRight size={20} />
+              </button>
+            </div>
+            <div className="calendar-jump">
+              <label>
+                Miesiąc
+                <input
+                  type="month"
+                  value={month}
+                  min="1970-01"
+                  max="9997-12"
+                  onChange={(e) => {
+                    if (e.target.validity.valid && e.target.value) {
+                      setSelected(null);
+                      setParams({ month: e.target.value });
+                    }
+                  }}
+                />
+              </label>
+              <button
+                className="button small"
+                onClick={() => {
+                  setSelected(null);
+                  setParams({});
                 }}
-              />
-            </label>
-            <button
-              className="button small"
-              onClick={() => {
-                setSelected(null);
-                setParams({});
-              }}
-            >
-              Dzisiaj
-            </button>
-          </div>
-          <table className="month-grid" aria-label={title}>
-            <thead>
-              <tr>
-                {["Pn", "Wt", "Śr", "Cz", "Pt", "So", "Nd"].map((day) => (
-                  <th scope="col" key={day}>
-                    {day}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {Array.from({ length: days.length / 7 }, (_, week) => (
-                <tr key={week}>
-                  {days.slice(week * 7, week * 7 + 7).map((day, col) => {
-                    const key = `${month}-${String(day).padStart(2, "0")}`;
-                    const events = items.filter(
-                      (item) => localDate(item.starts_at) === key,
-                    );
-                    const today = key === localDate(new Date().toISOString());
-                    return (
-                      <td key={col}>
-                        {day < 1 || day > count ? null : (
-                          <button
-                            className={`calendar-day ${today ? "today" : ""} ${selected === key ? "selected" : ""}`}
-                            disabled={!events.length}
-                            aria-label={`${day} ${title}${events.length ? `, spotkania: ${events.length}${events.every((item) => item.status === "cancelled") ? ", odwołane" : ""}` : ""}`}
-                            aria-pressed={selected === key}
-                            onClick={() =>
-                              setSelected(selected === key ? null : key)
-                            }
-                          >
-                            <span>{day}</span>
-                            {events.length > 0 && (
-                              <i
-                                className={
-                                  events.every(
-                                    (item) => item.status === "cancelled",
-                                  )
-                                    ? "cancelled-dot"
-                                    : "event-dot"
-                                }
-                              />
-                            )}
-                          </button>
-                        )}
-                      </td>
-                    );
-                  })}
+              >
+                Dzisiaj
+              </button>
+            </div>
+            <table className="month-grid" aria-label={title}>
+              <thead>
+                <tr>
+                  {["Pn", "Wt", "Śr", "Cz", "Pt", "So", "Nd"].map((day) => (
+                    <th scope="col" key={day}>
+                      {day}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          <div className="calendar-legend">
-            <span>
-              <i className="event-dot" /> Spotkanie
-            </span>
-            <span>
-              <i className="cancelled-dot" /> Odwołane
-            </span>
-          </div>
-        </section>
+              </thead>
+              <tbody>
+                {Array.from({ length: days.length / 7 }, (_, week) => (
+                  <tr key={week}>
+                    {days.slice(week * 7, week * 7 + 7).map((day, col) => {
+                      const key = `${month}-${String(day).padStart(2, "0")}`;
+                      const events = items.filter(
+                        (item) => localDate(item.starts_at) === key,
+                      );
+                      const today = key === localDate(new Date().toISOString());
+                      return (
+                        <td key={col}>
+                          {day < 1 || day > count ? null : (
+                            <button
+                              className={`calendar-day ${today ? "today" : ""} ${selected === key ? "selected" : ""}`}
+                              disabled={
+                                !events.length && session.data?.role !== "admin"
+                              }
+                              aria-label={`${day} ${title}${events.length ? `, spotkania: ${events.length}${events.every((item) => item.status === "cancelled") ? ", odwołane" : ""}` : ""}`}
+                              aria-pressed={selected === key}
+                              onClick={() =>
+                                setSelected(selected === key ? null : key)
+                              }
+                            >
+                              <span>{day}</span>
+                              {events.length > 0 && (
+                                <i
+                                  className={
+                                    events.every(
+                                      (item) => item.status === "cancelled",
+                                    )
+                                      ? "cancelled-dot"
+                                      : "event-dot"
+                                  }
+                                />
+                              )}
+                            </button>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="calendar-legend">
+              <span>
+                <i className="event-dot" /> Spotkanie
+              </span>
+              <span>
+                <i className="cancelled-dot" /> Odwołane
+              </span>
+            </div>
+          </section>
+        </div>
         <section className="calendar-agenda">
           <div className="section-title">
             <h2>
@@ -201,6 +251,11 @@ export function CalendarPage() {
               </button>
             )}
           </div>
+          {notice && (
+            <p className="form-notice" role="status">
+              {notice}
+            </p>
+          )}
           {calendar.isPending ? (
             <div className="card" role="status">
               Wczytujemy terminy…
@@ -287,6 +342,20 @@ export function CalendarPage() {
                       >
                         <ArrowRight size={18} />
                       </button>
+                      {session.data?.role === "admin" && (
+                        <MeetingActions
+                          meeting={item}
+                          compact
+                          onChanged={(updated, resultNotice) => {
+                            const date = localDate(updated.starts_at);
+                            if (selected || date.slice(0, 7) !== month)
+                              setSelected(date);
+                            if (date.slice(0, 7) !== month)
+                              setParams({ month: date.slice(0, 7) });
+                            setNotice(resultNotice);
+                          }}
+                        />
+                      )}
                     </li>
                   ))}
                 </ul>

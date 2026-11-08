@@ -7,6 +7,7 @@ from app.api.errors import ApiError
 from app.api.meeting_schemas import MeetingDetail
 from app.api.schedule_schemas import (
     ApplySchedule,
+    CreateMeetingInput,
     MeetingVersionInput,
     ReleaseReservation,
     RescheduleInput,
@@ -85,6 +86,14 @@ async def release(
 ):
     row = await service.release(db, meeting_id, body, actor.id, request.app.state.clock)
     await db.flush()
+    view = await meetings.detail(db, row)
+    await db.commit()
+    return view
+
+
+@router.post("/admin/meetings", response_model=MeetingDetail, operation_id="createMeeting")
+async def create_meeting(body: CreateMeetingInput, actor: Admin, db: DB, request: Request):
+    row = await service.create_meeting(db, body, actor.id, request.app.state.clock)
     view = await meetings.detail(db, row)
     await db.commit()
     return view

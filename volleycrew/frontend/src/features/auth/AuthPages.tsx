@@ -10,6 +10,7 @@ import {
 } from "react-router-dom";
 import { KeyRound, LoaderCircle, ShieldCheck, Volleyball } from "lucide-react";
 import { api, message, unwrap } from "../../lib/api/client";
+import { PreviewProfiles } from "./PreviewProfiles";
 import { useSession } from "./useSession";
 
 export function Protected({
@@ -97,7 +98,7 @@ function Pending({ busy, children }: { busy: boolean; children: ReactNode }) {
   );
 }
 
-export function LoginPage() {
+export function LoginPage({ preview = false }: { preview?: boolean }) {
   const session = useSession();
   const profiles = useQuery({
     queryKey: ["login-profiles"],
@@ -119,7 +120,7 @@ export function LoginPage() {
     !requested.startsWith("/login")
       ? requested
       : "/";
-  if (session.data) return <Navigate to={destination} replace />;
+  if (session.data && !preview) return <Navigate to={destination} replace />;
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -146,6 +147,7 @@ export function LoginPage() {
       title="Dobrze Cię widzieć"
       subtitle="Wybierz swój profil i podaj sześciocyfrowy PIN."
     >
+      {!preview && <PreviewProfiles />}
       {profiles.isPending ? (
         <p role="status">Wczytujemy profile…</p>
       ) : profiles.isError ? (

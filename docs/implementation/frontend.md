@@ -18,7 +18,7 @@ Odtworzyć UI jako komponenty z rzeczywistymi danymi. Główna struktura: `AppSh
 | `/join#token` | Walidacja zaproszenia, imię/nazwisko, sześciocyfrowy PIN i jego powtórzenie |
 | `/login` | Lista profili: imię, maskowane nazwisko (np. Michał N*****k), ewentualny przydomek; wybór istniejącego profilu i sześciocyfrowy PIN |
 | `/reset-pin#token` | Ustawienie nowego PIN-u przez jednorazowy grant |
-| `/admin/settings` | Harmonogram, statusy i blokady, link zaproszenia, reset PIN-u |
+| `/admin/settings` | Statusy i blokady, link zaproszenia, reset PIN-u |
 
 Ustawienia administracyjne są dodatkową trasą, nie piątą główną zakładką. Panel obsługi konkretnego meczu pozostaje w jego szczegółach. Uprawnienia są danymi z API; frontend nie nadaje ich przez przełącznik. Przed blokadą profilu administrator widzi podsumowanie: wylogowanie zawodnika, zablokowanie dostępu i zwolnienie przyszłych miejsc/rezerwacji/ofert przy zachowaniu historii i wyników. Po zatwierdzeniu UI pobiera aktualne listy.
 
@@ -132,3 +132,17 @@ Manifest i ikona są lokalne, bez service workera. Dolna nawigacja uwzględnia s
 ## Wejścia pakietu E10
 
 Nginx renderuje `<base>` osobno dla zwykłego wejścia i aktualnego prefiksu Ingress. `lib/base.ts` dostarcza basename routera i bazę klienta API. Wszystkie nowe połączenia API i zasoby muszą zachować ten kontekst; nie konstruuj URL z samego `window.location.origin` ani ręcznie zakodowanego tokenu Ingress. Manifest i lazy worker PDF.js działają względem tej bazy. Oba wejścia wymagają własnego logowania Volleycrew, z oddzielnymi nazwami/ścieżkami cookies i właściwym CSRF. Testy produkcyjnego obrazu są oddzielne od Vite w `container-tests/`.
+
+## Uzupełnienie kalendarza — 2026-11-08
+
+Data (dzień tygodnia, dzień, miesiąc, rok) jest głównym nagłówkiem zielonej karty spotkania; godzina i miejsce są poniżej. Boczne menu wyświetla termin z `/meetings/next`, odświeżany co 30 s i po mutacjach, także gdy otwarte jest inne spotkanie. Obsługuje ładowanie, brak terminu i błąd z ponowieniem.
+
+Planowanie dostępne wyłącznie administratorowi w `/calendar`: „Dodaj spotkanie” oraz „Zaplanuj serię”. Można wybrać również pusty dzień siatki jako datę nowego spotkania. Dodawanie wymaga podglądu i zatwierdzenia. Seria zawiera dzień tygodnia, godzinę, czas gry, miejsce i zakres od–do; koniec w UI jest włącznie, opcjonalny, po nim wraca wcześniejszy harmonogram. Podgląd wyjaśnia zastąpienie istniejącej reguły i ponowne potwierdzenia. Pojedynczą zmianę wtorku na środę wykonuje się przyciskiem „Zmień termin” na kafelku w kalendarzu; szczegóły spotkania zachowują dotychczasowe akcje. Ustawienia ekipy obejmują dostęp i zawodników.
+
+### Akcje na kafelku — 2026-11-08
+
+Kafelek przyszłego zaplanowanego spotkania w kalendarzu ma dla administratora przyciski „Zmień termin” i „Odwołaj”. Pierwszy rozwija formularz daty, godziny i czasu gry na tym samym kafelku; zapis nadal wymaga podglądu oraz potwierdzenia skutków dla zapisanych. Drugi otwiera dialog potwierdzenia odwołania. Widok pozostaje w kalendarzu; po przesunięciu aktywny filtr daty i ewentualnie miesiąc przechodzą do nowego terminu. Odwołany kafelek pozostaje ze statusem, bez ponownych akcji zmiany/odwołania. Zawodnik nie widzi tych przycisków.
+
+### Rozmieszczenie mniejszych drużyn — 2026-11-08
+
+Boisko dopasowuje układ do liczby graczy na danej połowie zamiast wyświetlać sześć miejsc z pustymi znacznikami. Jedna osoba jest pośrodku; dwie są ustawione przód/tył; trzy to jedna przy siatce i dwie z tyłu; cztery to 2+2; pięć to dwie przy siatce i trzy z tyłu; sześć to 3+3. Siódma osoba pozostaje w panelu rotacji. Obie drużyny są skierowane ku siatce, również przy pionowym boisku na telefonie. To układ poglądowy, bez zmiany przypisania graczy i reguł podziału.

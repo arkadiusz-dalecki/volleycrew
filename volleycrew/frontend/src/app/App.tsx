@@ -1,3 +1,4 @@
+import { PreviewProfiles } from "../features/auth/PreviewProfiles";
 import { AppEnvironment, ConnectionNotice } from "../components/AppEnvironment";
 import {
   RankingPage,
@@ -8,7 +9,7 @@ import { PlayerHistoryPage } from "../features/room/HistoryPanel";
 import { MeetingPage } from "../features/meetings/MeetingPage";
 import { CalendarPage } from "../features/meetings/CalendarPage";
 import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, message, unwrap } from "../lib/api/client";
 import {
   LoginPage,
@@ -32,6 +33,7 @@ import {
   LogOut,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { dateLabel, hour } from "../features/meetings/dates";
 import { ServiceStatus } from "../features/system/ServiceStatus";
 
 const navigation: { path: string; label: string; icon: LucideIcon }[] = [
@@ -100,6 +102,12 @@ function EmptyPage({
 }
 
 function PrivateApp() {
+  const next = useQuery({
+    queryKey: ["next-meeting"],
+    queryFn: async ({ signal }) =>
+      unwrap(await api.GET("/api/v1/meetings/next", { signal })),
+    refetchInterval: 30_000,
+  });
   const session = useSession();
   const client = useQueryClient();
   const [logoutError, setLogoutError] = useState("");
@@ -140,7 +148,36 @@ function PrivateApp() {
         <div className="sidebar-bottom">
           <div className="venue">
             <MapPin size={20} />
-            <strong>Widzimy się na boisku.</strong>
+            <span>Najbliższe spotkanie</span>
+            {next.data ? (
+              <>
+                <strong>
+                  <time dateTime={next.data.starts_at}>
+                    {dateLabel(next.data.starts_at, next.data.timezone)}
+                  </time>
+                </strong>
+                <span>
+                  {hour(next.data.starts_at, next.data.timezone)} —{" "}
+                  {hour(next.data.ends_at, next.data.timezone)}
+                </span>
+              </>
+            ) : (
+              <strong>
+                {next.isPending
+                  ? "Wczytujemy termin…"
+                  : next.isError
+                    ? "Nie udało się pobrać terminu"
+                    : "Brak kolejnego spotkania"}
+              </strong>
+            )}
+            {next.isError && (
+              <button
+                className="button small"
+                onClick={() => void next.refetch()}
+              >
+                Ponów
+              </button>
+            )}
             <Link className="text-link" to="/calendar">
               Terminy w kalendarzu
             </Link>
@@ -180,6 +217,7 @@ function PrivateApp() {
         </header>
         <main id="main" className="content" tabIndex={-1}>
           <ConnectionNotice />
+          <PreviewProfiles />
           {logoutError && (
             <p role="alert" className="form-error">
               {logoutError}
@@ -247,6 +285,9 @@ export function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      {import.meta.env.DEV && (
+        <Route path="/preview/login" element={<LoginPage preview />} />
+      )}
       <Route path="/join" element={<RegisterPage key="join" />} />
       <Route path="/join/:token" element={<RegisterPage key="join-legacy" />} />
       <Route path="/setup" element={<RegisterPage bootstrap key="setup" />} />

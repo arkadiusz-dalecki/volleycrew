@@ -160,3 +160,7 @@ Zakończ dopiero po kryteriach odbioru dla tego zakresu.
 Raportuj: zmiany, testy i ich wynik, nierozstrzygnięte zależności,
 pozostałe ryzyka oraz następne gotowe zadanie. Zaktualizuj postęp.
 ```
+
+## Uzupełnienie E3/E5/E9 — kalendarz administratora
+
+Zlecone 2026-11-08: widoczna data na karcie, najbliższe spotkanie w bocznym panelu, planowanie w kalendarzu zamiast ustawień, pojedynczy termin i cotygodniowa seria od–do. Odbiór: uprawnienia, brak kolizji, zachowanie zapisów i wyjątków, powrót wcześniejszej reguły po serii, sprawdzenie desktop/mobile/WebKit. [Raport](calendar-management-report.md).

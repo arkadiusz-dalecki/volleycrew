@@ -107,6 +107,11 @@ def main():
     task = sys.argv[1] if len(sys.argv) > 1 else "help"
     if task == "setup":
         setup()
+    elif task == "dev-preview":
+        run(backend("alembic", "upgrade", "head"))
+        run(backend("python", "-m", "app.seed_preview"))
+        ENV["VITE_LOCAL_PREVIEW"] = "true"
+        dev()
     elif task == "dev":
         dev()
     elif task == "migrate":

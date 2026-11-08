@@ -55,3 +55,7 @@ Użytkownik potwierdził, że sam doda repozytorium do HA, wygeneruje token i za
 ## Własna baza w pakiecie — zatwierdzone 2026-11-08
 
 Użytkownik nie ma PostgreSQL i zlecił bazę wewnątrz Volleycrew. To zastępuje wcześniejsze wymaganie osobnego serwera dla nowych instalacji (D1/E0/E10). Pakiet 0.2.0 zawiera PostgreSQL 17, trwały katalog /data/postgresql, automatycznie tworzoną bazę/rolę/hasło i prywatny listener loopback. DATABASE_MODE=auto wybiera bazę własną przy pustym POSTGRES_HOST; istniejący host zachowuje tryb external. Zmiana utrwalonego trybu wymaga jawnej migracji danych, bez automatycznego tworzenia pustej alternatywy. Backup HA zatrzymuje aplikację i kopiuje spójny klaster; dodatkowo działa backup logiczny i odtworzenie z archiwum przy braku plików klastra. Nie ma automatycznego upgrade głównej wersji PostgreSQL.
+
+## Kalendarz administratora — 2026-11-08
+
+Użytkownik zlecił wyeksponowanie daty spotkania, stałe wyświetlanie najbliższego terminu w bocznym panelu oraz przeniesienie planowania z ustawień do kalendarza. Kalendarz udostępnia administratorowi dodanie pojedynczego terminu i planowanie cotygodniowej serii od–do. Przesunięcie jednego istniejącego spotkania (np. wtorek → środa) pozostaje indywidualnym wyjątkiem. Przyjęte zachowanie serii: zastępuje dotychczasowy harmonogram w wskazanym okresie; po dacie końcowej wraca poprzednia reguła. Dodatkowe pojedyncze spotkania pozostają niezależne. Szczegóły i odbiór: [raport](calendar-management-report.md).

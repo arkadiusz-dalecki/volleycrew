@@ -149,27 +149,11 @@ export function MeetingPage() {
                     <span className="eyebrow">
                       <span className="live-dot" /> CZAS NA WSPÓLNĄ GRĘ
                     </span>
-                    <h2>
-                      {item.status === "cancelled" ? (
-                        <>
-                          Tym razem
-                          <br />
-                          bez gry.
-                        </>
-                      ) : (
-                        <>
-                          Widzimy się
-                          <br />
-                          na boisku.
-                        </>
-                      )}
-                    </h2>
-                    <p className="meeting-date">
-                      <CalendarDays size={16} />
+                    <h2 className="hero-date">
                       <time dateTime={item.starts_at}>
                         {dateLabel(item.starts_at, item.timezone)}
                       </time>
-                    </p>
+                    </h2>
                     <p>
                       <Clock3 size={16} />
                       {hour(item.starts_at, item.timezone)} —{" "}

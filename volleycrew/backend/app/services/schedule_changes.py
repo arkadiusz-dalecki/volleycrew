@@ -62,7 +62,7 @@ def proposed_occurrence(body, identifier=None):
     return Rule(
         identifier or uuid4(),
         body.effective_from,
-        None,
+        body.effective_until,
         body.weekday,
         body.local_time,
         body.duration_minutes,
@@ -264,7 +264,16 @@ async def preview(db, body, clock):
         raise DomainError(
             422, "past_schedule", "Wybierz dzisiejszą lub przyszłą datę obowiązywania."
         )
+    if body.effective_until and (
+        body.effective_until <= body.effective_from or body.effective_until.year > 9998
+    ):
+        raise DomainError(422, "invalid_range", "Koniec serii musi być późniejszy niż początek.")
     rule = proposed_occurrence(body)
+    if (
+        rule.effective_until
+        and first_date_on_or_after(rule.effective_from, rule.weekday) >= rule.effective_until
+    ):
+        raise DomainError(422, "empty_schedule", "W tym zakresie nie ma wybranego dnia tygodnia.")
     validate_rule(rule)
     boundary = datetime.combine(body.effective_from, datetime.min.time(), ZONE).astimezone(UTC)
     rows = (
@@ -272,6 +281,7 @@ async def preview(db, body, clock):
             select(Meeting)
             .where(
                 Meeting.starts_at > at,
+                Meeting.is_additional.is_(False),
                 (Meeting.calendar_source_date >= body.effective_from)
                 | (Meeting.starts_at >= boundary),
             )
@@ -282,6 +292,8 @@ async def preview(db, body, clock):
     at = enrollment.current_time(clock)
     planned, bindings = [], {}
     for row in rows:
+        if body.effective_until and row.calendar_source_date >= body.effective_until:
+            continue
         if row.status not in {"scheduled", "cancelled"}:
             raise DomainError(
                 409,
@@ -294,7 +306,7 @@ async def preview(db, body, clock):
             else row.starts_at.astimezone(ZONE).date()
         )
         day = base - timedelta(days=base.weekday()) + timedelta(days=body.weekday)
-        if day < body.effective_from:
+        if day < body.effective_from or (body.effective_until and day >= body.effective_until):
             raise DomainError(
                 409,
                 "schedule_boundary_conflict",
@@ -365,6 +377,16 @@ async def preview(db, body, clock):
             )
         )
     ).all()
+    for other in untouched:
+        window_start = other.starts_at.astimezone(ZONE).date() - timedelta(days=1)
+        window_end = other.ends_at.astimezone(ZONE).date() + timedelta(days=1)
+        if any(
+            generated.source_date not in bindings
+            and generated.starts_at < other.ends_at
+            and generated.ends_at > other.starts_at
+            for generated in occurrences(rule, window_start, window_end)
+        ):
+            raise DomainError(409, "schedule_collision", "Seria nakłada się na inne spotkanie.")
     for item in planned:
         if item.status == "cancelled":
             continue
@@ -397,6 +419,40 @@ async def preview(db, body, clock):
             .order_by(ScheduleVersion.effective_from)
         )
     ).all()
+    # Date ranges do not prevent an overnight meeting at a range boundary
+    # from overlapping a slot preserved before/after the replacement.
+    from app.services.meetings import rule_of
+
+    override_keys = set(
+        (await db.execute(select(Meeting.calendar_schedule_id, Meeting.calendar_source_date))).all()
+    )
+    boundary_candidates = [item for item in planned if item.status != "cancelled"]
+    for edge in (body.effective_from, body.effective_until):
+        if edge:
+            boundary_candidates.extend(
+                item
+                for item in occurrences(rule, edge - timedelta(days=1), edge + timedelta(days=2))
+                if item.source_date not in bindings
+            )
+    for candidate in boundary_candidates:
+        first = candidate.starts_at.astimezone(ZONE).date() - timedelta(days=1)
+        last = candidate.ends_at.astimezone(ZONE).date() + timedelta(days=1)
+        for old in rules:
+            for kept in occurrences(rule_of(old), first, last):
+                outside = kept.source_date < body.effective_from or (
+                    body.effective_until and kept.source_date >= body.effective_until
+                )
+                if (
+                    outside
+                    and (old.id, kept.source_date) not in override_keys
+                    and candidate.starts_at < kept.ends_at
+                    and candidate.ends_at > kept.starts_at
+                ):
+                    raise DomainError(
+                        409,
+                        "schedule_collision",
+                        "Seria nakłada się na termin poza zmienianym zakresem.",
+                    )
     payload = body.model_dump(mode="json", exclude={"preview_token"})
     payload["existing"] = [item.model_dump(mode="json") for item in planned]
     payload["rules"] = [ScheduleView.model_validate(item).model_dump(mode="json") for item in rules]
@@ -436,14 +492,52 @@ async def apply(db, body, actor_id, clock):
         )
     ).all()
     for old in old_rules:
+        if old.effective_until and old.effective_until <= body.effective_from:
+            continue
+        if body.effective_until and old.effective_from >= body.effective_until:
+            continue
+        # Preserve the original schedule after a bounded replacement, including
+        # materialized occurrences and their stable public/source identities.
+        tail = None
+        if body.effective_until and (
+            old.effective_until is None or old.effective_until > body.effective_until
+        ):
+            tail = ScheduleVersion(
+                id=uuid4(),
+                effective_from=body.effective_until,
+                effective_until=old.effective_until,
+                weekday=old.weekday,
+                local_time=old.local_time,
+                duration_minutes=old.duration_minutes,
+                timezone=old.timezone,
+                venue=old.venue,
+                created_at=at,
+            )
         if old.effective_from >= body.effective_from:
             old.superseded = True
-        elif old.effective_until is None or old.effective_until > body.effective_from:
+        else:
             old.effective_until = body.effective_from
+        await db.flush()
+        if tail:
+            db.add(tail)
+            await db.flush()
+            following = (
+                await db.scalars(
+                    select(Meeting)
+                    .where(
+                        Meeting.calendar_schedule_id == old.id,
+                        Meeting.calendar_source_date >= body.effective_until,
+                    )
+                    .with_for_update()
+                )
+            ).all()
+            for row in following:
+                row.calendar_schedule_id = tail.id
     await db.flush()
     new = ScheduleVersion(
         id=uuid4(),
         effective_from=body.effective_from,
+        effective_until=body.effective_until,
         weekday=body.weekday,
         local_time=body.local_time,
         duration_minutes=body.duration_minutes,
@@ -493,3 +587,61 @@ async def release(db, meeting_id, body, actor_id, clock):
     await enrollment.rebalance(db, meeting, actor_id, at)
     meeting.version += 1
     return meeting
+
+
+async def create_meeting(db, body, actor_id, clock):
+    state = await state_lock(db)
+    if state.version != body.expected_version:
+        conflict()
+    at = enrollment.current_time(clock)
+    try:
+        rule = Rule(
+            uuid4(),
+            body.local_date,
+            body.local_date + timedelta(days=1),
+            body.local_date.weekday(),
+            body.local_time,
+            body.duration_minutes,
+            "Europe/Warsaw",
+            body.venue,
+        )
+        item = occurrence(rule, body.local_date)
+    except (ValueError, OverflowError) as exc:
+        raise DomainError(
+            422, "invalid_local_time", "Wybrana data lub godzina jest nieprawidłowa."
+        ) from exc
+    if item.starts_at <= at:
+        raise DomainError(422, "past_term", "Nowy termin musi być w przyszłości.")
+    overlap = await db.scalar(
+        select(Meeting.id)
+        .where(
+            Meeting.status != "cancelled",
+            Meeting.starts_at < item.ends_at,
+            Meeting.ends_at > item.starts_at,
+        )
+        .limit(1)
+    )
+    if overlap:
+        raise DomainError(409, "schedule_collision", "Ten czas zajmuje inne spotkanie.")
+    await check_virtual_overlap(db, None, item.starts_at, item.ends_at)
+    db.add(
+        ScheduleVersion(
+            **{key: getattr(rule, key) for key in Rule.__dataclass_fields__},
+            superseded=True,
+            created_at=at,
+        )
+    )
+    await db.flush()
+    row = Meeting(
+        **{key: getattr(item, key) for key in item.__dataclass_fields__},
+        calendar_schedule_id=rule.id,
+        calendar_source_date=body.local_date,
+        is_additional=True,
+        is_exception=True,
+        created_at=at,
+    )
+    db.add(row)
+    state.version += 1
+    audit(db, actor_id, "create_meeting", row.id, at)
+    await db.flush()
+    return row

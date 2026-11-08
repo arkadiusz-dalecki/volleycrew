@@ -246,3 +246,9 @@ Endpointy E8, prefiks `/api/v1`:
 - GET `/admin/meetings/{id}/result` — wynik, prywatne powody i poprzednie składy dla organizatora.
 - GET `/meetings/{id}/result` — wynik i wersje bez prywatnych powodów; null przed pierwszym zapisem.
 - GET `/ranking`, GET `/results`, GET `/players/{id}/rating-history` — ranking, historia spotkań i aktualnie przeliczona historia punktów. Limit 1–100 i offset≥0; własna i cudza historia punktów są grupowe, historia obecności pozostaje prywatna.
+
+## Uzupełnienie E3/E5 — planowanie z kalendarza, 2026-11-08
+
+`ScheduleInput.effective_until` jest opcjonalną, wyłączną datą końca serii. Zakres musi zawierać wybrany dzień tygodnia. Podgląd i zapis obejmują ten sam zakres, zachowują stabilne ID, odwołania i indywidualne wyjątki. Przy ograniczonej serii wcześniejsze reguły po końcu zakresu są zachowane; utrwalone późniejsze spotkania otrzymują powiązanie z zachowaną regułą, bez zmiany terminu ani zapisów.
+
+`POST /admin/meetings` przyjmuje wersję harmonogramu, lokalną datę/godzinę, czas gry i miejsce. Tylko administrator może utworzyć dodatkowy, przyszły termin. Operacja pod blokadą ScheduleState odrzuca kolizje z zapisanymi i wyliczanymi terminami, zwiększa wersję harmonogramu i zapisuje audyt. `Meeting.is_additional` odróżnia dodatkowy termin od wystąpienia zmienianego harmonogramu. Jego źródłowa reguła jest nieaktywna (superseded), a rekord Meeting jest od razu trwały; zmiana serii nie przesuwa dodatkowego spotkania. Dodany termin podlega zwykłym deklaracjom, przesunięciom, odwołaniu, obecności i wynikom. Migracja 0008 zachowuje wszystkie dotychczasowe rekordy jako wystąpienia harmonogramu.

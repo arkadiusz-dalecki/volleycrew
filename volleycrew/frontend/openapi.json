@@ -200,6 +200,18 @@
             "title": "Effective From",
             "type": "string"
           },
+          "effective_until": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective Until"
+          },
           "expected_version": {
             "minimum": 1.0,
             "title": "Expected Version",
@@ -692,6 +704,47 @@
           "created_at"
         ],
         "title": "CorrectionView",
+        "type": "object"
+      },
+      "CreateMeetingInput": {
+        "additionalProperties": false,
+        "properties": {
+          "duration_minutes": {
+            "maximum": 1440.0,
+            "minimum": 1.0,
+            "title": "Duration Minutes",
+            "type": "integer"
+          },
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "local_date": {
+            "format": "date",
+            "title": "Local Date",
+            "type": "string"
+          },
+          "local_time": {
+            "format": "time",
+            "title": "Local Time",
+            "type": "string"
+          },
+          "venue": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Venue",
+            "type": "string"
+          }
+        },
+        "required": [
+          "expected_version",
+          "local_date",
+          "local_time",
+          "duration_minutes",
+          "venue"
+        ],
+        "title": "CreateMeetingInput",
         "type": "object"
       },
       "CsrfView": {
@@ -2553,6 +2606,18 @@
             "title": "Effective From",
             "type": "string"
           },
+          "effective_until": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective Until"
+          },
           "expected_version": {
             "minimum": 1.0,
             "title": "Expected Version",
@@ -3236,6 +3301,97 @@
         "summary": "Revoke Invite",
         "tags": [
           "auth"
+        ]
+      }
+    },
+    "/api/v1/admin/meetings": {
+      "post": {
+        "operationId": "createMeeting",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMeetingInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeetingDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Create Meeting",
+        "tags": [
+          "schedule-changes"
         ]
       }
     },

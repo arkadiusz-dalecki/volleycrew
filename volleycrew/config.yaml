@@ -1,6 +1,6 @@
 name: Volleycrew
 description: Zapisy, obecność, drużyny i ranking grupy siatkarskiej
-version: "0.2.0"
+version: "0.3.0"
 slug: volleycrew
 url: https://github.com/arkadiusz-dalecki/volleycrew
 arch:

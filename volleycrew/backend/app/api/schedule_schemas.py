@@ -10,6 +10,7 @@ from app.api.meeting_schemas import ScheduleView
 class ScheduleInput(Input):
     expected_version: int = Field(ge=1)
     effective_from: date
+    effective_until: date | None = None
     weekday: int = Field(ge=0, le=6)
     local_time: time
     duration_minutes: int = Field(ge=1, le=1440)
@@ -63,6 +64,11 @@ class RescheduleInput(Input):
     local_time: time
     duration_minutes: int = Field(ge=1, le=1440)
     _precision = field_validator("local_time")(ScheduleInput.minute_precision.__func__)
+
+
+class CreateMeetingInput(RescheduleInput):
+    venue: str = Field(min_length=1, max_length=160)
+    _venue = field_validator("venue")(ScheduleInput.venue_text.__func__)
 
 
 class MeetingVersionInput(Input):
