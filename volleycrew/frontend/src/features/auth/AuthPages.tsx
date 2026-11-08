@@ -142,6 +142,10 @@ export function LoginPage({ preview = false }: { preview?: boolean }) {
           body: { profile_id: selectedProfile, pin },
         }),
       );
+      await client.cancelQueries();
+      client.removeQueries({
+        predicate: (query) => query.queryKey[0] !== "me",
+      });
       rememberProfile(user.id);
       client.setQueryData(["me"], user);
       setPin("");

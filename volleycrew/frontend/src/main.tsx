@@ -19,7 +19,10 @@ const queryClient = new QueryClient({
 });
 
 window.addEventListener("volleycrew:session-expired", () => {
+  const expiredSession = queryClient.getQueryData(["me"]);
   void queryClient.cancelQueries().then(() => {
+    // Authentication may have completed while the old requests were cancelled.
+    if (queryClient.getQueryData(["me"]) !== expiredSession) return;
     queryClient.setQueryData(["me"], null);
     queryClient.removeQueries({
       predicate: (query) => query.queryKey[0] !== "me",

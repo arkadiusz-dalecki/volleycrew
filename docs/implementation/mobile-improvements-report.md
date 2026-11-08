@@ -29,3 +29,11 @@ Data: 2026-11-08. Wersja pakietu HA: **0.3.1** (poprawkowa po 0.3.0). Zakres: cz
 Brak nowych zależności npm, migracji i otwartych decyzji dla tego zakresu. Faktyczne dodanie ikony i uruchomienie z niej na iPhonie/Androidzie wymaga odbioru na urządzeniach pod docelowym HTTPS; emulacja nie zastępuje fizycznej próby. iOS nie udostępnia stronie automatycznej instalacji: użytkownik musi wybrać Udostępnij → Do ekranu początkowego. Zachowanie wynika z [instrukcji Apple](https://support.apple.com/guide/iphone/open-as-web-app-iphea86e5236/27/ios/27); dostępność promptu opisuje [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeinstallprompt_event).
 
 Następny krok: odbiór wyglądu i instalacji przez użytkownika; pozostałe kryteria E9/E10/E11 nadal według indeksu planu. Nie przeprowadzano publikacji ani instalacji na HA.
+
+## Poprawki CI w PR #5
+
+Dwa przebiegi CI dla 42860cd ujawniły pozostawiony selektor karty profilu w `container-tests/ingress.spec.ts`. Natywna opcja select nie jest klikalną kartą; testy obu CPU zatrzymywały się na logowaniu, mimo zaliczonych startu, migracji, HTTPS/Ingress, restartu, backupu przed aktualizacją i cyklu meczu. Test pakietu wybiera teraz profil przez etykietę select i `selectOption`.
+
+W przebiegu push pojawiła się również utrata nowej sesji podczas logowania/wylogowania. Nowy test `e2e/auth-races.spec.ts` opóźnia anonimową odpowiedź `/me` do chwili po udanym logowaniu. Przed poprawką test deterministycznie wracał do logowania (brak nagłówka spotkania po uwolnieniu odpowiedzi). Logowanie anuluje teraz poprzednie zapytania i czyści dane poprzedniego konta przed publikacją nowej sesji, tak jak rejestracja/reset. Middleware ignoruje `401` anulowanego żądania, a obsługa wygaśnięcia nie czyści sesji zastąpionej podczas oczekiwania na anulowanie.
+
+Lokalny lint, unit i build: zaliczone. `auth-races.spec.ts auth.spec.ts mobile-improvements.spec.ts ui.spec.ts`: **32 zaliczone, 1 celowo pominięty**, Chromium desktop/mobile i WebKit. Nowe CI jest właściwym dowodem dla pakietów obu CPU.

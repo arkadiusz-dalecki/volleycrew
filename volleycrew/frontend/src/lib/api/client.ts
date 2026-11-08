@@ -25,13 +25,13 @@ api.use({
     }
     return request;
   },
-  async onResponse({ response }) {
+  async onResponse({ request, response }) {
     if (response.status === 401) {
       const body = await response
         .clone()
         .json()
         .catch(() => null);
-      if (body?.code === "unauthenticated")
+      if (body?.code === "unauthenticated" && !request.signal.aborted)
         window.dispatchEvent(new Event("volleycrew:session-expired"));
     }
   },
