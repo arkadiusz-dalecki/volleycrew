@@ -12,6 +12,9 @@ import { KeyRound, LoaderCircle, ShieldCheck, Volleyball } from "lucide-react";
 import { api, message, unwrap } from "../../lib/api/client";
 import { PreviewProfiles } from "./PreviewProfiles";
 import { useSession } from "./useSession";
+import { useAdminView } from "./ViewMode";
+import { rememberedProfile, rememberProfile } from "./rememberedProfile";
+import { InstallApp } from "../install/InstallApp";
 
 export function Protected({
   children,
@@ -22,6 +25,7 @@ export function Protected({
 }) {
   const session = useSession();
   const location = useLocation();
+  const adminView = useAdminView();
   if (session.isPending)
     return (
       <div className="auth-loading" role="status">
@@ -45,7 +49,7 @@ export function Protected({
         state={{ returnTo: location.pathname + location.search }}
       />
     );
-  if (admin && session.data.role !== "admin")
+  if (admin && !adminView)
     return (
       <div className="card" role="alert">
         <h1>Brak dostępu</h1>
@@ -79,6 +83,7 @@ function AuthCard({
         <h1>{title}</h1>
         <p className="auth-subtitle">{subtitle}</p>
         {children}
+        <InstallApp />
       </section>
     </main>
   );
@@ -105,7 +110,12 @@ export function LoginPage({ preview = false }: { preview?: boolean }) {
     queryFn: async () => unwrap(await api.GET("/api/v1/auth/profiles")),
     staleTime: 0,
   });
-  const [profile, setProfile] = useState("");
+  const [profile, setProfile] = useState(rememberedProfile);
+  const selectedProfile = profiles.data?.some(
+    (item) => item.profile_id === profile,
+  )
+    ? profile
+    : "";
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -129,9 +139,10 @@ export function LoginPage({ preview = false }: { preview?: boolean }) {
     try {
       const user = unwrap(
         await api.POST("/api/v1/auth/login", {
-          body: { profile_id: profile, pin },
+          body: { profile_id: selectedProfile, pin },
         }),
       );
+      rememberProfile(user.id);
       client.setQueryData(["me"], user);
       setPin("");
       navigate(destination, { replace: true });
@@ -164,31 +175,25 @@ export function LoginPage({ preview = false }: { preview?: boolean }) {
         </p>
       ) : (
         <form onSubmit={(e) => void submit(e)}>
-          <fieldset className="profile-picker" disabled={busy}>
-            <legend>Twój profil</legend>
-            <div className="profile-options">
+          <label className="form-field">
+            Twój profil
+            <select
+              required
+              disabled={busy}
+              value={selectedProfile}
+              onChange={(event) => setProfile(event.target.value)}
+            >
+              <option value="" disabled>
+                Wybierz użytkownika
+              </option>
               {profiles.data.map((item) => (
-                <label
-                  className={`profile-option ${profile === item.profile_id ? "selected" : ""}`}
-                  key={item.profile_id}
-                >
-                  <input
-                    type="radio"
-                    name="profile"
-                    value={item.profile_id}
-                    required
-                    checked={profile === item.profile_id}
-                    onChange={() => setProfile(item.profile_id)}
-                  />
-                  <span className="profile-initial">{item.first_name[0]}</span>
-                  <span>
-                    {item.first_name} {item.masked_last_name}
-                    {item.nickname ? ` — ${item.nickname}` : ""}
-                  </span>
-                </label>
+                <option key={item.profile_id} value={item.profile_id}>
+                  {item.first_name} {item.masked_last_name}
+                  {item.nickname ? ` — ${item.nickname}` : ""}
+                </option>
               ))}
-            </div>
-          </fieldset>
+            </select>
+          </label>
           <label className="form-field">
             PIN
             <input
@@ -263,6 +268,7 @@ export function RegisterPage({ bootstrap = false }: { bootstrap?: boolean }) {
       client.removeQueries({
         predicate: (query) => query.queryKey[0] !== "me",
       });
+      rememberProfile(user.id);
       client.setQueryData(["me"], user);
       setPin("");
       setRepeat("");
@@ -402,6 +408,7 @@ export function ResetPinPage() {
       client.removeQueries({
         predicate: (query) => query.queryKey[0] !== "me",
       });
+      rememberProfile(user.id);
       client.setQueryData(["me"], user);
       setPin("");
       setRepeat("");

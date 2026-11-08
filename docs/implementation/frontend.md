@@ -146,3 +146,13 @@ Kafelek przyszłego zaplanowanego spotkania w kalendarzu ma dla administratora p
 ### Rozmieszczenie mniejszych drużyn — 2026-11-08
 
 Boisko dopasowuje układ do liczby graczy na danej połowie zamiast wyświetlać sześć miejsc z pustymi znacznikami. Jedna osoba jest pośrodku; dwie są ustawione przód/tył; trzy to jedna przy siatce i dwie z tyłu; cztery to 2+2; pięć to dwie przy siatce i trzy z tyłu; sześć to 3+3. Siódma osoba pozostaje w panelu rotacji. Obie drużyny są skierowane ku siatce, również przy pionowym boisku na telefonie. To układ poglądowy, bez zmiany przypisania graczy i reguł podziału.
+
+## Uzupełnienie E2/E9 — poprawki po próbie na iPhonie (2026-11-08)
+
+Logowanie używa natywnej listy rozwijanej „Twój profil”, z maskowanymi nazwiskami i przydomkami. Na nowym urządzeniu wybrana jest pusta opcja „Wybierz użytkownika”. Po poprawnym logowaniu, rejestracji lub resecie PIN-u zapamiętujemy wyłącznie ID ostatniego profilu w localStorage; przy istniejącej sesji także odtwarzamy ten wybór. Nie zapisujemy PIN-u. Gdy profil znika z publicznej listy, lista wraca do pustej opcji. Zablokowany localStorage nie uniemożliwia logowania.
+
+Administrator ma nad treścią przełącznik „Administrator / Użytkownik”, również na telefonie. W widoku użytkownika ma własny profil i deklaracje oraz zwykłe widoki kalendarza, zatwierdzonych drużyn i wyniku; nie ma narzędzi ani tras administracyjnych. Przełączenie z trasy `/admin/…` prowadzi do spotkania. Wybór widoku jest zachowany w sessionStorage osobno dla konta; uprawnienia serwera pozostają niezmienione. To podgląd interfejsu na własnym koncie, nie logowanie jako inny gracz.
+
+Podpis „Dobra ekipa, trochę ruchu i dwie godziny dla siebie.” usunięto. Formularz pojedynczego terminu nie ma ramki fieldset; pola daty i godziny mają ograniczoną szerokość także w Safari, a wąskie formularze używają jednej kolumny.
+
+Na ekranach dostępu i w stopce aplikacji jest „Dodaj aplikację do telefonu”. Jeśli przeglądarka udostępnia `beforeinstallprompt`, kliknięcie wywołuje systemowe okno. W pozostałych przypadkach przycisk otwiera dialog z instrukcją właściwą dla iPhone/iPad, Androida lub komputera. iOS wymaga użycia menu Udostępnij → Do ekranu początkowego; strona nie może wykonać tego kroku automatycznie. Po wykryciu trybu standalone lub zdarzenia appinstalled przycisk znika. Manifest zawiera lokalne PNG 192/512, a iOS otrzymuje apple-touch-icon 180. Nie dodajemy cache API ani pracy offline. Instalacja wymaga docelowego adresu HTTPS; fizyczny odbiór instalacji i wejścia przez HA pozostaje osobnym testem.

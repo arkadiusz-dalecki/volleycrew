@@ -775,7 +775,7 @@ h3 {
 }
 .form-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
 }
 .form-note {
@@ -1427,10 +1427,10 @@ input:focus-visible {
 }
 .form-field select {
   min-height: 48px;
-  padding: 12px;
+  padding: 12px 32px 12px 12px;
   border: 1px solid var(--line);
   border-radius: 10px;
-  background: #fbfcf9;
+  background-color: #fbfcf9;
   color: var(--green);
   font: inherit;
 }
@@ -2550,4 +2550,56 @@ select {
 .button.declaration-not-going:hover:not(:disabled) {
   background: #f5e3de;
   border-color: #d8b0a6;
+}
+
+/* Native date/time controls must fit the same grid track on iOS Safari. */
+.plain-fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-inline-size: 0;
+}
+.form-field input,
+.form-field select {
+  max-width: 100%;
+  min-width: 0;
+  width: 100%;
+}
+.form-field input[type="date"],
+.form-field input[type="time"] {
+  appearance: none;
+  -webkit-appearance: none;
+  display: block;
+}
+.form-field input::-webkit-date-and-time-value {
+  text-align: left;
+  min-height: 1.4em;
+}
+.view-mode-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+.view-mode-bar > span,
+.view-mode-bar > small {
+  color: var(--muted);
+  font-size: 13px;
+}
+.view-mode-bar [aria-pressed="true"] {
+  background: var(--green);
+  color: white;
+}
+.install-app {
+  margin-block: 16px;
+}
+@media (max-width: 700px) {
+  .form-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .plain-fieldset .button {
+    max-width: 100%;
+    white-space: normal;
+  }
 }

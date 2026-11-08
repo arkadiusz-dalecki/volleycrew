@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.1
+
+- Fix mobile calendar forms, including date and time inputs overflowing their card in Safari.
+- Replace login profile cards with a dropdown and remember the last successfully authenticated profile.
+- Let administrators switch between administrator and player views on their own account.
+- Add an installation button with browser prompts where supported, iPhone and Android instructions, and local app icons.
+- Remove the introductory sentence below the next-meeting heading.
+
 ## 0.3.0
 
 - Manage single meetings and weekly series directly from the calendar, including an optional end date and restoration of the previous schedule afterward.

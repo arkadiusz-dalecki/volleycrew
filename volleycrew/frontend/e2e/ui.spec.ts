@@ -85,7 +85,7 @@ test("network failure keeps forms; expired session clears private view and retur
       exact: true,
     }),
   ).toHaveCount(0);
-  await page.locator(`input[value="${process.env.E2E_ADMIN_ID}"]`).check();
+  await page.getByLabel("Twój profil").selectOption(process.env.E2E_ADMIN_ID!);
   await page.getByLabel("PIN", { exact: true }).fill("123456");
   await page.getByRole("button", { name: "Wejdź na boisko" }).click();
   await expect(page).toHaveURL(/\/profile$/);

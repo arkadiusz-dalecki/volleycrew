@@ -35,8 +35,8 @@ test("invite, remembered session, masked login, profile, reset and blocking", as
     page.getByRole("heading", { name: "Dobrze Cię widzieć" }),
   ).toBeVisible();
   await expect(
-    page.getByText(`Michał N*****k — ${nickname}-nowy`, { exact: true }),
-  ).toBeVisible();
+    page.getByLabel("Twój profil").locator("option:checked"),
+  ).toHaveText(`Michał N*****k — ${nickname}-nowy`);
   expect(await page.locator("body").innerText()).not.toContain("Nowak");
   await page.screenshot({
     path: info.outputPath("login.png"),
@@ -44,8 +44,8 @@ test("invite, remembered session, masked login, profile, reset and blocking", as
     scale: "css",
   });
   await page
-    .getByText(`Michał N*****k — ${nickname}-nowy`, { exact: true })
-    .click();
+    .getByLabel("Twój profil")
+    .selectOption({ label: `Michał N*****k — ${nickname}-nowy` });
   await page.getByLabel("PIN", { exact: true }).fill("654321");
   await page.getByRole("button", { name: "Wejdź na boisko" }).click();
   await expect(

@@ -1,3 +1,4 @@
+import { useAdminView } from "../auth/ViewMode";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { useState } from "react";
@@ -13,13 +14,12 @@ import { api, unwrap } from "../../lib/api/client";
 import { dateLabel, hour, localDate, shiftMonth, statusLabel } from "./dates";
 import { useOpenMeeting } from "./useOpenMeeting";
 
-import { useSession } from "../auth/useSession";
 import { ScheduleEditor } from "../schedule/ScheduleEditor";
 import { MeetingActions } from "../schedule/MeetingActions";
 import { CreateMeeting } from "../schedule/CreateMeeting";
 
 export function CalendarPage() {
-  const session = useSession();
+  const adminView = useAdminView();
   const [action, setAction] = useState<"single" | "series" | null>(null);
   const [params, setParams] = useSearchParams();
   const rawMonth = params.get("month") ?? "";
@@ -85,7 +85,7 @@ export function CalendarPage() {
         <h1>Kalendarz</h1>
         <p>Zarezerwuj sobie czas na grę. Wybierz miesiąc i sprawdź terminy.</p>
       </div>
-      {session.data?.role === "admin" && (
+      {adminView && (
         <div className="calendar-admin">
           <div className="row-actions">
             <button
@@ -195,9 +195,7 @@ export function CalendarPage() {
                           {day < 1 || day > count ? null : (
                             <button
                               className={`calendar-day ${today ? "today" : ""} ${selected === key ? "selected" : ""}`}
-                              disabled={
-                                !events.length && session.data?.role !== "admin"
-                              }
+                              disabled={!events.length && !adminView}
                               aria-label={`${day} ${title}${events.length ? `, spotkania: ${events.length}${events.every((item) => item.status === "cancelled") ? ", odwołane" : ""}` : ""}`}
                               aria-pressed={selected === key}
                               onClick={() =>
@@ -342,7 +340,7 @@ export function CalendarPage() {
                       >
                         <ArrowRight size={18} />
                       </button>
-                      {session.data?.role === "admin" && (
+                      {adminView && (
                         <MeetingActions
                           meeting={item}
                           compact
