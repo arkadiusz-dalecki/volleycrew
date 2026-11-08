@@ -1,0 +1,57 @@
+name: Volleycrew
+description: Zapisy, obecność, drużyny i ranking grupy siatkarskiej
+version: "0.1.0"
+slug: volleycrew
+url: https://github.com/arkadiusz-dalecki/volleycrew
+arch:
+  - aarch64
+  - amd64
+init: false
+startup: application
+boot: auto
+ingress: true
+ingress_port: 8099
+panel_icon: mdi:volleyball
+panel_title: Volleycrew
+panel_admin: true
+homeassistant_api: false
+hassio_api: false
+host_network: false
+ports:
+  8200/tcp: 8200
+ports_description:
+  8200/tcp: Wejście dla własnego reverse proxy / Cloudflare Tunnel
+watchdog: http://[HOST]:8200/api/v1/health/live
+backup: hot
+backup_pre: /usr/local/bin/volleycrew-backup create
+backup_exclude:
+  - backups/*.partial
+  - backups/.snapshot-*
+options:
+  POSTGRES_HOST: ""
+  POSTGRES_PORT: 5432
+  POSTGRES_DB: volleycrew
+  POSTGRES_USER: volleycrew
+  POSTGRES_PASSWORD: ""
+  POSTGRES_SSL: prefer
+  PUBLIC_URL: ""
+  ADDITIONAL_ORIGINS: []
+  TRUSTED_PROXY_CIDRS: []
+  SESSION_SECRET: ""
+  BOOTSTRAP_TOKEN: ""
+  BACKUP_HOUR: 3
+schema:
+  POSTGRES_HOST: str
+  POSTGRES_PORT: port
+  POSTGRES_DB: str
+  POSTGRES_USER: str
+  POSTGRES_PASSWORD: password
+  POSTGRES_SSL: list(disable|prefer|require|verify-full)
+  PUBLIC_URL: url
+  ADDITIONAL_ORIGINS:
+    - url
+  TRUSTED_PROXY_CIDRS:
+    - str
+  SESSION_SECRET: password
+  BOOTSTRAP_TOKEN: password
+  BACKUP_HOUR: int(0,23)

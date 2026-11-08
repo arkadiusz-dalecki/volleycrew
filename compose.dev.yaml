@@ -1,0 +1,19 @@
+name: volleycrew-dev
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: volleycrew
+      POSTGRES_PASSWORD: volleycrew_dev
+      POSTGRES_DB: volleycrew_dev
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - postgres-dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U volleycrew -d volleycrew_dev"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+volumes:
+  postgres-dev:

@@ -1,0 +1,53 @@
+worker_processes 1;
+pid /run/nginx.pid;
+error_log /dev/stderr warn;
+events { worker_connections 256; }
+http {
+    include /etc/nginx/mime.types;
+    types { application/javascript mjs; }
+    default_type application/octet-stream;
+    sendfile on;
+    server_tokens off;
+    log_format safe '$remote_addr $request_method $status $body_bytes_sent';
+    access_log /dev/stdout safe;
+    client_max_body_size 32k;
+    client_body_buffer_size 64k;
+    keepalive_timeout 30;
+
+    # realip_remote_addr is the connection peer before real_ip_recursive.
+    geo $realip_remote_addr $trusted_tls_proxy {
+        default 0;
+        @@TRUSTED_TLS@@
+    }
+    map "$trusted_tls_proxy:$http_x_forwarded_proto" $direct_scheme {
+        default $scheme;
+        "1:https" https;
+    }
+    map $http_x_ingress_path $ingress_base {
+        default "";
+        ~^(/api/hassio_ingress/[A-Za-z0-9_-]+)/?$ $1;
+    }
+    upstream api { server 127.0.0.1:8000; }
+
+    server {
+        listen 8200;
+        server_name _;
+        set $vc_base "";
+        set $vc_scheme $direct_scheme;
+        @@REAL_IP@@
+        real_ip_header X-Forwarded-For;
+        real_ip_recursive on;
+        include /etc/nginx/volleycrew-locations.conf;
+    }
+    server {
+        listen 8099;
+        server_name _;
+        allow 172.30.32.2;
+        deny all;
+        if ($ingress_base = "") { return 400; }
+        set $vc_base $ingress_base;
+        set $vc_scheme https;
+        # Only the Supervisor can reach this listener. Do not derive ACL from XFF.
+        include /etc/nginx/volleycrew-locations.conf;
+    }
+}

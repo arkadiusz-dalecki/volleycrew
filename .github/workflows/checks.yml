@@ -1,0 +1,84 @@
+name: Checks
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  application:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: volleycrew
+          POSTGRES_PASSWORD: ci_only
+          POSTGRES_DB: volleycrew_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U volleycrew -d volleycrew_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      VOLLEYCREW_DATABASE_URL: postgresql+asyncpg://volleycrew:ci_only@127.0.0.1:5432/volleycrew_test
+      VOLLEYCREW_E2E_DATABASE_URL: postgresql+asyncpg://volleycrew:ci_only@127.0.0.1:5432/volleycrew_test
+      VOLLEYCREW_TEST_DATABASE_URL: postgresql+asyncpg://volleycrew:ci_only@127.0.0.1:5432/volleycrew_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: volleycrew/frontend/package-lock.json
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.13.7"
+      - run: npm run setup
+      - name: Verify production Python lock
+        run: |
+          uv export --project volleycrew/backend --frozen --no-dev --format requirements-txt --no-header --no-annotate > /tmp/volleycrew-requirements.lock
+          diff -u volleycrew/backend/requirements.lock /tmp/volleycrew-requirements.lock
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run api:check
+      - run: npm run test:backend
+      - run: npm run test:frontend
+      - run: npm run build
+      - run: npm --prefix volleycrew/frontend exec -- playwright install --with-deps chromium webkit
+      - run: npm run test:e2e
+  package:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            platform: linux/amd64
+            base: ghcr.io/hassio-addons/debian-base/amd64:9.3.0@sha256:f07dbbaacb425581de42fa7e67e3e0e08e5a77335e3fec03222ebf22298a4f7e
+          - arch: aarch64
+            platform: linux/arm64
+            base: ghcr.io/hassio-addons/debian-base/aarch64:9.3.0@sha256:1e2b5674b3870ca4be69d8c05a4978cd270e643baa33ff876edf887ff014d220
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+      - uses: docker/setup-qemu-action@v3
+        with:
+          image: tonistiigi/binfmt@sha256:400a4873b838d1b89194d982c45e5fb3cda4593fbfd7e08a02e76b03b21166f0
+      - uses: docker/setup-buildx-action@v3
+      - run: npm --prefix volleycrew/frontend ci
+      - run: npm --prefix volleycrew/frontend exec -- playwright install --with-deps chromium webkit
+      - name: Build locally, without publishing
+        run: >-
+          docker buildx build --load --platform '${{ matrix.platform }}'
+          --build-arg BUILD_ARCH='${{ matrix.arch }}'
+          --build-arg BUILD_FROM='${{ matrix.base }}'
+          -t volleycrew:package volleycrew
+      - name: Production image, HTTPS/Ingress and separate DB restore
+        run: python3 scripts/test_container.py --image volleycrew:package --platform '${{ matrix.platform }}'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: package-check-${{ matrix.arch }}
+          path: |
+            .runtime/e10/browser.log
+            .runtime/e10/container.log
+            volleycrew/frontend/test-results-container/
