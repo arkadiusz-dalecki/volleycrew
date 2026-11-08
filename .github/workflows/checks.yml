@@ -51,10 +51,8 @@ jobs:
         include:
           - arch: amd64
             platform: linux/amd64
-            base: ghcr.io/hassio-addons/debian-base/amd64:9.3.0@sha256:f07dbbaacb425581de42fa7e67e3e0e08e5a77335e3fec03222ebf22298a4f7e
           - arch: aarch64
             platform: linux/arm64
-            base: ghcr.io/hassio-addons/debian-base/aarch64:9.3.0@sha256:1e2b5674b3870ca4be69d8c05a4978cd270e643baa33ff876edf887ff014d220
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -66,11 +64,11 @@ jobs:
       - uses: docker/setup-buildx-action@v3
       - run: npm --prefix volleycrew/frontend ci
       - run: npm --prefix volleycrew/frontend exec -- playwright install --with-deps chromium webkit
-      - name: Build locally, without publishing
+      - name: Build with Supervisor fallback argument, without publishing
         run: >-
           docker buildx build --load --platform '${{ matrix.platform }}'
           --build-arg BUILD_ARCH='${{ matrix.arch }}'
-          --build-arg BUILD_FROM='${{ matrix.base }}'
+          --build-arg BUILD_FROM=ghcr.io/home-assistant/base:latest
           -t volleycrew:package volleycrew
       - name: Production image, HTTPS/Ingress and separate DB restore
         run: python3 scripts/test_container.py --image volleycrew:package --platform '${{ matrix.platform }}'

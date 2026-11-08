@@ -1,4 +1,0 @@
-# Supervisor builds Volleycrew locally; these are only its runtime base images.
-build_from:
-  aarch64: ghcr.io/hassio-addons/debian-base/aarch64:9.3.0@sha256:1e2b5674b3870ca4be69d8c05a4978cd270e643baa33ff876edf887ff014d220
-  amd64: ghcr.io/hassio-addons/debian-base/amd64:9.3.0@sha256:f07dbbaacb425581de42fa7e67e3e0e08e5a77335e3fec03222ebf22298a4f7e

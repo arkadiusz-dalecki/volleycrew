@@ -71,7 +71,7 @@ Logi: `.runtime/e10-container-{arm,amd}.log`, `.runtime/e10/{browser-arm,browser
 
 Do odtworzenia: `scripts/test_container.py --image <lokalny obraz> --platform linux/arm64|linux/amd64`. Test tworzy i usuwa wyłącznie własne zasoby. `--backend-tests` uruchamia dodatkowo całą regresję na osobnej `regression_test` w PostgreSQL 17, bez naruszenia źródłowej bazy sprawdzanej aplikacji. Wyniki i screenshoty są w ignorowanych `.runtime/e10*` i `volleycrew/frontend/test-results-container/`.
 
-Workflow CI buduje/testuje oba CPU bez publikacji obrazu; zdalnego CI nie uruchamiano. `build.yaml` zachowano dla zgodności z wybranym sposobem wdrożenia; nowe HA nadal go czyta z ostrzeżeniem. Dockerfile ma też poprawny domyślny multiarch `BUILD_FROM`, więc nie zależy od wstrzyknięcia tego argumentu.
+W pierwotnym E10 workflow budował/testował oba CPU bez publikacji obrazu; zdalnego CI wtedy nie uruchamiano. Późniejsza próba instalacji HA wykazała, że build.yaml z digestami jest odrzucany i Supervisor nadpisuje BUILD_FROM bazą Alpine. Poprawkę 0.1.1 opisuje [raport zgodności HA](ha-build-fix.md); zastępuje ona wcześniejsze założenie o zgodności build.yaml.
 
 ## Odbiór użytkownika po publikacji kodu
 

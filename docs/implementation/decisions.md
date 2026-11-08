@@ -13,7 +13,7 @@ Podane propozycje nie są zatwierdzonymi regułami. Agent może implementować n
 | D7 | Zatwierdzone 2026-11-06: PDF z faktycznie obecnych, generowany po sprawdzeniu obecności, z możliwością ponownego wygenerowania po poprawkach. Dane i pola dokumentu w domain-api.md. | Rozstrzygnięte |
 | D8 | Zatwierdzone 2026-11-06/07: K=32, skala oczekiwań 400, bez pośredniego zaokrąglania, prezentacja do 1 miejsca; 0:0 bez ELO; korekty wyniku, historycznej obecności i składów z powodem oraz pełnym przeliczeniem. Kolejność według chwili startu i stałego ID. | Rozstrzygnięte; szczegóły poniżej i w domain-api.md |
 | D9 | Akceptacja zakresu pierwszej wersji z README i kryteriów wydania; horyzont wsparcia, oczekiwany backup i dopuszczalna utrata danych. | Ostateczny odbiór E11 |
-| D10 | Zatwierdzone 2026-11-06: jak w maybe-finance — repozytorium aplikacji HA, lokalny build przez Supervisor z Dockerfile i build.yaml, ręczne instalacje/aktualizacje po zmianie wersji config.yaml. Bez wymaganej publikacji własnych gotowych obrazów GHCR. Referencja potwierdzona odczytem manifestów i Dockerfile. | Rozstrzygnięte |
+| D10 | Zatwierdzone 2026-11-06: jak w maybe-finance — repozytorium aplikacji HA, lokalny build przez Supervisor z Dockerfile (od 0.1.1 bez przestarzałego build.yaml; poprawka zgodności po próbie HA 2026-11-08), ręczne instalacje/aktualizacje po zmianie wersji config.yaml. Bez wymaganej publikacji własnych gotowych obrazów GHCR. Referencja potwierdzona odczytem manifestów i Dockerfile. | Rozstrzygnięte |
 
 ## Kolejność rozmowy
 

@@ -166,7 +166,6 @@ def test_home_assistant_manifest_keeps_private_listener_and_local_build():
 
     root = Path(__file__).resolve().parents[2]
     manifest = yaml.safe_load((root / "config.yaml").read_text())
-    bases = yaml.safe_load((root / "build.yaml").read_text())["build_from"]
     assert set(manifest["arch"]) == {"amd64", "aarch64"}
     assert "image" not in manifest
     assert manifest["init"] is False and manifest["host_network"] is False
@@ -175,7 +174,21 @@ def test_home_assistant_manifest_keeps_private_listener_and_local_build():
     assert manifest["ingress_port"] == 8099 and "8099/tcp" not in manifest["ports"]
     assert manifest["schema"]["BOOTSTRAP_TOKEN"] == "password"
     assert manifest["backup_pre"] == "/usr/local/bin/volleycrew-backup create"
-    assert all("@sha256:" in bases[arch] for arch in manifest["arch"])
+    assert not (root / "build.yaml").exists()
+
+
+def test_runtime_base_cannot_be_overridden_by_supervisor_alpine_fallback():
+    import re
+
+    root = Path(__file__).resolve().parents[2]
+    dockerfile = (root / "Dockerfile").read_text()
+    stages = re.findall(r"^FROM (.+)$", dockerfile, re.MULTILINE)
+    # Supervisor's BUILD_FROM fallback must not select Alpine for apt-based setup.
+    assert len(stages) == 2
+    assert re.fullmatch(
+        r"ghcr\.io/hassio-addons/debian-base:9\.3\.0@sha256:[0-9a-f]{64}", stages[-1]
+    )
+    assert "ARG BUILD_FROM" not in dockerfile
 
 
 def test_backup_hook_environment_keeps_explicit_restore_target(tmp_path, monkeypatch):

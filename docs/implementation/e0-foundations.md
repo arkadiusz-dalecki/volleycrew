@@ -78,4 +78,4 @@ Aktualizacja wymagań 2026-11-06: statusy założyciel > zawodnik > gość, domy
 
 ## Weryfikacja kandydata w E10 — 2026-11-07
 
-[Raport E10](e10-report.md) potwierdza dostępność i digesty Debian base 9.3.0 dla obu CPU, lokalny build ARM64/amd64 oraz testy z PostgreSQL 17. Kandydat jest już używany przez Dockerfile/build.yaml. Samodzielna instalacja użytkownika, właściwy serwer produkcyjny, docelowe proxy i magazyn kopii nadal nie są dowodem wdrożenia na Pi.
+[Raport E10](e10-report.md) potwierdza dostępność i digesty Debian base 9.3.0 dla obu CPU, lokalny build ARM64/amd64 oraz testy z PostgreSQL 17. Baza jest używana przez Dockerfile; od 0.1.1 jest przypięta bezpośrednio, bez build.yaml. Samodzielna instalacja użytkownika, właściwy serwer produkcyjny, docelowe proxy i magazyn kopii nadal nie są dowodem wdrożenia na Pi.

@@ -147,7 +147,7 @@ Lokalny build produkcyjny na ARM64:
 docker build --platform linux/arm64 --build-arg BUILD_ARCH=aarch64 -t volleycrew:e10-arm64 volleycrew
 ```
 
-Dla `amd64` wybierz `--platform linux/amd64 --build-arg BUILD_ARCH=amd64`. Domyślna baza Dockerfile jest multiarch; `build.yaml` zawiera przypięte bazy per architektura dla zgodności z instalacją HA. Nowe HA oznacza `build.yaml` jako przestarzały, ale nadal go odczytuje; Dockerfile działa również bez przekazania `BUILD_FROM`.
+Dla `amd64` wybierz `--platform linux/amd64 --build-arg BUILD_ARCH=amd64`. Baza Debian w Dockerfile jest przypięta do digestu indeksu multiarch; Docker wybiera właściwą architekturę. Od 0.1.1 nie ma `build.yaml`, a `BUILD_FROM` przekazany przez Supervisor nie zmienia bazy. CI buduje z parametrem awaryjnym Alpine z logu HA, żeby sprawdzić odporność na tę podmianę.
 
 Test produkcyjnego obrazu (wymaga Dockera, `openssl`, Node i przeglądarek Playwright; tworzy/usuwa wyłącznie własne testowe kontenery, sieć i wolumeny):
 
