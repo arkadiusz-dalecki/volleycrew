@@ -59,6 +59,7 @@ class Meeting(Base):
     venue: Mapped[str] = mapped_column(String(160))
     calendar_schedule_id: Mapped[UUID] = mapped_column(ForeignKey("schedule_versions.id"))
     calendar_source_date: Mapped[date] = mapped_column(Date)
+    is_additional: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     is_exception: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     previous_starts_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     previous_ends_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

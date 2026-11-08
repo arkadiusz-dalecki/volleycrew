@@ -7,7 +7,7 @@ import os
 import tempfile
 from pathlib import Path
 
-from test_container import TOKEN, docker, wait
+from test_container import TOKEN, docker, migration_head, wait
 
 
 def main():
@@ -79,7 +79,7 @@ def main():
             assert sql(name, "SELECT rolsuper FROM pg_roles WHERE rolname='volleycrew'") == "f"
             assert sql(name, "SHOW listen_addresses") == "127.0.0.1"
             assert sql(name, "SHOW server_version").startswith("17.")
-            assert sql(name, "SELECT version_num FROM alembic_version") == "0007_results"
+            assert sql(name, "SELECT version_num FROM alembic_version") == migration_head(name)
             # Real Nginx/API request, loopback fixture trusted only for this test.
             code = """import http.client, json
 from http.cookies import SimpleCookie

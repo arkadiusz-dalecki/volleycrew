@@ -39,6 +39,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/meetings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Meeting */
+        post: operations["createMeeting"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/meetings/{meeting_id}/attendance": {
         parameters: {
             query?: never;
@@ -1030,6 +1047,8 @@ export interface components {
              * Format: date
              */
             effective_from: string;
+            /** Effective Until */
+            effective_until?: string | null;
             /** Expected Version */
             expected_version: number;
             /**
@@ -1204,6 +1223,25 @@ export interface components {
             kind: "present" | "no_show" | "excused" | "normal_cancellation" | "late_cancellation" | "late_offer_exception";
             /** Reason */
             reason: string;
+        };
+        /** CreateMeetingInput */
+        CreateMeetingInput: {
+            /** Duration Minutes */
+            duration_minutes: number;
+            /** Expected Version */
+            expected_version: number;
+            /**
+             * Local Date
+             * Format: date
+             */
+            local_date: string;
+            /**
+             * Local Time
+             * Format: time
+             */
+            local_time: string;
+            /** Venue */
+            venue: string;
         };
         /** CsrfView */
         CsrfView: {
@@ -2026,6 +2064,8 @@ export interface components {
              * Format: date
              */
             effective_from: string;
+            /** Effective Until */
+            effective_until?: string | null;
             /** Expected Version */
             expected_version: number;
             /**
@@ -2430,6 +2470,84 @@ export interface operations {
             };
             /** @description Too Many Requests */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    createMeeting: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateMeetingInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeetingDetail"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

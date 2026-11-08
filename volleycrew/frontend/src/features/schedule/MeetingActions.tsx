@@ -1,3 +1,4 @@
+import { Pencil, CalendarX2 } from "lucide-react";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -7,7 +8,26 @@ import { dateLabel, hour, localDate } from "../meetings/dates";
 import { refreshSchedule } from "./refresh";
 
 type Meeting = components["schemas"]["MeetingDetail"];
-export function MeetingActions({ meeting }: { meeting: Meeting }) {
+function isDetail(
+  value: Meeting | components["schemas"]["MeetingSummary"],
+): value is Meeting {
+  return (
+    "awaiting_confirmation" in value &&
+    Array.isArray(value.awaiting_confirmation)
+  );
+}
+export function MeetingActions({
+  meeting: source,
+  compact = false,
+  onChanged,
+}: {
+  meeting: Meeting | components["schemas"]["MeetingSummary"];
+  compact?: boolean;
+  onChanged?: (meeting: Meeting, notice: string) => void;
+}) {
+  const [now] = useState(() => Date.now());
+  const [prepared, setPrepared] = useState<Meeting | null>(null);
+  const meeting = prepared ?? source;
   const [mode, setMode] = useState<"edit" | "cancel" | null>(null);
   const [day, setDay] = useState(localDate(meeting.starts_at));
   const [time, setTime] = useState(hour(meeting.starts_at));
@@ -21,38 +41,78 @@ export function MeetingActions({ meeting }: { meeting: Meeting }) {
   const [busy, setBusy] = useState(false),
     [notice, setNotice] = useState("");
   const client = useQueryClient();
+  async function begin(nextMode: "edit" | "cancel") {
+    setBusy(true);
+    setNotice("");
+    try {
+      // Calendar slots may not yet have a persistent Meeting. Resolve only
+      // after an organizer chooses an action, without leaving the calendar.
+      const current = isDetail(source)
+        ? source
+        : source.persisted
+          ? unwrap(
+              await api.GET("/api/v1/meetings/{meeting_id}", {
+                params: { path: { meeting_id: source.id } },
+              }),
+            )
+          : unwrap(
+              await api.POST("/api/v1/meetings/resolve", {
+                body: {
+                  schedule_version_id: source.schedule_version_id,
+                  source_date: source.source_date,
+                },
+              }),
+            );
+      setPrepared(current);
+      setDay(localDate(current.starts_at));
+      setTime(hour(current.starts_at));
+      setDuration(
+        Math.round(
+          (Date.parse(current.ends_at) - Date.parse(current.starts_at)) / 60000,
+        ),
+      );
+      setMode(nextMode);
+      setReviewed(nextMode === "cancel" ? current.version : null);
+    } catch (e) {
+      setNotice(message(e));
+      await refreshSchedule(client);
+    } finally {
+      setBusy(false);
+    }
+  }
   async function change(cancel: boolean) {
     setBusy(true);
     setNotice("");
     try {
-      if (cancel)
-        unwrap(
-          await api.POST("/api/v1/admin/meetings/{meeting_id}/cancel", {
-            params: { path: { meeting_id: meeting.id } },
-            body: { expected_version: reviewed! },
-          }),
-        );
-      else
-        unwrap(
-          await api.POST("/api/v1/admin/meetings/{meeting_id}/reschedule", {
-            params: { path: { meeting_id: meeting.id } },
-            body: {
-              expected_version: reviewed!,
-              local_date: day,
-              local_time: time,
-              duration_minutes: duration,
-            },
-          }),
-        );
+      const updated = cancel
+        ? unwrap(
+            await api.POST("/api/v1/admin/meetings/{meeting_id}/cancel", {
+              params: { path: { meeting_id: meeting.id } },
+              body: { expected_version: reviewed! },
+            }),
+          )
+        : unwrap(
+            await api.POST("/api/v1/admin/meetings/{meeting_id}/reschedule", {
+              params: { path: { meeting_id: meeting.id } },
+              body: {
+                expected_version: reviewed!,
+                local_date: day,
+                local_time: time,
+                duration_minutes: duration,
+              },
+            }),
+          );
       setMode(null);
       setReviewed(null);
-      setNotice(
-        cancel
-          ? "Spotkanie odwołane. Poinformuj grupę na Messengerze."
-          : "Termin zmieniony. Poinformuj grupę na Messengerze o nowym terminie i potwierdzeniach.",
-      );
+      const resultNotice = cancel
+        ? "Spotkanie odwołane. Poinformuj grupę na Messengerze."
+        : "Termin zmieniony. Poinformuj grupę na Messengerze o nowym terminie i potwierdzeniach.";
+      setPrepared(null);
+      setNotice(compact ? "" : resultNotice);
+      onChanged?.(updated, resultNotice);
     } catch (e) {
       setNotice(message(e));
+      setPrepared(null);
       setReviewed(null);
     } finally {
       await refreshSchedule(client);
@@ -81,39 +141,37 @@ export function MeetingActions({ meeting }: { meeting: Meeting }) {
       setBusy(false);
     }
   }
-  if (meeting.status !== "scheduled") return null;
+  if (source.status !== "scheduled" || Date.parse(source.starts_at) <= now)
+    return null;
+  const awaiting =
+    !compact && isDetail(meeting) ? meeting.awaiting_confirmation : [];
   return (
-    <section className="card meeting-actions">
-      <h2>Zarządzaj terminem</h2>
+    <section
+      className={compact ? "agenda-admin-actions" : "card meeting-actions"}
+      aria-label={
+        compact
+          ? `Zarządzaj spotkaniem: ${dateLabel(source.starts_at)}`
+          : undefined
+      }
+    >
+      {!compact && <h2>Zarządzaj terminem</h2>}
       <div className="participation-actions">
         <button
           className="button"
           disabled={busy}
-          onClick={() => {
-            setDay(localDate(meeting.starts_at));
-            setTime(hour(meeting.starts_at));
-            setDuration(
-              Math.round(
-                (Date.parse(meeting.ends_at) - Date.parse(meeting.starts_at)) /
-                  60000,
-              ),
-            );
-            setMode("edit");
-            setReviewed(null);
-          }}
+          onClick={() => void begin("edit")}
         >
-          Zmień ten termin
+          {compact && <Pencil size={16} />}
+          {compact ? "Zmień termin" : "Zmień ten termin"}
         </button>
         <button
           className="button"
           disabled={busy}
           onClickCapture={(event) => event.currentTarget.focus()}
-          onClick={() => {
-            setMode("cancel");
-            setReviewed(meeting.version);
-          }}
+          onClick={() => void begin("cancel")}
         >
-          Odwołaj spotkanie
+          {compact && <CalendarX2 size={16} />}
+          {compact ? "Odwołaj" : "Odwołaj spotkanie"}
         </button>
       </div>
       {mode === "edit" && (
@@ -173,6 +231,17 @@ export function MeetingActions({ meeting }: { meeting: Meeting }) {
           >
             Pokaż zmianę terminu
           </button>
+          <button
+            className="button"
+            type="button"
+            disabled={busy}
+            onClick={() => {
+              setMode(null);
+              setReviewed(null);
+            }}
+          >
+            Zamknij edycję
+          </button>
         </form>
       )}
       {mode && reviewed !== null && (
@@ -231,11 +300,11 @@ export function MeetingActions({ meeting }: { meeting: Meeting }) {
           </div>
         </ConfirmDialog>
       )}
-      {!!meeting.awaiting_confirmation.length && (
+      {!!awaiting.length && (
         <>
           <h3>Czekamy na nowe potwierdzenie</h3>
           <ul className="offer-list">
-            {meeting.awaiting_confirmation.map((player) => (
+            {awaiting.map((player) => (
               <li key={player.id}>
                 <strong>
                   {player.first_name} {player.last_name}

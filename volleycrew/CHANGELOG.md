@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.0
+
+- Manage single meetings and weekly series directly from the calendar, including an optional end date and restoration of the previous schedule afterward.
+- Reschedule or cancel a meeting from its calendar card, with confirmation and enrollment protection.
+- Make meeting dates more prominent and show the actual next meeting in the sidebar.
+- Clarify declaration buttons and attendance prerequisites. Adapt court formations to 1–6 players, center unequal teams, and keep the seventh player in rotation.
+- Add an explicit local preview with 14 demo profiles and role switching; preview controls are excluded from production builds.
+- Apply migration 0008 to distinguish additional meetings from recurring occurrences. Back up before updating.
+
 ## 0.2.0
 
 Własny PostgreSQL 17: bez osobnego serwera i ręcznego hasła bazy. Pusty host wybiera własną bazę, istniejący zachowuje zewnętrzną. Trwałe dane, prywatny listener, automatyczny backup i restore HA przed migracjami; blokada niejawnej zmiany trybu. Testy kontenerowe obejmują restart, awarię, aktualizację i odtworzenie. Walidacja pokazuje nazwy nieprawidłowych pól bez ich wartości.

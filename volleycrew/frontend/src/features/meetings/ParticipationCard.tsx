@@ -1,7 +1,7 @@
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Clock3, UserPlus } from "lucide-react";
+import { Check, Clock3, UserPlus, X } from "lucide-react";
 import { api, message, unwrap } from "../../lib/api/client";
 import type { components } from "../../lib/api/schema";
 import { dateLabel, hour } from "./dates";
@@ -201,16 +201,18 @@ export function ParticipationCard({ meeting }: { meeting: Meeting }) {
               )}
               {!allocated && (
                 <button
-                  className="button primary"
+                  className="button declaration-going"
                   disabled={busy}
                   onClick={() => void declare("going")}
                 >
-                  Będę <Check size={17} />
+                  Będę <Check size={17} aria-hidden="true" />
                 </button>
               )}
               {state?.declaration !== "not-going" && (
                 <button
-                  className="button"
+                  className={
+                    allocated ? "button" : "button declaration-not-going"
+                  }
                   disabled={busy}
                   onClickCapture={(event) => event.currentTarget.focus()}
                   onClick={() =>
@@ -218,6 +220,7 @@ export function ParticipationCard({ meeting }: { meeting: Meeting }) {
                   }
                 >
                   {allocated ? "Rezygnuję" : "Nie będę"}
+                  {!allocated && <X size={17} aria-hidden="true" />}
                 </button>
               )}
             </div>

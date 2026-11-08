@@ -1,5 +1,4 @@
 import { ConfirmDialog } from "../../components/ConfirmDialog";
-import { ScheduleEditor } from "../schedule/ScheduleEditor";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -110,7 +109,6 @@ export function AdminSettings() {
         <p>Zaproszenia i dostęp zawodników. Tylko dla organizatora.</p>
       </div>
       <div className="admin-settings">
-        <ScheduleEditor />
         <section className="card">
           <div className="section-title">
             <h2>Link do ekipy</h2>

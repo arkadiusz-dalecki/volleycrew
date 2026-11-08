@@ -432,6 +432,21 @@ function RoomEditor({
               </button>
             </div>
           )}
+          {!attendance.confirmed_at &&
+            attendance.can_confirm &&
+            !staleChecks &&
+            (checks ? (
+              <p className="form-note" role="status">
+                Masz niezapisane zmiany. Oznacz obecność wszystkich osób i
+                kliknij „Zapisz szkic obecności”, aby odblokować zatwierdzenie.
+              </p>
+            ) : attendance.players.some((p) => p.draft_state === "unknown") ? (
+              <p className="form-note" role="status">
+                Oznacz każdą osobę jako obecną lub nieobecną albo wybierz
+                „Wszyscy obecni”. Następnie kliknij „Zapisz szkic obecności” —
+                wtedy zatwierdzenie będzie dostępne.
+              </p>
+            ) : null)}
           {!attendance.confirmed_at && !attendance.can_confirm && (
             <p className="form-note">
               Zatwierdzenie jest dostępne od godziny rozpoczęcia spotkania.

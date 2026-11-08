@@ -386,3 +386,100 @@ def test_kept_exception_cannot_duplicate_a_new_unmaterialized_schedule_slot(cale
     response = mutate(admin, "/admin/schedule/preview", body)
     assert response.status_code == 409 and response.json()["code"] == "schedule_collision"
     assert admin.get(PREFIX + "/admin/schedule").json()["version"] == 1
+
+
+def test_bounded_series_restores_schedule_and_preserves_following_meeting(calendar_system):
+    _, _, admin, _, member, _, first, _ = setup_group(calendar_system, 0)
+    following = resolve_day(member, "2026-12-01")
+    body = {**schedule_body(admin, "2026-11-09", 2, "17:00"), "effective_until": "2026-11-30"}
+    apply(admin, body)
+    november = read_calendar(member)["items"]
+    assert [row["starts_at"][:10] for row in november] == ["2026-11-11", "2026-11-18", "2026-11-25"]
+    assert all(row["starts_at"][11:16] == "16:00" for row in november)
+    assert fresh(member, first)["id"] == first["id"]
+    assert fresh(member, following)["starts_at"] == following["starts_at"]
+    december = read_calendar(member, "2026-12-01", "2027-01-01")["items"]
+    assert len(december) == 5
+    assert all(datetime.fromisoformat(row["starts_at"]).weekday() == 1 for row in december)
+    assert sum(row["id"] == following["id"] for row in december) == 1
+    assert (
+        resolve_day(member, "2026-12-01", december[0]["schedule_version_id"])["id"]
+        == following["id"]
+    )
+
+
+def test_single_addition_permissions_collision_and_survival_of_series_change(calendar_system):
+    _, _, admin, _, member, _, _, _ = setup_group(calendar_system, 0)
+    body = {
+        "expected_version": 1,
+        "local_date": "2026-11-08",
+        "local_time": "17:00",
+        "duration_minutes": 120,
+        "venue": "Inna sala",
+    }
+    assert mutate(member, "/admin/meetings", body).status_code == 403
+    response = mutate(admin, "/admin/meetings", body)
+    assert response.status_code == 200, response.text
+    added = response.json()
+    assert member.get(PREFIX + "/meetings/next").json()["id"] == added["id"]
+    assert declaration(member, added).status_code == 200
+    assert mutate(admin, "/admin/meetings", body).status_code == 409
+    current = {**body, "expected_version": 2}
+    assert mutate(admin, "/admin/meetings", current).status_code == 409
+    assert (
+        mutate(
+            admin, "/admin/meetings", {**current, "local_date": "2026-11-10", "local_time": "18:00"}
+        ).status_code
+        == 409
+    )
+    assert (
+        mutate(admin, "/admin/meetings", {**current, "local_date": "2026-11-05"}).status_code == 422
+    )
+    assert (
+        mutate(
+            admin, "/admin/meetings", {**current, "local_date": "2027-03-28", "local_time": "02:30"}
+        ).status_code
+        == 422
+    )
+    apply(admin, schedule_body(admin, "2026-11-07", 3))
+    assert fresh(member, added)["starts_at"] == added["starts_at"]
+    assert fresh(member, added)["participant_count"] == 1
+    assert any(row["id"] == added["id"] for row in read_calendar(member)["items"])
+
+
+def test_bounded_series_validates_range_and_collisions_with_additional_meetings(calendar_system):
+    _, _, admin, _, _, _, _, _ = setup_group(calendar_system, 0)
+    body = schedule_body(admin, "2026-11-09", 2)
+    for end in ("2026-11-08", "2026-11-09", "2026-11-10"):
+        assert (
+            mutate(admin, "/admin/schedule/preview", {**body, "effective_until": end}).status_code
+            == 422
+        )
+    assert (
+        mutate(
+            admin,
+            "/admin/meetings",
+            {
+                "expected_version": 1,
+                "local_date": "2026-11-18",
+                "local_time": "18:00",
+                "duration_minutes": 120,
+                "venue": "Sala",
+            },
+        ).status_code
+        == 200
+    )
+    body = {**body, "expected_version": 2, "effective_until": "2026-11-30"}
+    assert mutate(admin, "/admin/schedule/preview", body).status_code == 409
+
+
+def test_series_cannot_overlap_preserved_overnight_slot_at_end_boundary(calendar_system):
+    _, _, admin, _, _, _, _, _ = setup_group(calendar_system, 0)
+    # Monday 23:00 through Tuesday 23:00 would overlap the restored Tuesday 18:00.
+    body = {
+        **schedule_body(admin, "2026-11-09", 0, "23:00"),
+        "duration_minutes": 1440,
+        "effective_until": "2026-11-10",
+    }
+    response = mutate(admin, "/admin/schedule/preview", body)
+    assert response.status_code == 409, response.text

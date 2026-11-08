@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeftRight, RotateCw } from "lucide-react";
 import { api, unwrap } from "../../lib/api/client";
@@ -20,7 +21,7 @@ export function Court({
   disabled?: boolean;
   showRatings?: boolean;
 }) {
-  function playerCard(p: TeamPlayer) {
+  function playerCard(p: TeamPlayer, placement?: CSSProperties) {
     const content = (
       <>
         <span className="court-avatar" aria-hidden="true">
@@ -38,6 +39,7 @@ export function Court({
       <button
         key={p.player.id}
         className="court-player"
+        style={placement}
         aria-pressed={selected === p.player.id}
         disabled={disabled}
         onClick={() => onSelect(p.player.id)}
@@ -46,7 +48,7 @@ export function Court({
         {content}
       </button>
     ) : (
-      <div key={p.player.id} className="court-player">
+      <div key={p.player.id} className="court-player" style={placement}>
         {content}
       </div>
     );
@@ -83,20 +85,24 @@ export function Court({
             aria-label={`Boisko drużyny ${i ? "B" : "A"}`}
           >
             <div className="court-lines" aria-hidden="true" />
-            <div className="court-formation">
-              {Array.from({ length: 6 }, (_, position) =>
-                players[position] ? (
-                  playerCard(players[position])
-                ) : (
-                  <div
-                    className="court-empty"
-                    key={`empty-${position}`}
-                    aria-hidden="true"
-                  >
-                    <span>·</span>
-                  </div>
-                ),
-              )}
+            <div
+              className={`court-formation formation-${Math.min(players.length, 6)}`}
+            >
+              {players.slice(0, 6).map((player, position) => {
+                const count = Math.min(players.length, 6);
+                // One front player for 2–3 people, two for 4–5, three for 6.
+                // Back row fills the remaining lanes; each half faces the net.
+                const front = Math.max(1, Math.floor(count / 2));
+                const depth = position < front ? 0 : 1;
+                const rowCount = depth === 0 ? front : count - front;
+                const lane = depth === 0 ? position : position - front;
+                return playerCard(player, {
+                  "--lane-start": 1 + lane * (6 / rowCount),
+                  "--lane-span": 6 / rowCount,
+                  "--mobile-row": i === 0 ? 2 - depth : 1 + depth,
+                  "--desktop-column": i === 0 ? 2 - depth : 1 + depth,
+                } as CSSProperties);
+              })}
             </div>
           </div>
         ))}

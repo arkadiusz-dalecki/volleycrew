@@ -34,6 +34,7 @@ function ScheduleForm({ settings }: { settings: Settings }) {
         (!rule.effective_until || rule.effective_until > today),
     ) ?? settings.rules.at(-1);
   const [from, setFrom] = useState(nextMonday);
+  const [until, setUntil] = useState("");
   const [weekday, setWeekday] = useState(current?.weekday ?? 1);
   const [time, setTime] = useState(current?.local_time.slice(0, 5) ?? "18:00");
   const [duration, setDuration] = useState(current?.duration_minutes ?? 120);
@@ -47,6 +48,11 @@ function ScheduleForm({ settings }: { settings: Settings }) {
   const body = {
     expected_version: settings.version,
     effective_from: from,
+    effective_until: until
+      ? new Date(new Date(`${until}T12:00:00Z`).getTime() + 86400000)
+          .toISOString()
+          .slice(0, 10)
+      : null,
     weekday,
     local_time: time,
     duration_minutes: duration,
@@ -131,6 +137,24 @@ function ScheduleForm({ settings }: { settings: Settings }) {
             </select>
           </label>
         </div>
+        <label className="form-field">
+          Do dnia (włącznie, opcjonalnie)
+          <input
+            type="date"
+            value={until}
+            min={from}
+            max="9997-12-31"
+            disabled={busy}
+            onChange={(e) => {
+              edit();
+              setUntil(e.target.value);
+            }}
+          />
+          <small>
+            Po tej dacie wróci wcześniejszy harmonogram. Puste pole oznacza
+            serię bez końca.
+          </small>
+        </label>
         <div className="form-row">
           <label className="form-field">
             Godzina rozpoczęcia
@@ -186,14 +210,24 @@ function ScheduleForm({ settings }: { settings: Settings }) {
         >
           <h3>Sprawdź zakres zmiany</h3>
           <p>
+            <strong>
+              {from.split("-").reverse().join(".")} –{" "}
+              {until
+                ? `${until.split("-").reverse().join(".")} (włącznie)`
+                : "bez końca"}{" "}
+              · {weekdays[weekday]}, {time} · {duration} min · {venue}
+            </strong>
+          </p>
+          <p>
             {preview.existing.length} istniejących spotkań ·{" "}
             {preview.reconfirmation_count} zgłoszeń wymaga nowego potwierdzenia
             · {preview.kept_exception_count} zachowanych wyjątków.
           </p>
           <p className="form-note">
             Zmiana dotyczy także kolejnych, jeszcze nieotwartych terminów.
-            Zastępuje zaplanowane reguły od wybranej daty. Odwołane pozostają
-            odwołane; indywidualne terminy pozostają bez zmian.
+            Zastępuje zaplanowane reguły w wybranym zakresie. Po końcu serii
+            wraca wcześniejszy harmonogram. Odwołane pozostają odwołane;
+            indywidualne terminy pozostają bez zmian.
           </p>
           <ul className="schedule-change-list">
             {preview.existing.map((item) => (
@@ -269,12 +303,12 @@ export function ScheduleEditor() {
   return (
     <section className="card">
       <div className="section-title">
-        <h2>Harmonogram spotkań</h2>
+        <h2>Seria spotkań</h2>
         <CalendarDays size={20} />
       </div>
       <p className="form-note">
-        Zmień stały dzień lub godzinę od wybranej daty. Przed zapisem zobaczysz
-        dotknięte spotkania.
+        Ustaw cotygodniową grę od–do. Seria zastąpi dotychczasowy harmonogram w
+        tym okresie. Przed zapisem zobaczysz dotknięte spotkania.
       </p>
       {settings.isPending ? (
         <p role="status">Wczytujemy harmonogram…</p>

@@ -166,3 +166,7 @@ uv export --project volleycrew/backend --frozen --no-dev --format requirements-t
 ```
 
 CI weryfikuje zgodność tego pliku z `uv.lock`, buduje i testuje oba CPU bez publikacji obrazu. Samo dodanie workflow nie oznacza wykonanego zdalnego CI.
+
+### Lokalny podgląd obu ról
+
+`npm run dev:preview` tworzy w lokalnej bazie `*_dev` 14 kont: **Admin Demo**, **User Demo** i 12 zawodników demo, wszystkie z PIN-em `123456`, i uruchamia aplikację z przyciskami „Wejdź jako Admin” / „Wejdź jako User”. Przyciski działają na ekranie logowania i nad treścią aplikacji, używając zwykłego logowania API. Seeder odmawia pracy z bazą poza loopback lub bez końcówki `_dev`; nie usuwa istniejących profili. Zwykły `npm run dev` oraz produkcyjny build nie pokazują przełącznika.

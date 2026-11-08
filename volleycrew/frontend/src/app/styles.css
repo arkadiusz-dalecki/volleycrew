@@ -133,7 +133,7 @@ h3 {
   margin-top: 40px;
   background: #f5f7ee;
   border-radius: 13px;
-  color: #728364;
+  color: #52654b;
   font-size: 12px;
   line-height: 1.8;
 }
@@ -997,9 +997,13 @@ input:focus-visible {
   gap: 28px;
   align-items: start;
 }
-.calendar-card {
+.calendar-month-column {
   position: sticky;
   top: 24px;
+  min-width: 0;
+}
+.calendar-card {
+  position: static;
 }
 .calendar-toolbar {
   display: flex;
@@ -1111,9 +1115,17 @@ input:focus-visible {
   align-items: center;
   gap: 7px;
 }
-.calendar-agenda > .section-title {
-  margin-bottom: 16px;
+.calendar-agenda > .section-title,
+.calendar-column-heading {
+  margin: 0 0 16px;
   min-height: 44px;
+}
+.calendar-agenda > .section-title h2,
+.calendar-column-heading h2 {
+  margin: 0;
+}
+.calendar-agenda {
+  min-width: 0;
 }
 .agenda-list {
   list-style: none;
@@ -1251,6 +1263,9 @@ input:focus-visible {
 @media (max-width: 1100px) {
   .calendar-layout {
     grid-template-columns: 1fr;
+  }
+  .calendar-month-column {
+    position: static;
   }
   .calendar-card {
     position: static;
@@ -1673,6 +1688,7 @@ input:focus-visible {
   background: #edf3e4;
 }
 .court-half {
+  display: grid;
   position: relative;
   min-width: 0;
   padding: 22px 14px;
@@ -1705,8 +1721,8 @@ input:focus-visible {
   position: relative;
   z-index: 2;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  grid-template-rows: repeat(2, minmax(110px, auto));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(110px, 1fr));
   gap: 12px 5px;
   align-items: stretch;
 }
@@ -1774,11 +1790,13 @@ button.court-player:disabled {
   opacity: 0.65;
   cursor: default;
 }
-.court-empty {
-  min-height: 105px;
-  display: grid;
-  place-items: center;
-  color: #849479;
+.court-formation > .court-player {
+  grid-column: var(--lane-start) / span var(--lane-span);
+  grid-row: var(--mobile-row);
+}
+.court-formation.formation-1 > .court-player {
+  grid-column: 1 / -1;
+  grid-row: 1 / -1;
 }
 .court-net {
   position: absolute;
@@ -1886,8 +1904,16 @@ button.court-player:disabled {
   }
   .court-formation {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-rows: repeat(3, minmax(100px, auto));
+    grid-template-rows: repeat(6, minmax(44px, 1fr));
     gap: 5px 10px;
+  }
+  .court-formation > .court-player {
+    grid-column: var(--desktop-column);
+    grid-row: var(--lane-start) / span var(--lane-span);
+  }
+  .court-formation.formation-1 > .court-player {
+    grid-column: 1 / -1;
+    grid-row: 1 / -1;
   }
   .court-lines:before,
   .court-lines:after {
@@ -2420,4 +2446,108 @@ select {
   background-position: right 12px center;
   background-size: 12px 8px;
   padding-right: 32px;
+}
+
+.calendar-admin {
+  margin-bottom: 28px;
+}
+.calendar-admin > .card {
+  margin-top: 20px;
+}
+.hero {
+  grid-template-columns: minmax(0, 1fr) 220px;
+}
+.hero .hero-date {
+  font-size: clamp(28px, 3vw, 40px);
+  line-height: 1.22;
+  margin: 26px 0 20px;
+}
+.hero .hero-date time {
+  text-transform: none;
+}
+.hero-copy > p {
+  font-size: 16px;
+}
+.hero-copy > p svg {
+  flex-shrink: 0;
+}
+.venue {
+  gap: 12px;
+}
+.venue strong {
+  line-height: 1.4;
+}
+@media (max-width: 700px) {
+  .hero .hero-date {
+    font-size: 29px;
+  }
+  .hero-copy {
+    padding-right: 26px;
+  }
+  .hero-copy > p {
+    font-size: 15px;
+  }
+  .court-illustration {
+    opacity: 0.25;
+  }
+}
+
+.preview-profiles {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 16px;
+  margin-bottom: 24px;
+  border: 1px dashed var(--line);
+  border-radius: 14px;
+  background: white;
+}
+.preview-profiles > span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.preview-profiles .row-actions {
+  flex-wrap: wrap;
+}
+
+.agenda-card {
+  flex-wrap: wrap;
+}
+.agenda-admin-actions {
+  flex: 1 0 100%;
+  min-width: 0;
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+.agenda-admin-actions > .participation-actions {
+  margin: 0;
+}
+.agenda-admin-actions > form {
+  margin-top: 20px;
+}
+.agenda-admin-actions > form > .button {
+  margin: 0 8px 8px 0;
+}
+.agenda-admin-actions > .form-notice:empty {
+  display: none;
+}
+
+.button.declaration-going {
+  background: #edf4e9;
+  border-color: #d4e2cb;
+  color: #365a3c;
+}
+.button.declaration-going:hover:not(:disabled) {
+  background: #e2eddc;
+  border-color: #adc59f;
+}
+.button.declaration-not-going {
+  background: #fbefec;
+  border-color: #edd7d1;
+  color: #854c43;
+}
+.button.declaration-not-going:hover:not(:disabled) {
+  background: #f5e3de;
+  border-color: #d8b0a6;
 }
