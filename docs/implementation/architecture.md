@@ -27,7 +27,8 @@ flowchart TD
     Public --> API[FastAPI /api/v1]
     Ingress --> API
   end
-  API --> PG[(Osobna baza PostgreSQL)]
+  API --> PG[(PostgreSQL 17 w pakiecie /data)]
+  API -. opcjonalnie .-> ExternalPG[(Zewnętrzny PostgreSQL)]
 ```
 
 Stan implementacji pakietu i granice odbioru: [raport E10](e10-report.md); [instrukcja instalacji](../../volleycrew/DOCS.md). Użytkownik samodzielnie publikuje/dodaje repozytorium i instaluje aplikację.
@@ -119,3 +120,7 @@ Wejścia używają oddzielnych nazw i ścieżek cookies. Nginx renderuje bazę H
 `build.yaml` pozostaje dla zgodności z uzgodnionym sposobem wdrożenia. Aktualna dokumentacja HA oznacza go jako przestarzały, ale wspierany; Dockerfile ma także domyślny przypięty obraz multiarch i nie polega na przekazaniu BUILD_FROM. Zmianę bazy/s6 trzeba weryfikować razem ze skryptami pomocniczymi.
 
 Kopie w /data są lokalne; backup_pre wykonuje świeży zrzut zewnętrznej DB przed kopią HA. Szyfrowany cel HA poza hostem i test odtworzenia z tego miejsca konfiguruje użytkownik. Restore operatora ma jawny osobny URL pustego celu i domyślnie unieważnia sesje. Szczegóły oraz ograniczenia testów fizycznych są w raporcie E10.
+
+## Własny PostgreSQL — 0.2.0
+
+Decyzja użytkownika 2026-11-08 zastępuje wymóg osobnego serwera dla nowych instalacji. Prywatny PostgreSQL startuje przed migracjami, następnie działa jako nadzorowana usługa s6. Baza i rola bez superusera powstają automatycznie, hasło jest losowe i trwałe. Listener tylko loopback, bez mapowania 5432. AUTO zachowuje istniejący host zewnętrzny; utrwalony tryb nie zmienia się bez migracji. Backup HA zatrzymuje aplikację i zapisuje spójny klaster. Dodatkowe kopie logiczne są przenośne; przy braku plików klastra kontrolowane odtworzenie używa archiwum odzyskiwania.

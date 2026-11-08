@@ -3,11 +3,12 @@
 import json
 import os
 import re
+import secrets
 from ipaddress import ip_network
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator, model_validator
 from sqlalchemy.engine import URL
 
 from app.core.config import Settings
@@ -17,11 +18,12 @@ ENV_DIR = Path("/var/run/s6/container_environment")
 
 class Options(BaseModel):
     model_config = ConfigDict(extra="forbid", hide_input_in_errors=True)
-    POSTGRES_HOST: str = Field(min_length=1, max_length=253)
+    DATABASE_MODE: str = "auto"
+    POSTGRES_HOST: str = Field(default="", max_length=253)
     POSTGRES_PORT: int = Field(default=5432, ge=1, le=65535)
     POSTGRES_DB: str = Field(default="volleycrew", min_length=1)
     POSTGRES_USER: str = Field(default="volleycrew", min_length=1)
-    POSTGRES_PASSWORD: SecretStr
+    POSTGRES_PASSWORD: SecretStr = SecretStr("")
     POSTGRES_SSL: str = "prefer"
     PUBLIC_URL: str
     ADDITIONAL_ORIGINS: list[str] = []
@@ -77,15 +79,54 @@ class Options(BaseModel):
             raise ValueError("BOOTSTRAP_TOKEN must be URL-safe: letters, digits, - and _")
         return value
 
+    @model_validator(mode="after")
+    def database_mode_valid(self):
+        if self.DATABASE_MODE not in {"auto", "embedded", "external"}:
+            raise ValueError("DATABASE_MODE must be auto, embedded or external")
+        if self.DATABASE_MODE == "external" and not self.POSTGRES_HOST:
+            raise ValueError("POSTGRES_HOST is required for an external database")
+        return self
+
+    @property
+    def embedded(self) -> bool:
+        return self.DATABASE_MODE == "embedded" or (
+            self.DATABASE_MODE == "auto" and not self.POSTGRES_HOST
+        )
+
     def settings(self, state: Path) -> Settings:
+        if self.embedded:
+            password_file = state / "postgres-password"
+            if not password_file.exists():
+                if (state / "postgres-initialized").exists() or (
+                    state / "postgresql/PG_VERSION"
+                ).exists():
+                    raise ValueError("Bundled database password missing; recover matching state")
+                private_write(password_file, secrets.token_hex(32))
+            host, port, database, user, password, ssl = (
+                "127.0.0.1",
+                5432,
+                "volleycrew",
+                "volleycrew",
+                password_file.read_text().strip(),
+                "disable",
+            )
+        else:
+            host, port, database, user, password, ssl = (
+                self.POSTGRES_HOST,
+                self.POSTGRES_PORT,
+                self.POSTGRES_DB,
+                self.POSTGRES_USER,
+                self.POSTGRES_PASSWORD.get_secret_value(),
+                self.POSTGRES_SSL,
+            )
         url = URL.create(
             "postgresql+asyncpg",
-            username=self.POSTGRES_USER,
-            password=self.POSTGRES_PASSWORD.get_secret_value(),
-            host=self.POSTGRES_HOST,
-            port=self.POSTGRES_PORT,
-            database=self.POSTGRES_DB,
-            query={"ssl": self.POSTGRES_SSL},
+            username=user,
+            password=password,
+            host=host,
+            port=port,
+            database=database,
+            query={"ssl": ssl},
         )
         return Settings(
             _env_file=None,
@@ -115,7 +156,16 @@ def prepare(
     nginx_dir: Path = Path("/etc/nginx"),
 ) -> Options:
     options = Options.model_validate_json(options_path.read_bytes())
+    mode = "embedded" if options.embedded else "external"
+    previous = state / "database-mode"
+    if previous.exists() and previous.read_text().strip() != mode:
+        raise ValueError(
+            "Database mode change requires explicit data migration; original data retained"
+        )
+    if not previous.exists() and mode == "embedded" and (state / "installed-version").exists():
+        raise ValueError("Existing installation requires explicit database migration")
     settings = options.settings(state)
+    private_write(previous, mode)
     os.umask(0o077)
     env_dir.mkdir(parents=True, exist_ok=True)
     values = {

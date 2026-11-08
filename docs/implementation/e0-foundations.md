@@ -1,3 +1,5 @@
+> Aktualizacja 2026-11-08: użytkownik zlecił własny PostgreSQL w pakiecie. Od 0.2.0 nowe instalacje nie wymagają osobnego serwera. Wcześniejsze ustalenia poniżej są historyczne; aktualne zachowanie opisują architecture.md i bundled-postgresql.md.
+
 # E0 — ustalenia fundamentów
 
 Data: 2026-11-06. Stan: część techniczna przygotowana do E1; D2 zatwierdzone, D3 zatwierdzone wraz z prywatnością statusu; D4 zatwierdzone (każda zmiana wymaga potwierdzenia, zachowuje kolejność i rezerwacje, obejmuje oferty); D5 zatwierdzone (korekty, usprawiedliwienia, późne przyjście, dopisanie bez deklaracji); D6 zatwierdzone (blokada, zwolnienie przyszłych miejsc, zachowanie historii, przydomek i maskowana lista logowania). Nie wykonano instalacji, połączenia z HA ani produkcyjną bazą. Wyniki poniżej to ustalenia projektowe i weryfikacja dokumentacji, nie testy kontenera.

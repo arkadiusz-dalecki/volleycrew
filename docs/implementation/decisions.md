@@ -51,3 +51,7 @@ Mecze są liczone według chwili rozpoczęcia, a przy identycznej chwili według
 ## Zakres wdrożenia E10 — 2026-11-07
 
 Użytkownik potwierdził, że sam doda repozytorium do HA, wygeneruje token i zainstaluje aplikację. Zakres agenta: przygotowanie pakietu i instrukcji oraz lokalne testy kontenerów, Ingress i backup/restore. Bez dalszych działań w panelu HA, konfiguracji tunelu, publikacji repozytorium lub używania produkcyjnej bazy. Odbiór na docelowym Pi 4, pomiary i kopia poza hostem pozostają po stronie użytkownika. Zachowano D10: lokalny build jak w maybe-finance; BOOTSTRAP_TOKEN w opcjach umożliwia utworzenie pierwszego administratora bez SSH i tokenu API HA.
+
+## Własna baza w pakiecie — zatwierdzone 2026-11-08
+
+Użytkownik nie ma PostgreSQL i zlecił bazę wewnątrz Volleycrew. To zastępuje wcześniejsze wymaganie osobnego serwera dla nowych instalacji (D1/E0/E10). Pakiet 0.2.0 zawiera PostgreSQL 17, trwały katalog /data/postgresql, automatycznie tworzoną bazę/rolę/hasło i prywatny listener loopback. DATABASE_MODE=auto wybiera bazę własną przy pustym POSTGRES_HOST; istniejący host zachowuje tryb external. Zmiana utrwalonego trybu wymaga jawnej migracji danych, bez automatycznego tworzenia pustej alternatywy. Backup HA zatrzymuje aplikację i kopiuje spójny klaster; dodatkowo działa backup logiczny i odtworzenie z archiwum przy braku plików klastra. Nie ma automatycznego upgrade głównej wersji PostgreSQL.

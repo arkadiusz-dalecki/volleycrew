@@ -133,6 +133,10 @@ Zależności: E0/E1 oraz działająca aplikacja; D1/D10. Eksperyment z pustym ko
 
 Odbiór: instalacja i aktualizacja w docelowym HA, trwałość danych po restarcie, poprawny dostęp z telefonu poza LAN, bez konta HA dla zawodnika. Wynik sprawdzenia drugiej architektury opisany; nie utożsamiać samej kompilacji z uruchomieniem.
 
+## E10 — własny PostgreSQL 0.2.0
+
+Zlecone 2026-11-08. Zastępuje wymóg osobnego serwera w nowej instalacji. Własna baza z automatycznym hasłem i trwałym /data; zachowanie istniejącego external; migracje, restart/awaria/aktualizacja, backup i restore HA. Odbiór: realny start i bootstrap bez osobnego serwera, dane po restartach, odtworzenie na nowym wolumenie, blokada startu przy braku kopii, kontrole obu CPU. Instalację wykonuje użytkownik.
+
 ## E11 — odbiór i pierwsze wydanie
 
 Zależności: wszystkie wymagane etapy, rozstrzygnięte D1–D10 albo jawnie zawężony zakres zatwierdzony przez użytkownika.

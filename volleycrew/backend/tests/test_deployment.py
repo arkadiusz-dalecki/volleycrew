@@ -173,7 +173,9 @@ def test_home_assistant_manifest_keeps_private_listener_and_local_build():
     assert manifest["ports"] == {"8200/tcp": 8200}
     assert manifest["ingress_port"] == 8099 and "8099/tcp" not in manifest["ports"]
     assert manifest["schema"]["BOOTSTRAP_TOKEN"] == "password"
-    assert manifest["backup_pre"] == "/usr/local/bin/volleycrew-backup create"
+    assert manifest["backup"] == "cold"
+    assert "backup_pre" not in manifest
+    assert not any("postgresql" in rule for rule in manifest["backup_exclude"])
     assert not (root / "build.yaml").exists()
 
 
@@ -206,3 +208,55 @@ def test_backup_hook_environment_keeps_explicit_restore_target(tmp_path, monkeyp
     assert "@source/source" in os.environ["VOLLEYCREW_DATABASE_URL"]
     assert os.environ["VOLLEYCREW_RESTORE_DATABASE_URL"].endswith("@target/restore")
     monkeypatch.delenv("VOLLEYCREW_DATABASE_URL")
+
+
+def test_bundled_database_default_is_private_and_credentials_persist(tmp_path):
+    opts = Options.model_validate({"PUBLIC_URL": "https://volleycrew.test"})
+    assert opts.embedded
+    first = make_url(opts.settings(tmp_path).database_url.get_secret_value())
+    second = make_url(opts.settings(tmp_path).database_url.get_secret_value())
+    assert first == second
+    assert (first.host, first.port, first.database, first.username) == (
+        "127.0.0.1",
+        5432,
+        "volleycrew",
+        "volleycrew",
+    )
+    assert len(first.password) == 64 and first.query["ssl"] == "disable"
+    assert (tmp_path / "postgres-password").stat().st_mode & 0o777 == 0o600
+    external = options()
+    assert not external.embedded
+    assert make_url(external.settings(tmp_path).database_url.get_secret_value()).host == "db"
+    with pytest.raises(ValidationError):
+        Options.model_validate(
+            {"DATABASE_MODE": "external", "PUBLIC_URL": "https://volleycrew.test"}
+        )
+    (tmp_path / "postgres-password").unlink()
+    (tmp_path / "postgres-initialized").write_text("17")
+    with pytest.raises(ValueError):
+        opts.settings(tmp_path)
+
+
+def test_database_mode_switch_is_not_an_implicit_data_migration(tmp_path):
+    file = tmp_path / "options.json"
+    file.write_text('{"PUBLIC_URL":"https://volleycrew.test"}')
+    (tmp_path / "database-mode").write_text("external")
+    with pytest.raises(ValueError, match="migration"):
+        prepare(file, tmp_path, tmp_path / "env", tmp_path / "nginx")
+    assert not (tmp_path / "postgres-password").exists()
+
+
+def test_startup_validation_lists_fields_without_secret_values(monkeypatch, caplog):
+    from app import runtime
+
+    def invalid():
+        Options.model_validate(
+            {"PUBLIC_URL": "https://volleycrew.test", "BOOTSTRAP_TOKEN": "private-short-token"}
+        )
+
+    monkeypatch.setattr(runtime, "prepare", invalid)
+    monkeypatch.setattr("sys.argv", ["runtime", "prepare"])
+    with pytest.raises(SystemExit):
+        runtime.main()
+    assert "BOOTSTRAP_TOKEN" in caplog.text
+    assert "private-short-token" not in caplog.text

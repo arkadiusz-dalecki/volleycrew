@@ -72,11 +72,14 @@ jobs:
           -t volleycrew:package volleycrew
       - name: Production image, HTTPS/Ingress and separate DB restore
         run: python3 scripts/test_container.py --image volleycrew:package --platform '${{ matrix.platform }}'
+      - name: Bundled PostgreSQL, crash recovery and HA backup restore
+        run: python3 scripts/test_bundled_database.py --image volleycrew:package --platform '${{ matrix.platform }}'
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: package-check-${{ matrix.arch }}
           path: |
+            .runtime/bundled/container.log
             .runtime/e10/browser.log
             .runtime/e10/container.log
             volleycrew/frontend/test-results-container/
