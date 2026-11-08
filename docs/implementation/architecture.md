@@ -40,7 +40,6 @@ Home Assistant jest gospodarzem aplikacji, nie dostawcą tożsamości zawodnikó
 repository.yaml                  # repozytorium aplikacji HA
 volleycrew/
   config.yaml                    # manifest HA, opcje, wersja, architektury
-  build.yaml
   Dockerfile
   rootfs/                        # konfiguracja Nginx, init i usługi s6
   backend/

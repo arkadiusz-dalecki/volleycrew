@@ -1,3 +1,5 @@
+> Poprawka 0.1.1: usuwa błąd instalacji `apt-get: not found`. Po udostępnieniu poprawki na `main` odśwież repozytoria w sklepie HA, sprawdź wersję 0.1.1 i ponów instalację. Nie usuwaj bazy ani konfiguracji. Pakiet nie korzysta już z `build.yaml`; baza Debian jest przypięta w Dockerfile i nie zależy od `BUILD_FROM` przekazywanego przez Supervisor.
+
 # Instalacja i obsługa Volleycrew w Home Assistant
 
 ## Instalacja bez SSH
@@ -69,7 +71,7 @@ Cofnięcie obrazu jest bezpieczne tylko wtedy, gdy poprzedni kod wspiera bieżą
 1. Zatrzymaj aplikację, odzyskaj archiwum `.tar.gz` z kopii HA i przygotuj pustą docelową bazę na wybranym serwerze, należącą do własnego użytkownika Volleycrew. Nie nadpisuj działającej bazy ani maybe-finance.
 2. Użyj obrazu odpowiadającego wersji/schematowi z `manifest.json` archiwum. Operator może zbudować go z odpowiedniej wersji repozytorium na maszynie z Dockerem. Binariów `pg_dump`/`pg_restore` nie trzeba instalować osobno w tym obrazie.
 3. Przygotuj prywatny plik `.env.restore` z `VOLLEYCREW_RESTORE_DATABASE_URL=postgresql+asyncpg://…` wskazującym **wyłącznie pusty cel**. Nie przekazuj hasła jako argumentu programu ani w logu; uprawnienia pliku ustaw na 600. Hasło w URL musi być poprawnie zakodowane.
-4. Przykład na maszynie operatora z Dockerem, dla wcześniej zbudowanego obrazu `volleycrew:0.1.0`:
+4. Przykład na maszynie operatora z Dockerem, dla wcześniej zbudowanego obrazu `volleycrew:0.1.1`:
 
 ```sh
 mkdir -p restore-data
@@ -78,7 +80,7 @@ chmod 600 .env.restore
 docker run --rm --env-file .env.restore \
   -e VOLLEYCREW_STATE_DIR=/data \
   -v "$PWD/restore-data:/data" -v "$PWD/backup:/restore:ro" \
-  --entrypoint python volleycrew:0.1.0 \
+  --entrypoint python volleycrew:0.1.1 \
   -m app.backup restore /restore/volleycrew-KOPIA.tar.gz --confirm-empty-target
 ```
 
