@@ -91,7 +91,11 @@ async def calendar(db: AsyncSession, start: date, end: date, at: datetime) -> li
     ).all()
     # Include both sources and actual dates: moved occurrences suppress their old slot.
     overrides = {(row.calendar_schedule_id, row.calendar_source_date) for row in stored}
-    result = [summary(row, True) for row in stored if lower <= row.starts_at < upper]
+    result = [
+        summary(row, True)
+        for row in stored
+        if not row.deleted_at and lower <= row.starts_at < upper
+    ]
     for schedule in schedules:
         for item in occurrences(rule_of(schedule), start, end):
             if (item.schedule_version_id, item.source_date) not in overrides and item.ends_at > at:
@@ -107,7 +111,9 @@ async def next_meeting(db: AsyncSession, at: datetime) -> MeetingSummary | None:
         )
     ).all()
     candidates = [
-        summary(row, True) for row in stored if row.status not in {"cancelled", "completed"}
+        summary(row, True)
+        for row in stored
+        if not row.deleted_at and row.status not in {"cancelled", "completed"}
     ]
     # A stored override is authoritative even when moved into the past.
     original_dates = set(
@@ -163,6 +169,7 @@ async def resolve(db: AsyncSession, version_id: UUID, day: date, at: datetime) -
         select(Meeting).where(Meeting.schedule_version_id == version_id, Meeting.source_date == day)
     )
     if existing is not None:
+        ensure_visible(existing)
         return existing
     bound = await db.scalar(
         select(Meeting).where(
@@ -170,6 +177,7 @@ async def resolve(db: AsyncSession, version_id: UUID, day: date, at: datetime) -
         )
     )
     if bound is not None:
+        ensure_visible(bound)
         return bound
     if schedule.superseded:
         raise DomainError(
@@ -269,7 +277,13 @@ async def rosters(
     return result
 
 
+def ensure_visible(row: Meeting):
+    if row.deleted_at:
+        raise DomainError(404, "not_found", "Nie znaleziono spotkania.")
+
+
 async def detail(db: AsyncSession, row: Meeting) -> MeetingDetail:
+    ensure_visible(row)
     item = summary(row, True)
     roster = (await rosters(db, [item]))[row.id]
     pending = (

@@ -33,5 +33,7 @@ async def signature_list(meeting_id: UUID, _actor: Admin, db: DB, download: bool
             "Content-Disposition": f'{disposition}; filename="{source.filename}"',
             "X-Content-Type-Options": "nosniff",
             "X-Attendance-Revision": str(source.attendance_revision),
+            "X-Meeting-Version": str(source.meeting_version),
+            "X-List-Basis": source.basis,
         },
     )

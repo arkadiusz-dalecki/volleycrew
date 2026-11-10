@@ -25,22 +25,53 @@ function nextMonday() {
   return date.toISOString().slice(0, 10);
 }
 
-function ScheduleForm({ settings }: { settings: Settings }) {
+function ScheduleForm({
+  settings,
+  rule,
+  onSaved,
+}: {
+  settings: Settings;
+  rule?: components["schemas"]["ScheduleView"];
+  onSaved?: () => void;
+}) {
   const today = localDate(new Date().toISOString());
   const current =
+    rule ??
     settings.rules.find(
       (rule) =>
         rule.effective_from <= today &&
         (!rule.effective_until || rule.effective_until > today),
-    ) ?? settings.rules.at(-1);
-  const [from, setFrom] = useState(nextMonday);
-  const [until, setUntil] = useState("");
+    ) ??
+    settings.rules.at(-1);
+  const [from, setFrom] = useState(() => {
+    if (!rule) return nextMonday();
+    const minimum = rule.effective_from > today ? rule.effective_from : today;
+    if (
+      minimum === today &&
+      new Date(`${today}T12:00:00Z`).getUTCDay() === (rule.weekday + 1) % 7 &&
+      hour(new Date().toISOString()) >= rule.local_time.slice(0, 5)
+    ) {
+      return new Date(Date.parse(`${today}T12:00:00Z`) + 86400000)
+        .toISOString()
+        .slice(0, 10);
+    }
+    return minimum;
+  });
+  const [until, setUntil] = useState(() =>
+    rule?.effective_until
+      ? new Date(Date.parse(`${rule.effective_until}T12:00:00Z`) - 86400000)
+          .toISOString()
+          .slice(0, 10)
+      : "",
+  );
   const [weekday, setWeekday] = useState(current?.weekday ?? 1);
   const [time, setTime] = useState(current?.local_time.slice(0, 5) ?? "18:00");
   const [duration, setDuration] = useState(current?.duration_minutes ?? 120);
   const [venue, setVenue] = useState(current?.venue ?? "I LO w Gdańsku");
   const [preview, setPreview] = useState<
-    components["schemas"]["SchedulePreview"] | null
+    | components["schemas"]["SchedulePreview"]
+    | components["schemas"]["SeriesChangePreview"]
+    | null
   >(null);
   const [busy, setBusy] = useState(false),
     [notice, setNotice] = useState("");
@@ -68,7 +99,14 @@ function ScheduleForm({ settings }: { settings: Settings }) {
     setNotice("");
     try {
       setPreview(
-        unwrap(await api.POST("/api/v1/admin/schedule/preview", { body })),
+        rule
+          ? unwrap(
+              await api.POST("/api/v1/admin/schedule/rules/{rule_id}/preview", {
+                params: { path: { rule_id: rule.id } },
+                body,
+              }),
+            )
+          : unwrap(await api.POST("/api/v1/admin/schedule/preview", { body })),
       );
     } catch (e) {
       setNotice(message(e));
@@ -84,12 +122,18 @@ function ScheduleForm({ settings }: { settings: Settings }) {
     setNotice("");
     try {
       unwrap(
-        await api.POST("/api/v1/admin/schedule/versions", {
-          body: { ...body, preview_token: preview.preview_token },
-        }),
+        rule
+          ? await api.POST("/api/v1/admin/schedule/rules/{rule_id}/edit", {
+              params: { path: { rule_id: rule.id } },
+              body: { ...body, preview_token: preview.preview_token },
+            })
+          : await api.POST("/api/v1/admin/schedule/versions", {
+              body: { ...body, preview_token: preview.preview_token },
+            }),
       );
       setPreview(null);
       await refreshSchedule(client);
+      onSaved?.();
       setNotice(
         "Harmonogram zapisany. Poinformuj grupę na Messengerze o zmianie i nowych potwierdzeniach.",
       );
@@ -151,8 +195,10 @@ function ScheduleForm({ settings }: { settings: Settings }) {
             }}
           />
           <small>
-            Po tej dacie wróci wcześniejszy harmonogram. Puste pole oznacza
-            serię bez końca.
+            {rule
+              ? "Terminy poza nowym zakresem zostaną usunięte z kalendarza."
+              : "Po tej dacie wróci wcześniejszy harmonogram."}{" "}
+            Puste pole oznacza serię bez końca.
           </small>
         </label>
         <div className="form-row">
@@ -218,43 +264,65 @@ function ScheduleForm({ settings }: { settings: Settings }) {
               · {weekdays[weekday]}, {time} · {duration} min · {venue}
             </strong>
           </p>
-          <p>
-            {preview.existing.length} istniejących spotkań ·{" "}
-            {preview.reconfirmation_count} zgłoszeń wymaga nowego potwierdzenia
-            · {preview.kept_exception_count} zachowanych wyjątków.
-          </p>
-          <p className="form-note">
-            Zmiana dotyczy także kolejnych, jeszcze nieotwartych terminów.
-            Zastępuje zaplanowane reguły w wybranym zakresie. Po końcu serii
-            wraca wcześniejszy harmonogram. Odwołane pozostają odwołane;
-            indywidualne terminy pozostają bez zmian.
-          </p>
-          <ul className="schedule-change-list">
-            {preview.existing.map((item) => (
-              <li key={item.id}>
-                <span>
-                  {dateLabel(item.previous_starts_at)},{" "}
-                  {hour(item.previous_starts_at)}
-                </span>
-                <strong>
-                  {item.kept_exception
-                    ? "Wyjątek — termin bez zmian"
-                    : `→ ${dateLabel(item.starts_at)}, ${hour(item.starts_at)}`}
-                </strong>
-                {item.status === "cancelled" && (
-                  <small>Pozostaje odwołane</small>
-                )}
-              </li>
-            ))}
-          </ul>
-          <h3>Przykładowe terminy nowej reguły</h3>
-          <ul className="schedule-examples">
-            {preview.examples.slice(0, 4).map((value) => (
-              <li key={value}>
-                {dateLabel(value)}, {hour(value)}
-              </li>
-            ))}
-          </ul>
+          {"existing" in preview ? (
+            <>
+              <p>
+                {preview.existing.filter((item) => !item.deleted).length}{" "}
+                istniejących spotkań · {preview.reconfirmation_count} zgłoszeń
+                wymaga nowego potwierdzenia · {preview.kept_exception_count}{" "}
+                zachowanych wyjątków.
+              </p>
+              <p className="form-note">
+                Zmiana dotyczy także kolejnych, jeszcze nieotwartych terminów.
+                Zastępuje zaplanowane reguły w wybranym zakresie. Po końcu serii
+                wraca wcześniejszy harmonogram. Odwołane pozostają odwołane;
+                indywidualne terminy pozostają bez zmian.
+              </p>
+              <ul className="schedule-change-list">
+                {preview.existing
+                  .filter((item) => !item.deleted)
+                  .map((item) => (
+                    <li key={item.id}>
+                      <span>
+                        {dateLabel(item.previous_starts_at)},{" "}
+                        {hour(item.previous_starts_at)}
+                      </span>
+                      <strong>
+                        {item.kept_exception
+                          ? "Wyjątek — termin bez zmian"
+                          : `→ ${dateLabel(item.starts_at)}, ${hour(item.starts_at)}`}
+                      </strong>
+                      {item.status === "cancelled" && (
+                        <small>Pozostaje odwołane</small>
+                      )}
+                    </li>
+                  ))}
+              </ul>
+              <h3>Przykładowe terminy nowej reguły</h3>
+              <ul className="schedule-examples">
+                {preview.examples.slice(0, 4).map((value) => (
+                  <li key={value}>
+                    {dateLabel(value)}, {hour(value)}
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <>
+              <p>
+                {preview.affected_count} istniejących spotkań ·{" "}
+                {preview.removed_count} do usunięcia ·{" "}
+                {preview.reconfirmation_count} zgłoszeń wymaga nowego
+                potwierdzenia · {preview.kept_exception_count} zachowanych
+                wyjątków.
+              </p>
+              <p>
+                Nowy zakres zastąpi przyszłą część tej serii. Usunięte wcześniej
+                spotkania nie wrócą. Inne serie i dodatkowe spotkania pozostaną
+                bez zmian.
+              </p>
+            </>
+          )}
           <p className="form-note">
             Dotychczasowe miejsca czekają na potwierdzenie bez limitu czasu.
             Propozycje z rezerwy wymagają ponownej akceptacji nowego terminu.
@@ -280,22 +348,16 @@ function ScheduleForm({ settings }: { settings: Settings }) {
       <p className="form-notice" role="status">
         {notice}
       </p>
-      <details className="scheduled-rules">
-        <summary>Obowiązujące i zaplanowane reguły</summary>
-        <ul>
-          {settings.rules.map((rule) => (
-            <li key={rule.id}>
-              {rule.effective_from} – {rule.effective_until ?? "bez końca"}:{" "}
-              {weekdays[rule.weekday]}, {rule.local_time.slice(0, 5)} ·{" "}
-              {rule.duration_minutes} min
-            </li>
-          ))}
-        </ul>
-      </details>
     </>
   );
 }
-export function ScheduleEditor() {
+export function ScheduleEditor({
+  rule,
+  onSaved,
+}: {
+  rule?: components["schemas"]["ScheduleView"];
+  onSaved?: () => void;
+}) {
   const settings = useQuery({
     queryKey: ["admin-schedule"],
     queryFn: async () => unwrap(await api.GET("/api/v1/admin/schedule")),
@@ -303,12 +365,13 @@ export function ScheduleEditor() {
   return (
     <section className="card">
       <div className="section-title">
-        <h2>Seria spotkań</h2>
+        <h2>{rule ? "Edytuj serię" : "Seria spotkań"}</h2>
         <CalendarDays size={20} />
       </div>
       <p className="form-note">
-        Ustaw cotygodniową grę od–do. Seria zastąpi dotychczasowy harmonogram w
-        tym okresie. Przed zapisem zobaczysz dotknięte spotkania.
+        {rule
+          ? "Zmień przyszłe terminy tej serii. Skrócenie zakresu usunie wypadające spotkania. Przed zapisem sprawdzisz skutki."
+          : "Ustaw cotygodniową grę od–do. Seria zastąpi dotychczasowy harmonogram w tym okresie. Przed zapisem zobaczysz dotknięte spotkania."}
       </p>
       {settings.isPending ? (
         <p role="status">Wczytujemy harmonogram…</p>
@@ -327,7 +390,12 @@ export function ScheduleEditor() {
               dane.
             </p>
           )}
-          <ScheduleForm settings={settings.data!} />
+          <ScheduleForm
+            key={rule?.id ?? "new"}
+            settings={settings.data!}
+            rule={rule}
+            onSaved={onSaved}
+          />
         </>
       )}
     </section>

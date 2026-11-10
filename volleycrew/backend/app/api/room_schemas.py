@@ -50,7 +50,7 @@ class CorrectionInput(ReasonInput):
 
 
 class GenerateTeams(VersionInput):
-    mode: Literal["random", "balanced"]
+    mode: Literal["random", "balanced", "preliminary"]
 
 
 class TeamsDraft(VersionInput):
@@ -125,3 +125,23 @@ class HistoryPage(BaseModel):
     items: list[HistoryItem]
     total: int
     next_offset: int | None
+
+
+class PreliminaryTeamsView(BaseModel):
+    meeting_id: UUID
+    roster_token: str
+    revision: int
+    method: Literal["balanced", "random", "manual"]
+    participant_count: int
+    team_a: list[TeamPlayer]
+    team_b: list[TeamPlayer]
+    average_a: float
+    average_b: float
+
+
+class PreliminaryTeamsInput(Input):
+    roster_token: str = Field(min_length=64, max_length=64)
+    revision: int = Field(ge=0)
+    mode: Literal["balanced", "random", "manual"]
+    team_a: list[UUID] = Field(default_factory=list, max_length=7)
+    team_b: list[UUID] = Field(default_factory=list, max_length=7)

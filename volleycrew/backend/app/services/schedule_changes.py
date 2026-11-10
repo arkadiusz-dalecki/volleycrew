@@ -352,6 +352,7 @@ async def preview(db, body, clock):
                 status=row.status,
                 kept_exception=row.is_exception,
                 reconfirmation_count=count,
+                deleted=row.deleted_at is not None,
             )
         )
     for index, item in enumerate(planned):
@@ -549,12 +550,21 @@ async def apply(db, body, actor_id, clock):
     await db.flush()
     dates = {identifier: day for day, identifier in bindings.items()}
     for item in shown.existing:
-        row = await enrollment.lock_meeting(db, item.id)
+        row = (
+            await db.get(Meeting, item.id)
+            if item.deleted
+            else await enrollment.lock_meeting(db, item.id)
+        )
         row.calendar_schedule_id, row.calendar_source_date = new.id, dates[row.id]
-        if not item.kept_exception and (row.starts_at, row.ends_at, row.venue) != (
-            item.starts_at,
-            item.ends_at,
-            body.venue,
+        if (
+            not row.deleted_at
+            and not item.kept_exception
+            and (row.starts_at, row.ends_at, row.venue)
+            != (
+                item.starts_at,
+                item.ends_at,
+                body.venue,
+            )
         ):
             await change_term(db, row, item.starts_at, item.ends_at, actor_id, at, venue=body.venue)
     state.version += 1
@@ -645,3 +655,26 @@ async def create_meeting(db, body, actor_id, clock):
     audit(db, actor_id, "create_meeting", row.id, at)
     await db.flush()
     return row
+
+
+async def delete_meeting(db, meeting_id, body, actor_id, clock):
+    await state_lock(db)
+    row = await enrollment.lock_meeting(db, meeting_id)
+    at = enrollment.current_time(clock)
+    if row.version != body.expected_version:
+        conflict()
+    await hide_meeting(db, row, actor_id, at)
+    state = await db.get(ScheduleState, 1)
+    state.version += 1
+
+
+async def hide_meeting(db, row, actor_id, at):
+    if row.deleted_at:
+        return
+    if row.status != "cancelled":
+        check_future(row, row.version, at)
+        await change_term(db, row, row.starts_at, row.ends_at, actor_id, at, cancel=True)
+    else:
+        row.version += 1
+    row.deleted_at = at
+    audit(db, actor_id, "delete_meeting", row.id, at)

@@ -176,7 +176,7 @@ async def calculate_candidate(db, meeting, body, correction):
 async def preview(db, meeting_id, body, correction=False):
     state = await state_lock(db)
     meeting = await db.get(Meeting, meeting_id)
-    if not meeting:
+    if not meeting or meeting.deleted_at:
         raise DomainError(404, "not_found", "Nie znaleziono spotkania.")
     if meeting.version != body.expected_version:
         raise DomainError(409, "version_conflict", "Spotkanie się zmieniło. Wczytaj aktualne dane.")

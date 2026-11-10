@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.3.2
+
+- Show preliminary ELO-balanced teams from confirmed enrollments before attendance, with shared administrator random/manual overrides and automatic resets when declarations change.
+- Allow using the preliminary split after attendance confirmation; rebalance actual participants when the roster differs.
+- Add migration 0010 for preliminary team overrides.
+- Add a calendar picker to meeting details and calendar cards for individual events. Support Google Calendar, Outlook, Apple Calendar, and other compatible apps.
+- Delete individual meetings, including cancelled entries, without regenerating them from recurring schedules.
+- Edit or remove existing recurring series from the calendar, with previews, enrollment protection, and preserved game history.
+- Print signature sheets before a meeting from confirmed enrollments; use actual attendance once confirmed.
+- Clarify the signup action as “Potwierdzam obecność”.
+- Add migration 0009 for hidden deleted-occurrence markers. Back up before updating.
+
 ## 0.3.1
 
 - Fix mobile calendar forms, including date and time inputs overflowing their card in Safari.

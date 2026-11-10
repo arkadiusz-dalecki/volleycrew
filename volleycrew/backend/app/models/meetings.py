@@ -61,6 +61,7 @@ class Meeting(Base):
     calendar_source_date: Mapped[date] = mapped_column(Date)
     is_additional: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     is_exception: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     previous_starts_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     previous_ends_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     status: Mapped[str] = mapped_column(String(24), default="scheduled", server_default="scheduled")

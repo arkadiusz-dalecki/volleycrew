@@ -7,6 +7,7 @@ from app.api.errors import ApiError
 from app.api.meeting_schemas import MeetingDetail
 from app.api.schedule_schemas import (
     ApplySchedule,
+    ApplySeriesRemoval,
     CreateMeetingInput,
     MeetingVersionInput,
     ReleaseReservation,
@@ -14,8 +15,9 @@ from app.api.schedule_schemas import (
     ScheduleInput,
     SchedulePreview,
     ScheduleSettings,
+    SeriesChangePreview,
 )
-from app.services import meetings
+from app.services import meetings, series
 from app.services import schedule_changes as service
 
 router = APIRouter(
@@ -97,3 +99,57 @@ async def create_meeting(body: CreateMeetingInput, actor: Admin, db: DB, request
     view = await meetings.detail(db, row)
     await db.commit()
     return view
+
+
+@router.post("/admin/meetings/{meeting_id}/delete", status_code=204, operation_id="deleteMeeting")
+async def delete_meeting(
+    meeting_id: UUID, body: MeetingVersionInput, actor: Admin, db: DB, request: Request
+):
+    await service.delete_meeting(db, meeting_id, body, actor.id, request.app.state.clock)
+    await db.commit()
+
+
+@router.post(
+    "/admin/schedule/rules/{rule_id}/preview",
+    response_model=SeriesChangePreview,
+    operation_id="previewSeriesEdit",
+)
+async def preview_series_edit(
+    rule_id: UUID, body: ScheduleInput, _actor: Admin, db: DB, request: Request
+):
+    return await series.preview(db, rule_id, body, request.app.state.clock)
+
+
+@router.post(
+    "/admin/schedule/rules/{rule_id}/edit",
+    response_model=ScheduleSettings,
+    operation_id="editSeries",
+)
+async def edit_series(rule_id: UUID, body: ApplySchedule, actor: Admin, db: DB, request: Request):
+    result = await series.apply(db, rule_id, body, actor.id, request.app.state.clock)
+    await db.commit()
+    return result
+
+
+@router.post(
+    "/admin/schedule/rules/{rule_id}/delete-preview",
+    response_model=SeriesChangePreview,
+    operation_id="previewSeriesDeletion",
+)
+async def preview_series_deletion(
+    rule_id: UUID, body: MeetingVersionInput, _actor: Admin, db: DB, request: Request
+):
+    return await series.preview(db, rule_id, body, request.app.state.clock, remove=True)
+
+
+@router.post(
+    "/admin/schedule/rules/{rule_id}/delete",
+    response_model=ScheduleSettings,
+    operation_id="deleteSeries",
+)
+async def delete_series(
+    rule_id: UUID, body: ApplySeriesRemoval, actor: Admin, db: DB, request: Request
+):
+    result = await series.apply(db, rule_id, body, actor.id, request.app.state.clock, remove=True)
+    await db.commit()
+    return result

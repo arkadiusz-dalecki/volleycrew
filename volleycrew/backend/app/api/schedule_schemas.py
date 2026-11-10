@@ -47,6 +47,7 @@ class PlannedMeeting(BaseModel):
     status: str
     kept_exception: bool
     reconfirmation_count: int
+    deleted: bool = False
 
 
 class SchedulePreview(BaseModel):
@@ -77,3 +78,16 @@ class MeetingVersionInput(Input):
 
 class ReleaseReservation(MeetingVersionInput):
     player_id: UUID
+
+
+class SeriesChangePreview(BaseModel):
+    version: int
+    preview_token: str
+    affected_count: int
+    removed_count: int
+    reconfirmation_count: int
+    kept_exception_count: int
+
+
+class ApplySeriesRemoval(MeetingVersionInput):
+    preview_token: str = Field(min_length=64, max_length=64)

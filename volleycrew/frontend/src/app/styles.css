@@ -2603,3 +2603,62 @@ select {
     white-space: normal;
   }
 }
+
+.series-manager {
+  margin-block: 24px;
+}
+.series-manager > h2 {
+  margin-bottom: 16px;
+}
+.series-list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+}
+.series-list .form-note {
+  margin-bottom: 12px;
+}
+.series-list .row-actions {
+  flex-wrap: wrap;
+}
+
+.meeting-calendar {
+  padding-inline: 28px;
+  margin-block: 0 18px;
+}
+.meeting-calendar:empty {
+  display: none;
+}
+.calendar-providers {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+  margin-block: 20px;
+}
+.calendar-providers .button {
+  width: 100%;
+  justify-content: flex-start;
+  text-decoration: none;
+}
+@media (max-width: 700px) {
+  .meeting-calendar {
+    padding-inline: 20px;
+  }
+}
+
+.agenda-calendar {
+  flex: 1 0 100%;
+  min-width: 0;
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+.agenda-calendar:empty {
+  display: none;
+}
+@media (max-width: 700px) {
+  .agenda-calendar > .button {
+    width: 100%;
+  }
+}

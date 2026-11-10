@@ -10,7 +10,7 @@ Podane propozycje nie są zatwierdzonymi regułami. Agent może implementować n
 | D4 | Zatwierdzone 2026-11-06: każda zmiana terminu wymaga nowego potwierdzenia, przy zachowaniu pierwotnej kolejności i rezerwacji miejsc. Miejsca zwalnia administrator ręcznie, bez timeoutu. Obejmuje to propozycje z rezerwy; stare oferty i potwierdzenia są nieaktualne, przyjęcie wymaga akceptacji nowego terminu. Reguły w domain-api.md. | Rozstrzygnięte |
 | D5 | Zatwierdzone 2026-11-06: korekty i usprawiedliwienia z obowiązkowym powodem oraz prywatnym audytem bez kasowania wpisu źródłowego; spóźniony jest obecny bez osobnej kary. Administrator dopisuje osobę bez deklaracji z istniejącego, niezablokowanego profilu tylko przy wolnym, niezarezerwowanym miejscu i limicie 14. Reguły w domain-api.md. | Rozstrzygnięte |
 | D6 | Zatwierdzone 2026-11-06: blokada unieważnia sesje, blokuje logowanie, zwalnia przyszłe miejsca i rezerwacje, zamyka oferty; historia i wyniki pozostają. Reguła w domain-api.md. Zatwierdzono też przydomek odróżniający identyczne imiona/nazwiska; wydruk szkolny zawiera tylko imię i nazwisko. Przydomek ustawia i zmienia sam zawodnik w profilu (zatwierdzone 2026-11-06). Przed logowaniem lista profili pokazuje imię, pierwszą i ostatnią literę nazwiska oraz gwiazdki zamiast środka; wybór profilu i sześciocyfrowy PIN. Reguły i projekcja API w domain-api.md. | Rozstrzygnięte |
-| D7 | Zatwierdzone 2026-11-06: PDF z faktycznie obecnych, generowany po sprawdzeniu obecności, z możliwością ponownego wygenerowania po poprawkach. Dane i pola dokumentu w domain-api.md. | Rozstrzygnięte |
+| D7 | Zmienione 2026-11-08 na polecenie użytkownika: PDF z potwierdzonych zapisów dostępny przed spotkaniem do wydruku w domu; po zatwierdzeniu obecności z faktycznie obecnych. Bez rezerwy/ofert/oczekujących, bez wpływu wydruku na obecność. | Rozstrzygnięte; szczegóły poniżej |
 | D8 | Zatwierdzone 2026-11-06/07: K=32, skala oczekiwań 400, bez pośredniego zaokrąglania, prezentacja do 1 miejsca; 0:0 bez ELO; korekty wyniku, historycznej obecności i składów z powodem oraz pełnym przeliczeniem. Kolejność według chwili startu i stałego ID. | Rozstrzygnięte; szczegóły poniżej i w domain-api.md |
 | D9 | Akceptacja zakresu pierwszej wersji z README i kryteriów wydania; horyzont wsparcia, oczekiwany backup i dopuszczalna utrata danych. | Ostateczny odbiór E11 |
 | D10 | Zatwierdzone 2026-11-06: jak w maybe-finance — repozytorium aplikacji HA, lokalny build przez Supervisor z Dockerfile (od 0.1.1 bez przestarzałego build.yaml; poprawka zgodności po próbie HA 2026-11-08), ręczne instalacje/aktualizacje po zmianie wersji config.yaml. Bez wymaganej publikacji własnych gotowych obrazów GHCR. Referencja potwierdzona odczytem manifestów i Dockerfile. | Rozstrzygnięte |
@@ -63,3 +63,33 @@ Użytkownik zlecił wyeksponowanie daty spotkania, stałe wyświetlanie najbliż
 ## Poprawki mobilne, logowanie i podgląd administratora — 2026-11-08
 
 Użytkownik zlecił poprawę formularza pojedynczego spotkania na telefonie, usunięcie podpisu pod „Najbliższe spotkanie”, rozwijaną listę logowania z domyślnym „Wybierz użytkownika” i zapamiętaniem ostatnio zalogowanego profilu oraz przełącznik użytkownik/administrator. Podgląd działa na własnym koncie administratora, bez podszywania się pod innego gracza i bez zmiany uprawnień API. Użytkownik zlecił również przycisk instalacji na iOS/Android. Android korzysta z dostępnego systemowego promptu, iOS z instrukcji dodania przez menu Safari, zgodnie z ograniczeniami platformy.
+
+## Usuwanie spotkań i zarządzanie istniejącymi seriami — 2026-11-08
+
+Użytkownik zlecił usuwanie wydarzeń bez pozostawiania ich jako odwołanych oraz edycję/usuwanie istniejących serii, w tym domyślnej wtorkowej na produkcji. Usunięty termin znika z kalendarza, najbliższego spotkania i bezpośrednich wejść; jego wystąpienie nie odradza się z reguły tygodniowej. Usuwanie serii obejmuje przyszłą część wskazanej reguły, również utrwalone i przesunięte terminy należące do niej; niezależne spotkania i rozegrana historia pozostają. Edycja wskazanej serii zmienia jej przyszłą część, zachowuje ID spotkań i reguły ponownego potwierdzania, a skrócenie zakresu usuwa wypadające terminy z widoku. Przed zmianą/usunięciem serii użytkownik widzi podgląd skutków; wersje chronią przed zmianami z drugiej karty. Nie wykonujemy zmian w produkcyjnej bazie.
+
+## Lista podpisów przed wyjściem z domu — 2026-11-08
+
+Użytkownik zmienił D7: potrzebuje wydrukować listę przed spotkaniem, a podpisy zebrać na sali. Przed zatwierdzeniem faktycznej obecności generujemy PDF z aktualnych potwierdzonych miejsc (bez rezerwy, rezerwacji ofert i oczekujących na ponowne potwierdzenie). Po zatwierdzeniu obecności źródłem są obecni. UI jasno podaje źródło, pobranie zawsze odczytuje aktualny stan. Sam wydruk nie zatwierdza obecności i nie wpływa na historię/ELO. Zastępuje wcześniejszą blokadę eksportu do zatwierdzenia obecności.
+
+## Dodanie terminu do osobistego kalendarza — 2026-11-08
+
+Użytkownik zlecił wybór aplikacji po kliknięciu „Dodaj do kalendarza”. Menu obejmuje Google Calendar, Outlook.com, Outlook Microsoft 365, Apple Calendar oraz inne aplikacje przyjmujące plik iCalendar. To eksport jednego terminu, z aktualnymi godzinami i miejscem, bez uczestników, sesji ani linku Ingress. Google/Outlook otwierają formularz do samodzielnego zapisania, Apple/inne pobierają `.ics`. Zmiany i odwołania w Volleycrew nie synchronizują automatycznie osobistego wpisu. Nie zapisujemy wydarzeń przez podłączone konto użytkownika ani nie wysyłamy zaproszeń.
+
+## Kalendarz: eksport z kafelków i wielu terminów — 2026-11-09
+
+Użytkownik zlecił tę samą opcję na kafelkach listy kalendarza oraz dodanie wielu spotkań naraz. Nad listą jest „Dodaj wiele spotkań do kalendarza” z wyborem wyświetlanego miesiąca albo najbliższych 12 miesięcy. Eksport zbiorczy pobiera aktualny zakres z API, pomija odwołane/zakończone/minione/usunięte wpisy i tworzy jeden plik ICS z osobnymi VEVENT. Import obsługują Google/Outlook/Apple i inne aplikacje; nie otwieramy kilkudziesięciu formularzy ani nie tworzymy nieskończonej serii ignorującej wyjątki. To jednorazowy import bez automatycznej synchronizacji.
+
+
+## Wycofanie eksportu zbiorczego — 2026-11-09
+
+Użytkownik zrezygnował z masowego przenoszenia spotkań do osobistego kalendarza. Zastępuje to powyższe zlecenie miesiąca/12 miesięcy: usuwamy funkcję zbiorczą i jej kod. Zachowujemy wybór aplikacji dla jednego spotkania na kafelkach oraz w szczegółach. Migracja bazy 0009 dotycząca usuwania spotkań i funkcje zarządzania seriami nie należą do wycofanego eksportu.
+
+## Wstępne boisko przed obecnością — 2026-11-09
+
+Użytkownik zlecił boisko przed sprawdzeniem obecności, przeliczane po zapisach/rezygnacjach, domyślnie według ELO, z możliwością innego podziału przez administratora. Źródłem wstępnych składów są wyłącznie osoby z aktualnym potwierdzonym miejscem (bez rezerwy, ofert i oczekujących na ponowne potwierdzenie). Podgląd jest widoczny całej ekipie i nie potwierdza obecności ani nie wpływa na wynik/ELO. Domyślny podział jest deterministyczny i wyrównany według bieżącego ELO. Ręczny/losowy podział administratora jest zapisany dla danej listy; zmiana osób, kolejności ponownego zapisu, terminu lub ELO unieważnia go i przywraca aktualny podział ELO. Po obecności administrator może jawnie użyć wstępnego podziału; przy różnicy osób generujemy wyrównany podział faktycznie obecnych.
+
+
+## Etykieta deklaracji udziału — 2026-11-09
+
+Na prośbę użytkownika przycisk „Będę” zmieniono na „Potwierdzam obecność”. To nadal deklaracja udziału przed spotkaniem; faktyczną obecność zatwierdza osobno administrator.
