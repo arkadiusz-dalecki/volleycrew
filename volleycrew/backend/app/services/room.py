@@ -406,7 +406,12 @@ async def generate(db, meeting, mode, actor_id, at, random_source=None):
 
     ratings = await current_ratings(db, ids)
     try:
-        a, b = split_teams(ratings, mode, random_source)
+        if mode == "preliminary":
+            from app.services.preliminary_teams import for_present
+
+            a, b, mode = await for_present(db, meeting, ids, ratings)
+        else:
+            a, b = split_teams(ratings, mode, random_source)
     except ValueError as exc:
         raise DomainError(
             422, "invalid_team_size", "Do podziału potrzeba od 2 do 14 obecnych osób."

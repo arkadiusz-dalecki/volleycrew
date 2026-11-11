@@ -177,7 +177,7 @@ function RoomEditor({
     setTeamEdit({ version: teamEdit?.version ?? attendance.version, a, b });
     setSelected("");
   }
-  function generate(mode: "random" | "balanced") {
+  function generate(mode: "random" | "balanced" | "preliminary") {
     void action.run(
       async (key) =>
         unwrap(
@@ -739,6 +739,13 @@ function RoomEditor({
                 podziału.
               </p>
               <div className="room-actions">
+                <button
+                  className="button primary"
+                  disabled={locked || !!teamEdit}
+                  onClick={() => generate("preliminary")}
+                >
+                  Użyj wstępnego podziału
+                </button>
                 <button
                   className="button"
                   disabled={locked || !!teamEdit}

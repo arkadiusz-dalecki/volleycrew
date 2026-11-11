@@ -81,7 +81,7 @@ async def correct(
 async def view(db, meeting_id, private=False):
     state = await results.state_lock(db)
     meeting = await db.get(Meeting, meeting_id)
-    if not meeting:
+    if not meeting or meeting.deleted_at:
         raise DomainError(404, "not_found", "Nie znaleziono spotkania.")
     return await results.result_view(db, meeting, state, private=private)
 

@@ -1,3 +1,5 @@
+import { PreliminaryCourt } from "../room/PreliminaryCourt";
+import { AddToCalendar } from "./AddToCalendar";
 import { useAdminView } from "../auth/ViewMode";
 import { ResultCard } from "../results/ResultCard";
 import { RoomPanel } from "../room/RoomPanel";
@@ -204,7 +206,14 @@ export function MeetingPage() {
                 ) : (
                   <ParticipationCard key={item.id} meeting={item} />
                 )}
+                <AddToCalendar meeting={item} />
               </section>
+              {item.status === "scheduled" && (
+                <PreliminaryCourt
+                  key={`preliminary-${item.id}`}
+                  meeting={item}
+                />
+              )}
               {adminView && item.persisted && item.status === "scheduled" && (
                 <OfferManager
                   meetingId={item.id}

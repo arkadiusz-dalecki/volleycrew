@@ -21,6 +21,7 @@ from sqlalchemy import select
 
 from app.api.errors import DomainError
 from app.models.auth import Player
+from app.models.meetings import Enrollment
 from app.models.room import Attendance
 from app.services.enrollment import lock_meeting
 
@@ -32,6 +33,8 @@ class SignatureList:
     timezone: str
     attendance_revision: int
     names: tuple[str, ...]
+    basis: str = "attendance"
+    meeting_version: int = 0
 
     @property
     def local_start(self):
@@ -47,19 +50,27 @@ async def snapshot(db, meeting_id):
     meeting = await lock_meeting(db, meeting_id)
     if meeting.status == "cancelled":
         raise DomainError(409, "meeting_cancelled", "Odwołane spotkanie nie ma listy podpisów.")
-    if not meeting.attendance_confirmed_at or meeting.status not in {
-        "attendance_checked",
-        "teams_confirmed",
-        "completed",
-    }:
-        raise DomainError(409, "attendance_required", "Najpierw zatwierdź faktyczną obecność.")
-    rows = (
-        await db.execute(
+    confirmed = meeting.attendance_confirmed_at is not None
+    if confirmed:
+        query = (
             select(Player.first_name, Player.last_name, Player.id)
             .join(Attendance, Attendance.player_id == Player.id)
             .where(Attendance.meeting_id == meeting.id, Attendance.confirmed_state == "present")
         )
-    ).all()
+    else:
+        query = (
+            select(Player.first_name, Player.last_name, Player.id)
+            .join(Enrollment, Enrollment.player_id == Player.id)
+            .where(
+                Enrollment.meeting_id == meeting.id,
+                Enrollment.declaration == "going",
+                Enrollment.allocation == "seat",
+                Enrollment.confirmed_term_version == meeting.term_version,
+                Enrollment.reconfirmation_required.is_(False),
+                Player.is_active.is_(True),
+            )
+        )
+    rows = (await db.execute(query)).all()
     # Full names, including blocked historical profiles. Never nickname/priority/history.
     rows = sorted(rows, key=lambda p: (p.last_name.casefold(), p.first_name.casefold(), str(p.id)))
     result = SignatureList(
@@ -68,6 +79,8 @@ async def snapshot(db, meeting_id):
         meeting.timezone,
         meeting.attendance_revision,
         tuple(f"{p.first_name} {p.last_name}" for p in rows),
+        "attendance" if confirmed else "enrollments",
+        meeting.version,
     )
     await db.commit()  # Release the roster lock before CPU work; no domain mutation.
     return result
@@ -146,7 +159,14 @@ def _render_pdf(source: SignatureList) -> bytes:
         )
         story.append(table)
     else:
-        story.append(Paragraph("Brak potwierdzonych obecnych osób.", body))
+        story.append(
+            Paragraph(
+                "Brak potwierdzonych obecnych osób."
+                if source.basis == "attendance"
+                else "Brak osób z potwierdzonym miejscem.",
+                body,
+            )
+        )
 
     def footer(canvas, doc):
         canvas.saveState()

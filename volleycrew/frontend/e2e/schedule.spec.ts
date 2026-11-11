@@ -25,7 +25,9 @@ test("single exception, schedule preview, reconfirmation, stale organizer tab an
     .getByRole("button", { name: /^Otwórz spotkanie:/ })
     .first()
     .click();
-  await page.getByRole("button", { name: "Będę", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Potwierdzam obecność", exact: true })
+    .click();
   await expect(
     page.getByRole("heading", { name: "Masz miejsce na boisku" }),
   ).toBeVisible();
@@ -67,7 +69,9 @@ test("single exception, schedule preview, reconfirmation, stale organizer tab an
     .getByRole("button", { name: /^Otwórz spotkanie:/ })
     .nth(1)
     .click();
-  await page.getByRole("button", { name: "Będę", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Potwierdzam obecność", exact: true })
+    .click();
   await expect(
     page.getByRole("heading", { name: "Masz miejsce na boisku" }),
   ).toBeVisible();

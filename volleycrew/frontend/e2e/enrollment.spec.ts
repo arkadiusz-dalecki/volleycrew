@@ -34,7 +34,9 @@ test("distant signup, reserve, organizer proposal and explicit acceptance on ano
     })
     .click();
   await expect(page).toHaveURL(new RegExp(`/meetings/${id}$`));
-  await page.getByRole("button", { name: "Będę", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Potwierdzam obecność", exact: true })
+    .click();
   await expect(
     page.getByRole("heading", { name: "Jesteś na rezerwie · miejsce 1" }),
   ).toBeVisible();

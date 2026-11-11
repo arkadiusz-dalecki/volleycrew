@@ -7,7 +7,7 @@
 - Daty zdarzeń przechowuj jako świadome strefowo chwile UTC. Reguła powtarzalności zawiera lokalną godzinę i strefę IANA. Kolejny termin wyliczaj w strefie reguły, nie przez dodawanie 168 godzin UTC.
 - Granica rezygnacji i ochrony miejsc wynosi dokładnie 24 godziny przed konkretnym startem. `now < starts_at - 24h` oznacza okres wcześniejszy, `now >= starts_at - 24h` okres chroniony. Zwykła rezygnacja dokładnie na granicy nie jest późna; późna jest dopiero po granicy. Zegar serwera jest źródłem prawdy, w testach wstrzykiwany.
 - „Nie będę”, rezerwa, oczekiwanie na ponowne potwierdzenie i odmowa oferty nie oznaczają nieobecności bez odwołania.
-- Zapisany uczestnik jest kimś innym niż osoba faktycznie obecna. Tylko faktycznie obecni mogą wejść do składów i ELO.
+- Zapisany uczestnik jest kimś innym niż osoba faktycznie obecna. Tylko faktycznie obecni mogą wejść do oficjalnych składów i ELO. Wstępne boisko z deklaracji jest osobnym podglądem bez skutków w obecności i rankingu.
 
 ## Model danych
 
@@ -75,7 +75,7 @@ No-show powstaje po świadomym zatwierdzeniu obecności przez administratora, ni
 
 ## Drużyny i ELO
 
-Losowanie działa na rzeczywiście obecnych. Tryb wyrównany minimalizuje różnicę średnich ELO przy różnicy liczebności najwyżej 1 i maksymalnie 7 na stronę. Przy 14 osobach można deterministycznie przejrzeć kombinacje z usunięciem symetrii A/B. Ustalić jawny tie-break w kodzie. Administrator może zmienić składy; każda osoba dokładnie raz, nikt nieobecny nie może zostać dodany ukrytą zmianą UI.
+Losowanie oficjalnych drużyn działa na rzeczywiście obecnych. Tryb wyrównany minimalizuje różnicę średnich ELO przy różnicy liczebności najwyżej 1 i maksymalnie 7 na stronę. Przy 14 osobach można deterministycznie przejrzeć kombinacje z usunięciem symetrii A/B. Ustalić jawny tie-break w kodzie. Administrator może zmienić składy; każda osoba dokładnie raz, nikt nieobecny nie może zostać dodany ukrytą zmianą UI.
 
 Schemat boiska pokazuje sześć osób i ewentualną siódmą do rotacji. Nie zapisujemy czasu gry, pozycji ani zmian w setach. Cały zatwierdzony skład otrzymuje zmianę rankingową.
 
@@ -101,7 +101,7 @@ Administrator może skorygować wynik z obowiązkowym powodem. Poprzedni wynik p
 
 ## Lista podpisów dla szkoły
 
-Administrator generuje PDF po sprawdzeniu i zatwierdzeniu faktycznej obecności. Źródłem są osoby oznaczone jako obecne, a nie deklaracje „będę” ani lista rezerwowa. Po poprawieniu obecności można wygenerować nowy PDF z aktualnego stanu. Zatwierdzone 2026-11-06 (D7).
+Administrator może wygenerować PDF przed spotkaniem z aktualnych potwierdzonych zapisów, aby wydrukować go przed wyjściem z domu. Po zatwierdzeniu faktycznej obecności źródłem są osoby oznaczone jako obecne. Rezerwa i oczekujące rezerwacje nie trafiają do PDF. Po zmianie zapisów lub obecności można pobrać nowy dokument. D7 zaktualizowane na polecenie użytkownika 2026-11-08.
 
 Dokument: data spotkania, I LO w Gdańsku, tabela z numerem porządkowym, pełnym imieniem i nazwiskiem oraz pustym miejscem na podpis. Bez przydomków, statusów, ELO i prywatnej historii. Układ A4 jest techniczną bazą projektu wydruku. Eksport nie zmienia obecności, nie zatwierdza meczu i nie aktualizuje rankingu.
 
@@ -135,7 +135,7 @@ W tym dokumencie „publiczne” oznacza widoczne dla zalogowanej grupy. Kalenda
 | Drużyny | `POST /admin/meetings/{id}/teams/generate` z trybem; `PUT /admin/meetings/{id}/teams`; `POST /admin/meetings/{id}/teams/confirm` |
 | Wynik | `PUT /admin/meetings/{id}/result`; korekta osobnym endpointem po D8 z powodem i oczekiwaną wersją |
 | Ranking | `GET /ranking`; `GET /results` z paginacją; `GET /results/{id}` z zatwierdzonym składem i zmianami ELO |
-| Dokument | `GET /admin/meetings/{id}/signature-list` zwraca PDF faktycznie obecnych po zatwierdzeniu obecności (D7) |
+| Dokument | `GET /admin/meetings/{id}/signature-list` zwraca PDF potwierdzonych zapisów przed zatwierdzeniem obecności, później faktycznie obecnych (D7) |
 | Stan usług | `/health/live`, `/health/ready`; bez sekretów i szczegółów infrastruktury |
 
 Katalog `/auth/profiles` nie używa DTO gracza dostępnego dla zalogowanej grupy. Nazwisko maskuje backend; pełne nazwisko nie trafia do JSON, HTML, atrybutów, etykiet dostępności ani ukrytych pól listy logowania. Profile zablokowane nie są oferowane do logowania. Obsłużyć polskie znaki i nazwiska jedno-/dwuliterowe bez błędu indeksowania; maskowanie dotyczy znaków, nie bajtów. Maskowana etykieta nie jest unikalnym kluczem: logowanie przesyła ID wybranego profilu i PIN.
@@ -212,11 +212,11 @@ Każda mutacja E6 wymaga administratora, CSRF, `expected_version` spotkania i UU
 
 ## Lista podpisów — implementacja E7
 
-`GET /api/v1/admin/meetings/{id}/signature-list` zwraca `application/pdf`. Domyślnie `Content-Disposition: inline`; opcjonalne `?download=true` ustawia `attachment` i nazwę `lista-podpisow-YYYY-MM-DD.pdf`, z datą spotkania w jego strefie. Odczyt wymaga sesji i rzeczywistej roli administratora. Brak obiektu daje 404, brak zatwierdzonej obecności lub odwołanie — 409. Nie ma eksportu deklaracji ani listy rezerwowej.
+`GET /api/v1/admin/meetings/{id}/signature-list` zwraca `application/pdf`. Domyślnie `Content-Disposition: inline`; opcjonalne `?download=true` ustawia `attachment` i nazwę `lista-podpisow-YYYY-MM-DD.pdf`, z datą spotkania w jego strefie. Odczyt wymaga sesji i rzeczywistej roli administratora. Brak lub usunięcie obiektu daje 404, odwołanie — 409. Przed zatwierdzeniem obecności drukujemy potwierdzone miejsca; lista rezerwowa nie jest eksportowana.
 
-Źródłem są wyłącznie rekordy `Attendance.confirmed_state=present`, również dla historycznego profilu zablokowanego po spotkaniu. Jedna blokada Meeting, wspólna z korektami i dopisywaniem, pozwala pobrać spójną rewizję obecności i jej nazwiska. Następnie blokada jest zwalniana, a PDF powstaje w puli wątków z niezmiennego snapshotu. Odczyt nie zmienia obecności, wersji spotkania, drużyn ani rankingu. Każde nowe żądanie pobiera aktualny stan. Nagłówek `X-Attendance-Revision` identyfikuje rewizję dokumentu, a `Cache-Control: no-store` wyklucza cache HTTP.
+Po zatwierdzeniu obecności źródłem są rekordy `Attendance.confirmed_state=present`, również dla historycznego profilu zablokowanego po spotkaniu. Wcześniej źródłem są aktywne potwierdzone miejsca `Enrollment` dla aktualnej wersji terminu. Jedna blokada Meeting, wspólna z korektami i dopisywaniem, pozwala pobrać spójną rewizję obecności i jej nazwiska. Następnie blokada jest zwalniana, a PDF powstaje w puli wątków z niezmiennego snapshotu. Odczyt nie zmienia obecności, wersji spotkania, drużyn ani rankingu. Każde nowe żądanie pobiera aktualny stan. Nagłówek `X-Attendance-Revision` identyfikuje rewizję dokumentu, a `Cache-Control: no-store` wyklucza cache HTTP.
 
-PDF zawiera datę i godziny lokalne spotkania, I LO w Gdańsku, liczbę faktycznie obecnych oraz tabelę: Lp., imię i nazwisko, podpis. Kolejność według nazwiska, imienia i ID, bez ujawniania ID na wydruku. Nie zawiera przydomków, statusów, punktów ani historii/korekt. Puste miejsca na podpis są przeznaczone do podpisu odręcznego; nie jest to formularz elektronicznego podpisu.
+PDF zawiera datę i godziny lokalne spotkania, I LO w Gdańsku, liczbę osób na liście oraz tabelę: Lp., imię i nazwisko, podpis. Kolejność według nazwiska, imienia i ID, bez ujawniania ID na wydruku. Nie zawiera przydomków, statusów, punktów ani historii/korekt. Puste miejsca na podpis są przeznaczone do podpisu odręcznego; nie jest to formularz elektronicznego podpisu.
 
 Format A4, font Noto Sans osadzony w pliku, odstęp wierszy co najmniej 14 mm. Zwykła lista 14 osób, również z długim polskim nazwiskiem, mieści się na jednej stronie. Dla skrajnych, wielowierszowych nazw dozwolonych przez limit profilu tabela przechodzi na kolejną stronę A4, powtarza nagłówek i nie ucina nazwisk ani wierszy. Brak obecnych daje jawny komunikat i zero pozycji. Fonty z licencją OFL są dostarczane z backendem; generowanie nie łączy się z zewnętrznym serwisem i nie tworzy trwałego archiwum dokumentów.
 
@@ -252,3 +252,23 @@ Endpointy E8, prefiks `/api/v1`:
 `ScheduleInput.effective_until` jest opcjonalną, wyłączną datą końca serii. Zakres musi zawierać wybrany dzień tygodnia. Podgląd i zapis obejmują ten sam zakres, zachowują stabilne ID, odwołania i indywidualne wyjątki. Przy ograniczonej serii wcześniejsze reguły po końcu zakresu są zachowane; utrwalone późniejsze spotkania otrzymują powiązanie z zachowaną regułą, bez zmiany terminu ani zapisów.
 
 `POST /admin/meetings` przyjmuje wersję harmonogramu, lokalną datę/godzinę, czas gry i miejsce. Tylko administrator może utworzyć dodatkowy, przyszły termin. Operacja pod blokadą ScheduleState odrzuca kolizje z zapisanymi i wyliczanymi terminami, zwiększa wersję harmonogramu i zapisuje audyt. `Meeting.is_additional` odróżnia dodatkowy termin od wystąpienia zmienianego harmonogramu. Jego źródłowa reguła jest nieaktywna (superseded), a rekord Meeting jest od razu trwały; zmiana serii nie przesuwa dodatkowego spotkania. Dodany termin podlega zwykłym deklaracjom, przesunięciom, odwołaniu, obecności i wynikom. Migracja 0008 zachowuje wszystkie dotychczasowe rekordy jako wystąpienia harmonogramu.
+
+## Uzupełnienie: usuwanie spotkań, edycja serii i wydruk przed spotkaniem (2026-11-08)
+
+Administrator może usunąć przyszłe nierozpoczęte lub odwołane spotkanie. Usunięty termin nie pojawia się w kalendarzu/next, nie otwiera się przez stary URL/API ani nie odtwarza przy rozwiązywaniu wystąpienia. W bazie zachowujemy niewidoczny znacznik wystąpienia (`deleted_at`), tożsamość oraz audyt; zamykamy miejsca/oferty bez oznaczania nieobecności. Historia rozegranych/obsługiwanych meczów jest chroniona. Usunięcie odwołanego terminu jest dostępne także po jego dacie. Zmiana harmonogramu przenosi znaczniki usunięcia do nowej reguły, dzięki czemu nie przywraca ich przypadkiem.
+
+Administracyjne `/schedule/rules/{id}/preview` oraz `/edit` edytują wskazaną istniejącą regułę, również domyślną wtorkową. Obowiązuje wersja harmonogramu i token podglądu zawierający wersje wszystkich dotkniętych spotkań. Zmieniamy przyszłą część wskazanej reguły; zachowana przeszła część nie generuje nowych terminów. Zmiana dnia/godziny/miejsca wymaga ponownego potwierdzenia jak w D4, zachowuje ID i kolejność. Indywidualne terminy wewnątrz nowego zakresu pozostają wyjątkami. Spotkania poza nowym zakresem znikają z kalendarza. Inne aktywne reguły i dodatkowe pojedyncze terminy nie są nadpisywane; konflikt zakresów lub godzin jest odrzucany.
+
+`/schedule/rules/{id}/delete-preview` oraz `/delete` usuwają przyszłą część serii i jej przyszłe utrwalone terminy (także indywidualne przesunięcia). Zachowujemy przeszłe/rozegrane spotkania, niezależne pojedyncze terminy i pozostałe reguły. Reguła nie zostaje zastąpiona wcześniejszym domyślnym wtorkiem: w usuniętym zakresie kalendarz jest pusty. Zmiana jest atomowa, pod wspólną blokadą ScheduleState i Meeting.
+
+Lista podpisów jest dostępna administratorowi także przed spotkaniem. Gdy faktyczna obecność nie jest zatwierdzona, źródłem są `going/seat` z aktualną wersją terminu, bez oczekiwania na ponowne potwierdzenie i z aktywnego profilu. Rezerwa i zarezerwowane/pending oferty są wykluczone. Szkic obecności nie zmienia tej listy. Po zatwierdzeniu obecności źródłem są wyłącznie faktycznie obecni. Nagłówki `X-List-Basis` i `X-Meeting-Version` opisują źródło/świeżość; UI informuje o podstawie i zmianie danych po podglądzie. Pobranie zawsze generuje aktualny dokument. Eksport nie mutuje wersji spotkania, deklaracji ani obecności. Odwołany/usunięty termin nie ma eksportu.
+
+## Wstępne drużyny z zapisów (2026-11-09)
+
+Przed zatwierdzeniem obecności zaplanowane spotkanie pokazuje podział potwierdzonych miejsc według bieżącego ELO. Rezerwa, oferty, nieaktywne profile i niepotwierdzone zmienione terminy są wykluczone. Te same reguły wyrównania obejmują 2–14 osób, maksymalnie 7 na stronę; przy 0–1 nie tworzymy drużyn. Domyślny podział jest deterministyczny, odczyt nie zapisuje obecności ani oficjalnego składu.
+
+Administrator może zapisać podział losowy, ręczną zamianę lub wrócić do ELO. Migracja 0010 dodaje osobną tabelę `preliminary_teams`. Odcisk wejścia obejmuje wersję terminu, aktualne ELO, osoby i kolejność zapisów oraz licznik zdarzeń zapisów. Każda zmiana deklaracji unieważnia stary wyjątek, również gdy po rezygnacji lista wróci do tych samych osób. Nie aktualizujemy wersji spotkania przy zmianie wstępnego podziału. Blokada spotkania oraz odcisk i rewizja podziału chronią listę i równoległe zmiany administratora (409). Publiczny DTO zawiera wyłącznie publiczne profile i punkty, bez statusów priorytetu czy powodów korekt.
+
+- GET `/api/v1/meetings/{id}/preliminary-teams`: dla zalogowanych, podgląd lub null po zatwierdzeniu obecności/zmianie statusu; usunięte spotkanie daje 404.
+- PUT `/api/v1/admin/meetings/{id}/preliminary-teams`: administrator i CSRF, `roster_token`, `revision`, tryb `balanced`, `random` lub `manual`; ręczny podział wymaga każdej uprawnionej osoby dokładnie raz.
+- Istniejące generowanie oficjalnych drużyn przyjmuje też tryb `preliminary`. Nadal wymaga zatwierdzonej obecności. Zgodna lista i punkty zachowują podział wstępny; różnica osób lub punktów daje wyrównany podział faktycznie obecnych.

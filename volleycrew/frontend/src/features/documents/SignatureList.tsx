@@ -27,6 +27,8 @@ async function fetchPdf(
     blob,
     filename,
     revision: Number(result.response.headers.get("X-Attendance-Revision")),
+    version: Number(result.response.headers.get("X-Meeting-Version")),
+    basis: result.response.headers.get("X-List-Basis"),
   };
 }
 
@@ -41,12 +43,11 @@ export function SignatureListButton({
   return (
     <button
       className="button small signature-list-button"
-      disabled={!ready}
       onClick={() => navigate(`/admin/meetings/${meetingId}/signature-list`)}
       title={
         ready
           ? "Podgląd i pobranie aktualnej listy"
-          : "Najpierw zatwierdź faktyczną obecność"
+          : "Wydrukuj listę z potwierdzonych zapisów przed spotkaniem"
       }
     >
       <Printer size={17} /> Lista podpisów
@@ -62,6 +63,7 @@ function Preview({ meetingId }: { meetingId: string }) {
   useEffect(() => () => controller.current?.abort(), []);
   const attendance = useQuery({
     queryKey: ["attendance", meetingId],
+    staleTime: 0,
     queryFn: async ({ signal }) =>
       unwrap(
         await api.GET("/api/v1/admin/meetings/{meeting_id}/attendance", {
@@ -81,7 +83,7 @@ function Preview({ meetingId }: { meetingId: string }) {
   const stale =
     !!pdf.data &&
     !!attendance.data &&
-    pdf.data.revision !== attendance.data.attendance_revision;
+    pdf.data.version !== attendance.data.version;
   async function download() {
     if (busy) return;
     controller.current = new AbortController();
@@ -116,12 +118,15 @@ function Preview({ meetingId }: { meetingId: string }) {
       </Link>
       <div className="page-heading">
         <h1>Lista podpisów</h1>
-        <p>PDF dla I LO w Gdańsku, z aktualnej zatwierdzonej obecności.</p>
+        <p>Lista do wydruku przed spotkaniem lub z zatwierdzonej obecności.</p>
       </div>
       <section className="card signature-preview">
         <p className="form-note">
-          Na liście są wyłącznie faktycznie obecne osoby: numer, imię i nazwisko
-          oraz miejsce na podpis. Drukuj na papierze A4 w skali 100%.
+          {pdf.data?.basis === "attendance"
+            ? "Źródło: zatwierdzona faktyczna obecność."
+            : "Źródło: aktualne potwierdzone zapisy. Rezerwa i osoby oczekujące na potwierdzenie nie trafiają na listę. Wydruk nie zatwierdza obecności."}{" "}
+          Numer, imię i nazwisko oraz miejsce na podpis. Drukuj na papierze A4 w
+          skali 100%.
         </p>
         <div className="room-actions">
           <button
@@ -151,14 +156,14 @@ function Preview({ meetingId }: { meetingId: string }) {
         )}
         {stale && (
           <p className="form-error" role="alert">
-            Obecność zmieniła się po wygenerowaniu podglądu. Odśwież go, aby
-            zobaczyć aktualną listę. Pobranie zawsze tworzy aktualny PDF.
+            Dane spotkania zmieniły się po wygenerowaniu podglądu. Odśwież go,
+            aby zobaczyć aktualną listę. Pobranie zawsze tworzy aktualny PDF.
           </p>
         )}
         {attendance.isError && (
           <p className="form-error" role="alert">
-            Nie możemy sprawdzić, czy obecność się zmieniła. Przed wydrukiem
-            odśwież podgląd.
+            Nie możemy sprawdzić, czy lista uczestników się zmieniła. Przed
+            wydrukiem odśwież podgląd.
           </p>
         )}
         {pdf.isFetching ? (

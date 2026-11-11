@@ -1,3 +1,4 @@
+import { AddToCalendar } from "./AddToCalendar";
 import { useAdminView } from "../auth/ViewMode";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
@@ -14,6 +15,7 @@ import { api, unwrap } from "../../lib/api/client";
 import { dateLabel, hour, localDate, shiftMonth, statusLabel } from "./dates";
 import { useOpenMeeting } from "./useOpenMeeting";
 
+import { SeriesManager } from "../schedule/SeriesManager";
 import { ScheduleEditor } from "../schedule/ScheduleEditor";
 import { MeetingActions } from "../schedule/MeetingActions";
 import { CreateMeeting } from "../schedule/CreateMeeting";
@@ -106,6 +108,7 @@ export function CalendarPage() {
           <p className="form-note">
             Termin zmienisz lub odwołasz bezpośrednio na kafelku spotkania.
           </p>
+          <SeriesManager />
           {action === "single" && (
             <CreateMeeting
               key={selected ?? month}
@@ -340,10 +343,12 @@ export function CalendarPage() {
                       >
                         <ArrowRight size={18} />
                       </button>
+                      <AddToCalendar meeting={item} compact />
                       {adminView && (
                         <MeetingActions
                           meeting={item}
                           compact
+                          onDeleted={setNotice}
                           onChanged={(updated, resultNotice) => {
                             const date = localDate(updated.starts_at);
                             if (selected || date.slice(0, 7) !== month)

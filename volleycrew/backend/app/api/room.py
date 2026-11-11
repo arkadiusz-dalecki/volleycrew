@@ -12,6 +12,8 @@ from app.api.room_schemas import (
     CorrectionInput,
     GenerateTeams,
     HistoryPage,
+    PreliminaryTeamsInput,
+    PreliminaryTeamsView,
     ReasonInput,
     TeamsDraft,
     TeamsView,
@@ -19,7 +21,7 @@ from app.api.room_schemas import (
 )
 from app.models.auth import Player
 from app.models.meetings import Meeting
-from app.services import room
+from app.services import enrollment, preliminary_teams, room
 
 router = APIRouter(
     tags=["room"],
@@ -33,7 +35,7 @@ Offset = Annotated[int, Query(ge=0)]
 
 async def meeting_or_404(db, identifier):
     meeting = await db.get(Meeting, identifier)
-    if meeting is None:
+    if meeting is None or meeting.deleted_at:
         raise DomainError(404, "not_found", "Nie znaleziono spotkania.")
     return meeting
 
@@ -215,3 +217,29 @@ async def reopen(
     meeting_id: UUID, body: ReasonInput, actor: Admin, db: DB, key: RetryKey, request: Request
 ):
     return await change(db, meeting_id, actor, body, key, request, "reopen", team=True)
+
+
+@router.get(
+    "/meetings/{meeting_id}/preliminary-teams",
+    response_model=PreliminaryTeamsView | None,
+    operation_id="getPreliminaryTeams",
+)
+async def preliminary(meeting_id: UUID, _player: User, db: DB):
+    meeting = await enrollment.lock_meeting(db, meeting_id)
+    result = await preliminary_teams.view(db, meeting)
+    await db.commit()
+    return result
+
+
+@router.put(
+    "/admin/meetings/{meeting_id}/preliminary-teams",
+    response_model=PreliminaryTeamsView,
+    operation_id="savePreliminaryTeams",
+)
+async def save_preliminary(
+    meeting_id: UUID, body: PreliminaryTeamsInput, actor: Admin, db: DB, request: Request
+):
+    meeting = await enrollment.lock_meeting(db, meeting_id)
+    result = await preliminary_teams.save(db, meeting, body, actor.id, request.app.state.clock)
+    await db.commit()
+    return result

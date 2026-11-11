@@ -110,3 +110,16 @@ Po odzyskaniu sprawdź liczbę kont, spotkania i zapisy, prywatną historię, wy
 - **Błąd kopii/migracji:** nie kontynuuj aktualizacji bez poprawnej kopii. Readiness sprawdza DB i schemat, liveness sam proces. Chwilowy brak DB po uruchomieniu daje niegotowość bez kasowania danych.
 
 Testy w repozytorium symulują Supervisor i HTTPS; nie oznaczają wykonanej instalacji na Twoim HA, pomiaru RAM Pi 4 ani testu telefonu spoza LAN. Raport E10 oddziela te próby od weryfikacji lokalnej.
+
+
+## Kalendarz i lista do podpisów
+
+W kalendarzu administrator ma „Twoje serie spotkań”. „Edytuj serię” otwiera aktualne parametry i podgląd przyszłych zmian; skrócenie zakresu usuwa wypadające terminy. „Usuń serię” usuwa jej przyszłe terminy, zachowując rozegraną historię, inne serie i pojedyncze dodatkowe spotkania. Na kafelku spotkania „Usuń spotkanie” usuwa także odwołany wpis z widoku i zapobiega odtworzeniu tego wystąpienia.
+
+Aby wydrukować listę przed wyjściem z domu, otwórz spotkanie jako administrator i wybierz „Lista podpisów” w panelu organizatora. Przed sprawdzeniem obecności dokument zawiera osoby z potwierdzonym miejscem, bez rezerwy i oczekujących. Wybierz „Pobierz aktualny PDF” i wydrukuj A4 w skali 100%. Wydruk nie zatwierdza obecności. Po sprawdzeniu i zatwierdzeniu obecności na sali ten sam przycisk pobiera listę faktycznie obecnych.
+
+## Wstępne drużyny
+
+Przed sprawdzeniem obecności szczegóły spotkania pokazują boisko z osób z potwierdzonym miejscem, domyślnie wyrównane według ELO. Po własnym zapisie lub rezygnacji boisko odświeża się od razu; pozostali widzą zmiany najpóźniej przy kolejnym odświeżeniu co 30 sekund.
+
+Administrator może losować, zamieniać osoby przez dotknięcie zawodników z przeciwnych stron lub wrócić do „Według ELO”. Podział widzi cała ekipa, a zmiana deklaracji resetuje go do aktualnego ELO. Na sali sprawdź i zatwierdź obecność, następnie w kroku „Drużyny” wybierz „Użyj wstępnego podziału”. Gdy obecni różnią się od zapisanych, aplikacja wyrówna faktyczny skład od nowa.

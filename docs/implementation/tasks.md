@@ -168,3 +168,20 @@ Zlecone 2026-11-08: widoczna data na karcie, najbliższe spotkanie w bocznym pan
 ## Uzupełnienie E2/E9 — poprawki mobilne i instalacja
 
 Zlecone 2026-11-08 po zrzutach z iPhone: formularz pojedynczego terminu bez wychodzących pól/ramki, usunięcie podpisu spotkania, rozwijany wybór konta z pamięcią ostatniego logowania, przełącznik widoku administrator/użytkownik, przycisk dodania aplikacji na iOS i Android. Zakres i dowody: [raport](mobile-improvements-report.md).
+
+## Uzupełnienie E3/E5/E9 — usuwanie i istniejące serie
+
+Zlecone 2026-11-08: „Usuń spotkanie” także dla odwołanych terminów, bez ich dalszej prezentacji i odradzania z harmonogramu; widoczna lista istniejących serii z edycją i usuwaniem, również dla dotychczasowej domyślnej reguły wtorkowej. Odbiór: uprawnienia, trwałość usunięcia, zakres serii, zachowana historia rozegranych meczów, zwolnienie ofert/miejsc bez nieobecności, wersje/podgląd i UI mobile/desktop.
+
+## Uzupełnienie E3/E9 — osobisty kalendarz
+
+Zlecone 2026-11-08: „Dodaj do kalendarza” z wyborem Google, Outlook, Apple i innych aplikacji. Odbiór: bieżąca data/godzina/miejsce, poprawne UTC/DST i polskie znaki, bez eksportu odwołanych/usuniętych spotkań i danych uczestników, plik ICS oraz czytelne ograniczenie do jednorazowego eksportu.
+
+Zlecone 2026-11-09 uzupełnienie osobistego kalendarza: przycisk także na kafelkach oraz zbiorczy plik dla wyświetlanego miesiąca lub najbliższych 12 miesięcy. Weryfikacja i źródła importu w [raporcie](personal-calendar-report.md).
+
+
+Aktualizacja 2026-11-09: eksport zbiorczy miesiąca/12 miesięcy wycofany na prośbę użytkownika. Pozostają przyciski eksportu pojedynczego terminu na kafelkach i w szczegółach.
+
+## Uzupełnienie E4/E6/E9 — wstępne drużyny
+
+Zlecone 2026-11-09: boisko z potwierdzonych zapisów przed obecnością, domyślnie ELO, automatyczne odświeżanie po deklaracjach i rezygnacjach, zapisane losowanie/ręczna zamiana administratora oraz wykorzystanie podglądu po sprawdzeniu obecności. Odbiór: limit 14 i jedno miejsce na osobę, brak rezerwy/ofert, aktualne ELO, konflikty listy/drugiej karty, prywatność, brak skutków w obecności/ELO i widok mobile. Zakres i wyniki: [raport](preliminary-court-report.md).

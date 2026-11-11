@@ -31,7 +31,7 @@ test("calendar future navigation, cancelled meeting, persistent detail and recov
   await agenda
     .getByRole("listitem")
     .filter({ hasText: "Odwołane" })
-    .getByRole("button")
+    .getByRole("button", { name: /^Otwórz spotkanie:/ })
     .click();
   await expect(page).toHaveURL(
     new RegExp(`/meetings/${process.env.E2E_CANCELLED_ID}$`),

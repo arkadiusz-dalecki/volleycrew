@@ -106,14 +106,19 @@ def test_parallel_rendering_keeps_documents_separate():
         assert all(other not in text for i, other in enumerate(NAMES[:4]) if i != index)
 
 
-def test_requires_admin_confirmed_presence_and_reads_latest_correction(calendar_system):
+def test_prints_before_meeting_and_reads_latest_confirmed_correction(calendar_system):
     device, clock, admin, _, member, player, meeting, ids = setup_group(calendar_system, 3)
     endpoint = PREFIX + f"/admin/meetings/{meeting['id']}/signature-list"
     assert member.get(endpoint).status_code == 403
     assert device().get(endpoint).status_code == 401
-    assert admin.get(endpoint).status_code == 409
+    before_print = read(admin, meeting)
+    early = admin.get(endpoint)
+    assert early.status_code == 200
+    assert early.headers["x-list-basis"] == "enrollments"
+    assert "Liczba uczestników: 3" in extract(early.content)
+    assert read(admin, meeting) == before_print
     assert draft(admin, meeting, [ids[2]]).status_code == 200
-    assert admin.get(endpoint).status_code == 409
+    assert "Gracz2 Testowy" in extract(admin.get(endpoint).content)
     start(clock, meeting)
     view = confirm(admin, meeting)
     before = read(admin, meeting)
@@ -124,6 +129,7 @@ def test_requires_admin_confirmed_presence_and_reads_latest_correction(calendar_
     assert response.headers["cache-control"] == "no-store"
     assert response.headers["x-content-type-options"] == "nosniff"
     assert response.headers["x-attendance-revision"] == "1"
+    assert response.headers["x-list-basis"] == "attendance"
     text = extract(response.content)
     assert "Gracz0 Testowy" in text and "Gracz1 Testowy" in text and "Gracz2 Testowy" not in text
     assert player["first_name"] not in text  # unsaved member profile is not a participant
@@ -177,3 +183,25 @@ if __name__ == "__main__":
         render_pdf(sample(tuple(f"{i:02d}" + "W" * 78 + " " + "Ż" * 80 for i in range(14))))
     )
     print(root)
+
+
+def test_early_print_excludes_waitlist_offers_and_reconfirmation(calendar_system):
+    from tests.test_enrollment import propose
+    from tests.test_schedule_changes import fresh, move
+
+    device, _, admin, _, member, player, meeting, ids = setup_group(calendar_system)
+    assert declaration(member, meeting).status_code == 200
+    endpoint = PREFIX + f"/admin/meetings/{meeting['id']}/signature-list"
+    early = admin.get(endpoint)
+    assert early.headers["x-list-basis"] == "enrollments"
+    assert "Liczba uczestników: 14" in extract(early.content)
+    assert player["first_name"] not in extract(early.content)
+    assert declaration(as_player(device, ids[0]), meeting, "not-going").status_code == 200
+    propose(admin, fresh(admin, meeting), player["id"])
+    offered = admin.get(endpoint)
+    assert "Liczba uczestników: 13" in extract(offered.content)
+    assert player["first_name"] not in extract(offered.content)
+    move(admin, fresh(admin, meeting))
+    waiting = admin.get(endpoint)
+    assert waiting.status_code == 200
+    assert "Liczba uczestników: 0" in extract(waiting.content)

@@ -61,7 +61,7 @@ async def lock_meeting(db: AsyncSession, meeting_id: UUID) -> Meeting:
         .with_for_update()
         .execution_options(populate_existing=True)
     )
-    if row is None:
+    if row is None or row.deleted_at:
         raise DomainError(404, "not_found", "Nie znaleziono spotkania.")
     return row
 

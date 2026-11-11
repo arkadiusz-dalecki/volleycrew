@@ -26,7 +26,7 @@ Status „założyciel/zawodnik/gość” nie jest publiczną etykietą. Uczestn
 
 ## Spotkanie zawodnika
 
-Kolejność: termin/miejsce → własny stan i akcja → liczba miejsc → uczestnicy/rezerwa → zatwierdzone drużyny/wynik. W desktopowym bocznym panelu własny ranking i kolejne terminy; na telefonie główna deklaracja pozostaje przed dodatkowymi treściami.
+Kolejność: termin/miejsce → własny stan i akcja → liczba miejsc → wstępne boisko → uczestnicy/rezerwa → zatwierdzone drużyny/wynik. W desktopowym bocznym panelu własny ranking i kolejne terminy; na telefonie główna deklaracja pozostaje przed dodatkowymi treściami.
 
 Osobne stany własnej karty: brak deklaracji, potwierdzony udział, rezerwa z pozycją, aktywna oferta, „nie będę”, ponowne potwierdzenie po zmianie terminu, odwołane, zakończone. Stan oferty pochodzi z API, nie z pozycji 1 na rezerwie. Każda zmiana daty pokazuje stary i nowy termin oraz wymaga nowego potwierdzenia, także przy propozycji z rezerwy. Stary ekran z ofertą po próbie akceptacji informuje o zmianie i pobiera aktualny stan; nie pokazuje pozornego sukcesu. Przy ponownym potwierdzaniu miejsce czeka na odpowiedź bez automatycznego timeoutu. Administrator ma jawną akcję zwolnienia miejsca przy braku odpowiedzi; nie przedstawiać oczekującego gracza jako potwierdzonego uczestnika.
 
@@ -41,7 +41,7 @@ Przed rezygnacją backendowy preview lub spójnie obliczona informacja ze stanu 
 4. Zatwierdzenie blokuje przypadkowe edycje. Powrót do edycji jest jawną operacją z regułą korekty, a nie ponownym losowaniem w tle.
 5. Po grze wynik setów A/B, podsumowanie i jedno zatwierdzenie. Wynik 0:0 zamyka spotkanie bez rozegranych setów i bez zmiany ELO, zachowując obecność. Korekta wyniku wymaga powodu; pokazać stary i nowy wynik oraz informację o przeliczeniu późniejszych meczów. Punkty i delty prezentować do jednego miejsca po przecinku. Zapisany wynik widać po ponownym wejściu.
 
-Lista podpisów ma osobną akcję po zatwierdzeniu faktycznej obecności: podgląd i pobranie PDF z aktualnej listy obecnych. Po korekcie obecności można wygenerować go ponownie (D7). Historia innych osób dostępna administratorowi w ekranie gracza, nie przez publiczny ranking. Przy wpisie administrator ma akcję korekty z obowiązkowym powodem i podsumowaniem zmiany. Pierwotny wpis i poprawkę widać w prywatnej historii gracza, wraz z datą, autorem i powodem; żaden z tych elementów nie trafia do publicznych list.
+Lista podpisów ma osobną akcję przed spotkaniem (potwierdzone zapisy) oraz po zatwierdzeniu faktycznej obecności (aktualni obecni): podgląd i pobranie PDF. Po korekcie obecności można wygenerować go ponownie (D7). Historia innych osób dostępna administratorowi w ekranie gracza, nie przez publiczny ranking. Przy wpisie administrator ma akcję korekty z obowiązkowym powodem i podsumowaniem zmiany. Pierwotny wpis i poprawkę widać w prywatnej historii gracza, wraz z datą, autorem i powodem; żaden z tych elementów nie trafia do publicznych list.
 
 ## Dostępność i odporność
 
@@ -72,7 +72,7 @@ Najbliższe spotkanie pobiera datę, godzinę, miejsce i stan z API. Nie zawiera
 
 ## Udział i rezerwa w E4
 
-Karta własnego udziału działa przy najbliższym oraz wybranym z kalendarza spotkaniu. „Będę” na wirtualnym terminie najpierw rozwiązuje go do Meeting, potem zapisuje deklarację; sukces jest prezentowany dopiero po odpowiedzi. Pokazujemy potwierdzone miejsce, pozycję rezerwy, rezerwację przed propozycją, aktywną propozycję do jawnego przyjęcia/odmowy oraz „nie będę”. Liczniki wolnych i zarezerwowanych miejsc wyjaśniają, dlaczego np. przy 13 potwierdzonych osobach może nie być wolnego miejsca.
+Karta własnego udziału działa przy najbliższym oraz wybranym z kalendarza spotkaniu. „Potwierdzam obecność” na wirtualnym terminie najpierw rozwiązuje go do Meeting, potem zapisuje deklarację; sukces jest prezentowany dopiero po odpowiedzi. Pokazujemy potwierdzone miejsce, pozycję rezerwy, rezerwację przed propozycją, aktywną propozycję do jawnego przyjęcia/odmowy oraz „nie będę”. Liczniki wolnych i zarezerwowanych miejsc wyjaśniają, dlaczego np. przy 13 potwierdzonych osobach może nie być wolnego miejsca.
 
 Rezygnacja ma własne potwierdzenie z aktualną informacją: zwykła, późna, z wyjątkiem późno przyjętej oferty albo wycofanie samej rezerwy. Po konflikcie lub błędzie API pobieramy aktualny stan. Żądanie deklaracji zachowuje UUID do ponowienia przy błędzie sieci; po odpowiedzi 4xx i nowej decyzji powstaje nowy klucz. Nie zapisujemy deklaracji offline.
 
@@ -100,13 +100,13 @@ Mutacje pokazują sukces po odpowiedzi serwera. Utrata odpowiedzi zachowuje dok�
 
 ## Lista podpisów — E7
 
-W nagłówku panelu organizatora jest „Lista podpisów”, dostępna po zatwierdzeniu faktycznej obecności. Prowadzi do administracyjnej trasy `/admin/meetings/:meetingId/signature-list`, z powrotem do konkretnego spotkania. Zwykły zawodnik nie ma przycisku ani dostępu do trasy/API.
+W nagłówku panelu organizatora jest „Lista podpisów”, dostępna już przed spotkaniem z potwierdzonych zapisów, a po zatwierdzeniu obecności z faktycznie obecnych (zmiana D7 z 2026-11-08). Prowadzi do administracyjnej trasy `/admin/meetings/:meetingId/signature-list`, z powrotem do konkretnego spotkania. Zwykły zawodnik nie ma przycisku ani dostępu do trasy/API.
 
 Podgląd renderuje rzeczywisty PDF lokalnie przez PDF.js, także na telefonie bez wbudowanej przeglądarki PDF. Parser i jego worker są dostarczane z aplikacją, ładowane dopiero przy podglądzie; nie korzystają z CDN. Wszystkie strony są pokazywane w szerokości karty. Warstwa tekstowa dla czytników ekranu zawiera treść dokumentu. Osobny link otwiera PDF w nowej karcie.
 
 „Pobierz aktualny PDF” zawsze wykonuje nowe autoryzowane żądanie i uwzględnia korekty, nawet jeśli wcześniejszy podgląd pozostawał otwarty w innej karcie. „Odśwież podgląd” ponownie pobiera dokument. Porównanie rewizji z odpytywaną obecnością pozwala ostrzec o zmianie listy. Są stany generowania, renderowania, błędu, ponowienia i wygasłej sesji; podgląd i operacja pobierania są zwalniane/anulowane przy opuszczeniu strony. PDF nie trafia do localStorage ani trwałego cache aplikacji.
 
-Wydruk: A4, skala 100%; przeglądarka PDF udostępnia druk. Żaden przycisk nie sugeruje eksportu samych deklaracji. Dokument powstaje wyłącznie z zatwierdzonej faktycznej obecności.
+Wydruk: A4, skala 100%; przeglądarka PDF udostępnia druk. Źródło bieżącej listy jest jasno opisane w podglądzie. Przed zatwierdzeniem obecności dokument powstaje z potwierdzonych miejsc, a później z zatwierdzonej faktycznej obecności.
 
 
 ## Wyniki i ranking — E8
@@ -156,3 +156,29 @@ Administrator ma nad treścią przełącznik „Administrator / Użytkownik”, 
 Podpis „Dobra ekipa, trochę ruchu i dwie godziny dla siebie.” usunięto. Formularz pojedynczego terminu nie ma ramki fieldset; pola daty i godziny mają ograniczoną szerokość także w Safari, a wąskie formularze używają jednej kolumny.
 
 Na ekranach dostępu i w stopce aplikacji jest „Dodaj aplikację do telefonu”. Jeśli przeglądarka udostępnia `beforeinstallprompt`, kliknięcie wywołuje systemowe okno. W pozostałych przypadkach przycisk otwiera dialog z instrukcją właściwą dla iPhone/iPad, Androida lub komputera. iOS wymaga użycia menu Udostępnij → Do ekranu początkowego; strona nie może wykonać tego kroku automatycznie. Po wykryciu trybu standalone lub zdarzenia appinstalled przycisk znika. Manifest zawiera lokalne PNG 192/512, a iOS otrzymuje apple-touch-icon 180. Nie dodajemy cache API ani pracy offline. Instalacja wymaga docelowego adresu HTTPS; fizyczny odbiór instalacji i wejścia przez HA pozostaje osobnym testem.
+
+## Zarządzanie istniejącymi seriami i wydruk przed spotkaniem (2026-11-08)
+
+Kalendarz administratora ma stale widoczną listę „Twoje serie spotkań” z akcjami „Edytuj serię” i „Usuń serię”. Edycja ładuje wybraną regułę, w tym istniejącą domyślną wtorkową, i wymaga podglądu przed zapisem. Skrócenie zakresu pokazuje liczbę istniejących terminów do usunięcia; pozostałe reguły nie są automatycznie nadpisywane. Usunięcie serii wymaga dialogu z zakresem przyszłych spotkań i informacją o zachowanej historii. „Zaplanuj serię” pozostaje osobnym tworzeniem reguły.
+
+„Usuń spotkanie” jest dostępne na kafelku i w szczegółach przyszłego lub odwołanego terminu. Dialog wyjaśnia zniknięcie z kalendarza, zamknięcie zapisów/ofert oraz zachowanie innych terminów. Po usunięciu w szczegółach wracamy do miesiąca w kalendarzu. Akcja „Odwołaj” nadal oznacza pozostawienie wpisu jako odwołanego; „Usuń” pozwala go usunąć z widoku.
+
+Przycisk „Lista podpisów” w panelu organizatora jest aktywny także przed startem i zatwierdzeniem obecności. Podgląd podaje źródło: potwierdzone zapisy albo zatwierdzona faktyczna obecność. Przed spotkaniem pozwala pobrać i wydrukować dokument A4 do zebrania podpisów na sali. Nie wymaga zatwierdzania obecności z domu. Zmiana danych spotkania po wygenerowaniu podglądu pokazuje ostrzeżenie; pobranie zawsze pobiera aktualną listę. To ustalenie zastępuje wcześniejsze ograniczenie E7/D7 do faktycznie obecnych.
+
+## Dodanie terminu do osobistego kalendarza (2026-11-08)
+
+Na karcie najbliższego i wybranego spotkania, po własnej deklaracji, jest „Dodaj do kalendarza”. Dostępne administratorowi i zawodnikowi, także przed zapisem na grę. Dialog pokazuje aktualną datę, godziny i miejsce oraz wybór: Google Calendar, Outlook.com, Outlook Microsoft 365, Apple Calendar (.ics), inna aplikacja (.ics). Zapis w zewnętrznej aplikacji użytkownik zatwierdza sam. Eksport nie zmienia deklaracji.
+
+Google i oba warianty Outlook otwierają formularz w nowej karcie. Apple/inne pobierają plik ICS do importu; dla iPhone UI podaje możliwość importu z Mail, a dla Maca otwarcia w Kalendarzu. UI wyjaśnia brak automatycznej synchronizacji późniejszych zmian/odwołań. Odwołane, usunięte, zakończone lub minione terminy nie mają przycisku. Eksport zawiera tylko tytuł, termin i miejsce; nie zawiera listy uczestników ani linku/autoryzacji Ingress.
+
+### Eksport z listy (2026-11-09)
+
+Każdy kwalifikujący się kafelek kalendarza ma „Dodaj do kalendarza” z tym samym wyborem aplikacji co szczegóły. Na prośbę użytkownika usunięto eksport zbiorczy: nie ma przycisku wielu spotkań, zakresu miesiąca/12 miesięcy ani generowania zbiorczego ICS. Pozostaje eksport jednego terminu.
+
+## Wstępne boisko (2026-11-09)
+
+Nad listą uczestników zaplanowanego spotkania jest „Wstępne drużyny”, oznaczone „Z zapisów” i informacją o niesprawdzonej obecności. Boisko korzysta z układów wariantu A, pokazuje nazwiska i średnie ELO. Przy mniej niż dwóch osobach podaje warunek pokazania boiska. Widzą je administrator i użytkownicy, także podgląd użytkownika na koncie administratora.
+
+Własne „Potwierdzam obecność”, rezygnacja i przyjęcie oferty odświeżają boisko od razu; na innych urządzeniach odczyt odbywa się co 30 sekund oraz po powrocie do karty. Administrator ma „Według ELO”, „Losuj wstępne składy”, zamianę przez dotknięcie osoby z obu stron i przeniesienie z większej drużyny do mniejszej. Zapis jest wspólny dla ekipy; zmiana deklaracji przywraca aktualny podział ELO. Nieaktualna lista/rewizja wymaga odświeżenia zamiast nadpisania. Błąd odczytu oznacza ostatni podział, utrata odpowiedzi zapisu pozwala ponowić bez drugiego losowania.
+
+Po zatwierdzeniu obecności podgląd znika, a krok „Drużyny” ma „Użyj wstępnego podziału”. Użycie jest jawne; zmieniona lista faktycznie obecnych jest ponownie wyrównana według ELO. Sam podgląd nie zatwierdza obecności, drużyn ani wyniku.

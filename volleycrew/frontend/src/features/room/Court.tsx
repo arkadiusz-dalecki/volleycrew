@@ -15,7 +15,7 @@ export function Court({
   disabled = false,
   showRatings = true,
 }: {
-  teams: Teams;
+  teams: Pick<Teams, "team_a" | "team_b" | "average_a" | "average_b">;
   selected?: string;
   onSelect?: (id: string) => void;
   disabled?: boolean;

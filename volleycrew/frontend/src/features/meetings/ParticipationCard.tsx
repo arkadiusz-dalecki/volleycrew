@@ -38,6 +38,7 @@ export function ParticipationCard({ meeting }: { meeting: Meeting }) {
       client.invalidateQueries({ queryKey: ["calendar"] }),
       client.invalidateQueries({ queryKey: ["participation"] }),
       client.invalidateQueries({ queryKey: ["seat-offers"] }),
+      client.invalidateQueries({ queryKey: ["preliminary-teams"] }),
     ]);
   }
   async function declare(declaration: "going" | "not-going") {
@@ -205,7 +206,7 @@ export function ParticipationCard({ meeting }: { meeting: Meeting }) {
                   disabled={busy}
                   onClick={() => void declare("going")}
                 >
-                  Będę <Check size={17} aria-hidden="true" />
+                  Potwierdzam obecność <Check size={17} aria-hidden="true" />
                 </button>
               )}
               {state?.declaration !== "not-going" && (

@@ -42,7 +42,7 @@ test("attendance, court swap, signature PDF and private correction", async ({
   });
   await expect(
     panel.getByRole("button", { name: "Lista podpisów", exact: true }),
-  ).toBeDisabled();
+  ).toBeEnabled();
   await panel
     .getByRole("button", { name: "Wszyscy obecni", exact: true })
     .click();

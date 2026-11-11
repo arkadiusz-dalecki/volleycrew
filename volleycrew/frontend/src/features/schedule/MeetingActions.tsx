@@ -1,4 +1,5 @@
-import { Pencil, CalendarX2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Pencil, CalendarX2, Trash2 } from "lucide-react";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -20,15 +21,18 @@ export function MeetingActions({
   meeting: source,
   compact = false,
   onChanged,
+  onDeleted,
 }: {
   meeting: Meeting | components["schemas"]["MeetingSummary"];
   compact?: boolean;
   onChanged?: (meeting: Meeting, notice: string) => void;
+  onDeleted?: (notice: string) => void;
 }) {
+  const navigate = useNavigate();
   const [now] = useState(() => Date.now());
   const [prepared, setPrepared] = useState<Meeting | null>(null);
   const meeting = prepared ?? source;
-  const [mode, setMode] = useState<"edit" | "cancel" | null>(null);
+  const [mode, setMode] = useState<"edit" | "cancel" | "delete" | null>(null);
   const [day, setDay] = useState(localDate(meeting.starts_at));
   const [time, setTime] = useState(hour(meeting.starts_at));
   const [duration, setDuration] = useState(
@@ -41,7 +45,7 @@ export function MeetingActions({
   const [busy, setBusy] = useState(false),
     [notice, setNotice] = useState("");
   const client = useQueryClient();
-  async function begin(nextMode: "edit" | "cancel") {
+  async function begin(nextMode: "edit" | "cancel" | "delete") {
     setBusy(true);
     setNotice("");
     try {
@@ -72,7 +76,7 @@ export function MeetingActions({
         ),
       );
       setMode(nextMode);
-      setReviewed(nextMode === "cancel" ? current.version : null);
+      setReviewed(nextMode !== "edit" ? current.version : null);
     } catch (e) {
       setNotice(message(e));
       await refreshSchedule(client);
@@ -84,6 +88,26 @@ export function MeetingActions({
     setBusy(true);
     setNotice("");
     try {
+      if (mode === "delete") {
+        const result = await api.POST(
+          "/api/v1/admin/meetings/{meeting_id}/delete",
+          {
+            params: { path: { meeting_id: meeting.id } },
+            body: { expected_version: reviewed! },
+          },
+        );
+        if (!result.response.ok) unwrap(result);
+        setMode(null);
+        setReviewed(null);
+        setPrepared(null);
+        const text = "Spotkanie usunięte z kalendarza.";
+        onDeleted?.(text);
+        if (!compact)
+          void navigate(
+            `/calendar?month=${localDate(meeting.starts_at).slice(0, 7)}`,
+          );
+        return;
+      }
       const updated = cancel
         ? unwrap(
             await api.POST("/api/v1/admin/meetings/{meeting_id}/cancel", {
@@ -141,7 +165,10 @@ export function MeetingActions({
       setBusy(false);
     }
   }
-  if (source.status !== "scheduled" || Date.parse(source.starts_at) <= now)
+  if (
+    !["scheduled", "cancelled"].includes(source.status) ||
+    (source.status !== "cancelled" && Date.parse(source.starts_at) <= now)
+  )
     return null;
   const awaiting =
     !compact && isDetail(meeting) ? meeting.awaiting_confirmation : [];
@@ -156,22 +183,34 @@ export function MeetingActions({
     >
       {!compact && <h2>Zarządzaj terminem</h2>}
       <div className="participation-actions">
-        <button
-          className="button"
-          disabled={busy}
-          onClick={() => void begin("edit")}
-        >
-          {compact && <Pencil size={16} />}
-          {compact ? "Zmień termin" : "Zmień ten termin"}
-        </button>
+        {source.status === "scheduled" && (
+          <>
+            <button
+              className="button"
+              disabled={busy}
+              onClick={() => void begin("edit")}
+            >
+              {compact && <Pencil size={16} />}
+              {compact ? "Zmień termin" : "Zmień ten termin"}
+            </button>
+            <button
+              className="button"
+              disabled={busy}
+              onClickCapture={(event) => event.currentTarget.focus()}
+              onClick={() => void begin("cancel")}
+            >
+              {compact && <CalendarX2 size={16} />}
+              {compact ? "Odwołaj" : "Odwołaj spotkanie"}
+            </button>
+          </>
+        )}
         <button
           className="button"
           disabled={busy}
           onClickCapture={(event) => event.currentTarget.focus()}
-          onClick={() => void begin("cancel")}
+          onClick={() => void begin("delete")}
         >
-          {compact && <CalendarX2 size={16} />}
-          {compact ? "Odwołaj" : "Odwołaj spotkanie"}
+          <Trash2 size={16} /> Usuń spotkanie
         </button>
       </div>
       {mode === "edit" && (
@@ -247,13 +286,15 @@ export function MeetingActions({
       {mode && reviewed !== null && (
         <ConfirmDialog
           title={
-            mode === "cancel"
-              ? "Odwołać spotkanie?"
-              : "Zatwierdzić nowy termin?"
+            mode === "delete"
+              ? "Usunąć spotkanie?"
+              : mode === "cancel"
+                ? "Odwołać spotkanie?"
+                : "Zatwierdzić nowy termin?"
           }
           busy={busy}
           onDismiss={() => {
-            if (mode === "cancel") setMode(null);
+            if (mode !== "edit") setMode(null);
             setReviewed(null);
           }}
         >
@@ -273,9 +314,11 @@ export function MeetingActions({
             </p>
           )}
           <p>
-            {mode === "cancel"
-              ? "Spotkanie pozostanie w kalendarzu jako odwołane. Miejsca i propozycje zostaną zwolnione; bez oznaczeń nieobecności."
-              : "Wszyscy zapisani potwierdzają udział od nowa. Dotychczasowe miejsca pozostają zarezerwowane bez automatycznego timeoutu; stare propozycje przestają obowiązywać."}
+            {mode === "delete"
+              ? "Spotkanie zniknie z kalendarza i nie pojawi się ponownie w serii. Zapisy i propozycje zostaną zamknięte, bez oznaczeń nieobecności. Pozostałe terminy serii pozostaną."
+              : mode === "cancel"
+                ? "Spotkanie pozostanie w kalendarzu jako odwołane. Miejsca i propozycje zostaną zwolnione; bez oznaczeń nieobecności."
+                : "Wszyscy zapisani potwierdzają udział od nowa. Dotychczasowe miejsca pozostają zarezerwowane bez automatycznego timeoutu; stare propozycje przestają obowiązywać."}
           </p>
           <div className="participation-actions">
             <button
@@ -293,9 +336,11 @@ export function MeetingActions({
               disabled={busy}
               onClick={() => void change(mode === "cancel")}
             >
-              {mode === "cancel"
-                ? "Potwierdzam odwołanie"
-                : "Zatwierdź nowy termin"}
+              {mode === "delete"
+                ? "Usuń spotkanie"
+                : mode === "cancel"
+                  ? "Potwierdzam odwołanie"
+                  : "Zatwierdź nowy termin"}
             </button>
           </div>
         </ConfirmDialog>

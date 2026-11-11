@@ -20,6 +20,13 @@ test("court fits team sizes and centers unequal formations around the net", asyn
     data: { profile_id: players[0].id, pin: "123456" },
   });
   expect(login.ok()).toBe(true);
+  // This geometry fixture represents published, official teams.
+  const detail = await (
+    await context.request.get(`/api/v1/meetings/${meeting.id}`)
+  ).json();
+  await page.route(`**/api/v1/meetings/${meeting.id}`, (route) =>
+    route.fulfill({ json: { ...detail, status: "teams_confirmed" } }),
+  );
   let sizes = [3, 3];
   await page.route(`**/api/v1/meetings/${meeting.id}/teams`, (route) => {
     const team = (count: number, offset: number) =>

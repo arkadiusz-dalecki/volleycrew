@@ -11,6 +11,7 @@ export async function refreshSchedule(client: QueryClient) {
       "attendance",
       "room-teams",
       "public-teams",
+      "preliminary-teams",
       "attendance-history",
       "signature-list",
       "result",

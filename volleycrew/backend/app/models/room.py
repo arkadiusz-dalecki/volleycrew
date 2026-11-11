@@ -15,6 +15,7 @@ from sqlalchemy import (
     UniqueConstraint,
     text,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models import Base
@@ -107,3 +108,19 @@ class RoomMutation(Base):
     meeting_id: Mapped[UUID] = mapped_column(ForeignKey("meetings.id"), primary_key=True)
     key: Mapped[UUID] = mapped_column(primary_key=True)
     fingerprint: Mapped[str] = mapped_column(String(64))
+
+
+class PreliminaryTeams(Base):
+    __tablename__ = "preliminary_teams"
+    meeting_id: Mapped[UUID] = mapped_column(ForeignKey("meetings.id"), primary_key=True)
+    roster_token: Mapped[str] = mapped_column(String(64))
+    revision: Mapped[int] = mapped_column(Integer)
+    method: Mapped[str] = mapped_column(String(10))
+    team_a: Mapped[list[str]] = mapped_column(JSONB)
+    team_b: Mapped[list[str]] = mapped_column(JSONB)
+    actor_id: Mapped[UUID] = mapped_column(ForeignKey("players.id"))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    __table_args__ = (
+        CheckConstraint("revision > 0"),
+        CheckConstraint("method IN ('random','balanced','manual')"),
+    )

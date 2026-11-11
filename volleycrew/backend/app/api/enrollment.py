@@ -41,7 +41,7 @@ async def result(db, meeting, player_id, at):
 )
 async def own(meeting_id: UUID, player: User, db: DB, request: Request):
     meeting = await db.get(Meeting, meeting_id)
-    if meeting is None:
+    if meeting is None or meeting.deleted_at:
         raise DomainError(404, "not_found", "Nie znaleziono spotkania.")
     return await participation.own(db, meeting, player.id, request.app.state.clock.now())
 
