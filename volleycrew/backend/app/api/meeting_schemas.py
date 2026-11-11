@@ -70,6 +70,11 @@ class MeetingDetail(MeetingSummary):
     awaiting_confirmation: list[PublicPlayer] = []
 
 
+class AdjacentMeetings(BaseModel):
+    previous: MeetingSummary | None
+    next: MeetingSummary | None
+
+
 class CalendarPage(BaseModel):
     from_date: date
     to_date: date

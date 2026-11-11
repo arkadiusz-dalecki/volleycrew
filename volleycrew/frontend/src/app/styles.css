@@ -2662,3 +2662,16 @@ select {
     width: 100%;
   }
 }
+
+.meeting-navigation-surface {
+  touch-action: pan-y pinch-zoom;
+}
+.meeting-navigation {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.meeting-swipe-hint {
+  margin-bottom: 16px;
+}

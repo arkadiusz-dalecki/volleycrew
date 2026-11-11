@@ -3,11 +3,13 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request
+from pydantic import AwareDatetime
 from sqlalchemy import func, select
 
 from app.api.auth import DB, User, guard
 from app.api.errors import ApiError, DomainError
 from app.api.meeting_schemas import (
+    AdjacentMeetings,
     CalendarPage,
     MeetingDetail,
     PlayerPage,
@@ -80,6 +82,17 @@ async def resolve(body: ResolveOccurrence, _player: User, db: DB, request: Reque
     )
     await db.commit()
     return await service.detail(db, row)
+
+
+@router.get(
+    "/meetings/adjacent", response_model=AdjacentMeetings, operation_id="getAdjacentMeetings"
+)
+async def adjacent(
+    starts_at: AwareDatetime, meeting_id: UUID, _player: User, db: DB, request: Request
+):
+    if not 1970 <= starts_at.year <= 9997:
+        raise DomainError(422, "invalid_range", "Wybierz termin od roku 1970 do 9997.")
+    return await service.adjacent(db, starts_at, meeting_id, request.app.state.clock.now())
 
 
 @router.get("/meetings/{meeting_id}", response_model=MeetingDetail, operation_id="getMeeting")

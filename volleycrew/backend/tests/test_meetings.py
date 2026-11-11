@@ -300,3 +300,122 @@ def test_schedule_versions_cannot_overlap_at_database_level(calendar_system):
                 await db.commit()
 
     client.portal.call(overlap)
+
+
+def test_adjacent_matches_calendar_without_materializing(calendar_system):
+    _, clock, _, _, member, _, _, _ = group(calendar_system)
+
+    def neighbors(item):
+        response = member.get(
+            PREFIX + "/meetings/adjacent",
+            params={"starts_at": item["starts_at"], "meeting_id": item["id"]},
+        )
+        assert response.status_code == 200, response.text
+        return response.json()
+
+    first = member.get(PREFIX + "/meetings/next").json()
+    pair = neighbors(first)
+    assert pair["previous"] is None
+    assert pair["next"]["source_date"] == "2026-11-17"
+    assert not pair["next"]["persisted"]
+    assert neighbors(pair["next"])["previous"]["id"] == first["id"]
+
+    moved = resolve_day(member, "2026-11-17")
+    cancelled = resolve_day(member, "2026-11-24")
+    removed = resolve_day(member, "2026-12-01")
+
+    async def edit():
+        async with member.app.state.database.sessions() as db:
+            row = await db.get(Meeting, UUID(moved["id"]))
+            row.starts_at = datetime(2026, 12, 3, 17, tzinfo=UTC)
+            row.ends_at = row.starts_at + timedelta(hours=2)
+            row = await db.get(Meeting, UUID(cancelled["id"]))
+            row.status = "cancelled"
+            row = await db.get(Meeting, UUID(removed["id"]))
+            row.deleted_at = clock.at
+            await db.commit()
+
+    member.portal.call(edit)
+    assert neighbors(first)["next"]["id"] == cancelled["id"]
+    pair = neighbors(cancelled)
+    assert pair["next"]["id"] == moved["id"]
+    assert pair["previous"]["id"] == first["id"]
+    assert neighbors(pair["next"])["next"]["source_date"] == "2026-12-08"
+    distant = read_calendar(member, "2040-12-01", "2041-02-01")["items"]
+    last_december = next(item for item in distant if item["source_date"] == "2040-12-25")
+    assert neighbors(last_december)["next"]["source_date"] == "2041-01-01"
+
+    async def count():
+        async with member.app.state.database.sessions() as db:
+            return await db.scalar(select(func.count()).select_from(Meeting))
+
+    before_dst = next(
+        item
+        for item in read_calendar(member, "2027-03-01", "2027-04-01")["items"]
+        if item["source_date"] == "2027-03-23"
+    )
+    after_dst = neighbors(before_dst)["next"]
+    assert after_dst["source_date"] == "2027-03-30"
+    assert (
+        datetime.fromisoformat(after_dst["starts_at"])
+        - datetime.fromisoformat(before_dst["starts_at"])
+    ) == timedelta(hours=167)
+    assert member.portal.call(count) == 3
+    clock.at = datetime(2026, 12, 4, 12, tzinfo=UTC)
+    assert neighbors(cancelled)["previous"] is None  # no invented unplayed past dates
+    assert neighbors(cancelled)["next"]["id"] == moved["id"]
+
+
+def test_adjacent_finite_series_ties_gaps_auth_and_validation(calendar_system):
+    device, clock, _, _, member, _, _, _ = group(calendar_system)
+    first = resolve_day(member)
+    second = resolve_day(member, "2026-11-17")
+
+    async def edit():
+        async with member.app.state.database.sessions() as db:
+            schedule = await db.get(ScheduleVersion, DEFAULT_ID)
+            schedule.effective_until = date(2026, 11, 18)
+            row = await db.get(Meeting, UUID(second["id"]))
+            row.starts_at = datetime.fromisoformat(first["starts_at"])
+            row.ends_at = datetime.fromisoformat(first["ends_at"])
+            await db.commit()
+
+    member.portal.call(edit)
+    ids = sorted([first["id"], second["id"]])
+    query = {"starts_at": first["starts_at"], "meeting_id": ids[0]}
+    pair = member.get(PREFIX + "/meetings/adjacent", params=query).json()
+    assert pair["previous"] is None
+    assert pair["next"]["id"] == ids[1]
+    query["meeting_id"] = ids[1]
+    pair = member.get(PREFIX + "/meetings/adjacent", params=query).json()
+    assert pair["previous"]["id"] == ids[0]
+    assert pair["next"] is None
+    assert device().get(PREFIX + "/meetings/adjacent", params=query).status_code == 401
+    for value in ["2026-11-10T17:00:00", "not-a-date", "9999-01-01T00:00:00Z"]:
+        assert (
+            member.get(
+                PREFIX + "/meetings/adjacent", params={**query, "starts_at": value}
+            ).status_code
+            == 422
+        )
+
+    # A gap of years does not impose a navigation horizon.
+    async def distant_rule():
+        async with member.app.state.database.sessions() as db:
+            db.add(
+                ScheduleVersion(
+                    id=uuid4(),
+                    effective_from=date(2040, 1, 1),
+                    weekday=1,
+                    local_time=time(18),
+                    duration_minutes=120,
+                    timezone="Europe/Warsaw",
+                    venue="Nowa sala",
+                    created_at=clock.at,
+                )
+            )
+            await db.commit()
+
+    member.portal.call(distant_rule)
+    pair = member.get(PREFIX + "/meetings/adjacent", params=query).json()
+    assert pair["next"]["source_date"] == "2040-01-03"

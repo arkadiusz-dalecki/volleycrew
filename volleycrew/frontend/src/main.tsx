@@ -20,6 +20,8 @@ const queryClient = new QueryClient({
 
 window.addEventListener("volleycrew:session-expired", () => {
   const expiredSession = queryClient.getQueryData(["me"]);
+  // Late private responses must not clear queries on the logged-out screen.
+  if (!expiredSession) return;
   void queryClient.cancelQueries().then(() => {
     // Authentication may have completed while the old requests were cancelled.
     if (queryClient.getQueryData(["me"]) !== expiredSession) return;
