@@ -40,6 +40,8 @@ test("meeting swipes and buttons preserve declarations and recover from errors",
       mutations.push(new URL(request.url()).pathname);
   });
   await page.goto("/");
+  const surface = page.locator(".meeting-navigation-surface");
+  await expect(surface).toHaveAttribute("data-meeting-id", initial.id);
   const next = page.getByRole("button", {
     name: "Następne spotkanie",
     exact: true,
@@ -96,14 +98,17 @@ test("meeting swipes and buttons preserve declarations and recover from errors",
     await swipe(hero, left, right);
   }
   await expect(page).toHaveURL(new RegExp(`/meetings/${pair.next.id}$`));
+  await expect(surface).toHaveAttribute("data-meeting-id", pair.next.id);
   await expect(
     page.getByRole("button", { name: "Poprzednie spotkanie", exact: true }),
   ).toBeEnabled();
   await swipe(hero, right, left);
   await expect(page).toHaveURL(new RegExp(`/meetings/${initial.id}$`));
+  await expect(surface).toHaveAttribute("data-meeting-id", initial.id);
   await expect(next).toBeEnabled();
   await next.click();
   await expect(page).toHaveURL(new RegExp(`/meetings/${pair.next.id}$`));
+  await expect(surface).toHaveAttribute("data-meeting-id", pair.next.id);
   await page.reload();
   await expect(hero).toBeVisible();
   expect(mutations.every((path) => path.endsWith("/meetings/resolve"))).toBe(

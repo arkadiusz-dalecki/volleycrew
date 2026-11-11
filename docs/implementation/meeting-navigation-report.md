@@ -17,3 +17,7 @@ Nowy odczyt `/api/v1/meetings/adjacent` zwraca najbliższych sąsiadów według 
 ## Pozostałe zależności
 
 Stan przed publikacją PR: lokalne kontrole zaliczone; wyniki zdalnego CI będą dostępne w PR. Nie wykonano instalacji Home Assistant ani odbioru gestów na fizycznym iPhonie/Androidzie. Nie uruchamiano testów obrazów HA (zmiana API/UI bez infrastruktury). Kolejny odbiór: gesty na fizycznych telefonach, szczególnie przy krawędziach ekranu, gdzie przeglądarka/system może obsługiwać własną nawigację.
+
+## Synchronizacja testu po pierwszym CI
+
+Ślad pierwszego CI wykazał, że URL zmieniał się przed zakończeniem renderowania nowego spotkania. Gdy poprzedni ekran również miał aktywny przycisk „Poprzednie”, test wysyłał gest powrotu do starego komponentu, zanim pobrano nowych sąsiadów. Dodano identyfikator wyświetlanego spotkania na kontenerze i oczekiwanie na ten konkretny ekran przed kolejnym gestem. Zachowano asercje dokładnych adresów oraz brak zmian deklaracji.

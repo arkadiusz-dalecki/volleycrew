@@ -91,6 +91,7 @@ export function MeetingNavigation({
   return (
     <div
       className="meeting-navigation-surface"
+      data-meeting-id={meeting.id}
       onTouchStart={start}
       onTouchMove={track}
       onTouchEnd={finish}
