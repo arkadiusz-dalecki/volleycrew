@@ -182,3 +182,9 @@ Nad listą uczestników zaplanowanego spotkania jest „Wstępne drużyny”, oz
 Własne „Potwierdzam obecność”, rezygnacja i przyjęcie oferty odświeżają boisko od razu; na innych urządzeniach odczyt odbywa się co 30 sekund oraz po powrocie do karty. Administrator ma „Według ELO”, „Losuj wstępne składy”, zamianę przez dotknięcie osoby z obu stron i przeniesienie z większej drużyny do mniejszej. Zapis jest wspólny dla ekipy; zmiana deklaracji przywraca aktualny podział ELO. Nieaktualna lista/rewizja wymaga odświeżenia zamiast nadpisania. Błąd odczytu oznacza ostatni podział, utrata odpowiedzi zapisu pozwala ponowić bez drugiego losowania.
 
 Po zatwierdzeniu obecności podgląd znika, a krok „Drużyny” ma „Użyj wstępnego podziału”. Użycie jest jawne; zmieniona lista faktycznie obecnych jest ponownie wyrównana według ELO. Sam podgląd nie zatwierdza obecności, drużyn ani wyniku.
+
+## Nawigacja gestem między spotkaniami — 2026-11-11
+
+Na `/` i `/meetings/:id` przesunięcie w lewo otwiera następne spotkanie, w prawo poprzednie. Te same akcje są dostępne przyciskami z nazwami dostępnymi dla czytnika i klawiatury. Kolejność według aktualnego czasu startu i ID, jak w kalendarzu; usunięte pomijamy, odwołane pokazujemy. Brak sąsiada wyłącza przycisk. Wirtualny termin otwieramy dotychczasowym rozwiązaniem wystąpienia, bez deklaracji udziału.
+
+Gest wymaga wyraźnego poziomego ruchu jednego palca. Pionowe przewijanie, krótki ruch, gest wielopalcowy i ruch rozpoczęty na kontrolce/formularzu/dialogu nie nawigują. Błąd odczytu sąsiednich terminów ma komunikat i ponowienie, bez usuwania bieżącego spotkania.

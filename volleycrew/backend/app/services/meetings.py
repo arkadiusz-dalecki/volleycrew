@@ -7,7 +7,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.errors import DomainError
-from app.api.meeting_schemas import MeetingDetail, MeetingSummary, PublicPlayer
+from app.api.meeting_schemas import AdjacentMeetings, MeetingDetail, MeetingSummary, PublicPlayer
 from app.domain.schedule import Rule, first_date_on_or_after, occurrence, occurrences
 from app.models.auth import Player
 from app.models.meetings import Enrollment, Meeting, ScheduleVersion
@@ -154,6 +154,60 @@ async def next_meeting(db: AsyncSession, at: datetime) -> MeetingSummary | None:
                 break
             day += timedelta(days=7)
     return min(candidates, key=lambda item: (item.starts_at, str(item.id)), default=None)
+
+
+async def adjacent(
+    db: AsyncSession, starts_at: datetime, meeting_id: UUID, at: datetime
+) -> AdjacentMeetings:
+    await db.scalar(select(ScheduleState).where(ScheduleState.id == 1).with_for_update(read=True))
+    stored = (await db.scalars(select(Meeting))).all()
+    overrides = {(row.calendar_schedule_id, row.calendar_source_date) for row in stored}
+    candidates = [summary(row, True) for row in stored if not row.deleted_at]
+    anchor = (starts_at, str(meeting_id))
+    schedules = (
+        await db.scalars(select(ScheduleVersion).where(ScheduleVersion.superseded.is_(False)))
+    ).all()
+    for schedule in schedules:
+        rule = rule_of(schedule)
+        zone = ZoneInfo(rule.timezone)
+        # Unmaterialized past occurrences are absent from the calendar too.
+        lower = max(rule.effective_from, at.astimezone(zone).date() - timedelta(days=1))
+        upper = rule.effective_until or date(9998, 1, 1)
+        for direction in (-1, 1):
+            day = (
+                max(lower, starts_at.astimezone(zone).date())
+                if direction == 1
+                else min(upper - timedelta(days=1), starts_at.astimezone(zone).date())
+            )
+            day += (
+                timedelta(days=(rule.weekday - day.weekday()) % 7)
+                if direction == 1
+                else -timedelta(days=(day.weekday() - rule.weekday) % 7)
+            )
+            while lower <= day < upper:
+                item = occurrence(rule, day)
+                key = (item.starts_at, str(item.id))
+                if (
+                    item.ends_at > at
+                    and (rule.id, day) not in overrides
+                    and (key > anchor if direction == 1 else key < anchor)
+                ):
+                    candidates.append(summary(item, False))
+                    break
+                day += timedelta(days=7 * direction)
+    previous = max(
+        (item for item in candidates if (item.starts_at, str(item.id)) < anchor),
+        key=lambda item: (item.starts_at, str(item.id)),
+        default=None,
+    )
+    following = min(
+        (item for item in candidates if (item.starts_at, str(item.id)) > anchor),
+        key=lambda item: (item.starts_at, str(item.id)),
+        default=None,
+    )
+    items = [item for item in (previous, following) if item is not None]
+    await rosters(db, items)
+    return AdjacentMeetings(previous=previous, next=following)
 
 
 async def resolve(db: AsyncSession, version_id: UUID, day: date, at: datetime) -> Meeting:

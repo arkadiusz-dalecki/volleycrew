@@ -1,3 +1,4 @@
+import { MeetingNavigation } from "./MeetingNavigation";
 import { PreliminaryCourt } from "../room/PreliminaryCourt";
 import { AddToCalendar } from "./AddToCalendar";
 import { useAdminView } from "../auth/ViewMode";
@@ -140,149 +141,151 @@ export function MeetingPage() {
               </button>
             </p>
           )}
-          <div className="dashboard">
-            <div className="main-column">
-              <section
-                className={`meeting-card ${item.status === "cancelled" ? "meeting-cancelled" : ""}`}
-              >
-                <div className="hero">
-                  <div className="hero-copy">
-                    <span className="eyebrow">
-                      <span className="live-dot" /> CZAS NA WSPÓLNĄ GRĘ
-                    </span>
-                    <h2 className="hero-date">
-                      <time dateTime={item.starts_at}>
-                        {dateLabel(item.starts_at, item.timezone)}
-                      </time>
-                    </h2>
-                    <p>
-                      <Clock3 size={16} />
-                      {hour(item.starts_at, item.timezone)} —{" "}
-                      {hour(item.ends_at, item.timezone)}
-                    </p>
-                    <p>
-                      <MapPin size={16} />
-                      {item.venue}
-                    </p>
-                  </div>
-                  <div className="court-illustration" aria-hidden="true">
-                    <div className="mini-court">
-                      <i />
-                      <i />
+          <MeetingNavigation key={item.id} meeting={item}>
+            <div className="dashboard">
+              <div className="main-column">
+                <section
+                  className={`meeting-card ${item.status === "cancelled" ? "meeting-cancelled" : ""}`}
+                >
+                  <div className="hero">
+                    <div className="hero-copy">
+                      <span className="eyebrow">
+                        <span className="live-dot" /> CZAS NA WSPÓLNĄ GRĘ
+                      </span>
+                      <h2 className="hero-date">
+                        <time dateTime={item.starts_at}>
+                          {dateLabel(item.starts_at, item.timezone)}
+                        </time>
+                      </h2>
+                      <p>
+                        <Clock3 size={16} />
+                        {hour(item.starts_at, item.timezone)} —{" "}
+                        {hour(item.ends_at, item.timezone)}
+                      </p>
+                      <p>
+                        <MapPin size={16} />
+                        {item.venue}
+                      </p>
                     </div>
-                    <Volleyball className="hero-ball" strokeWidth={1} />
+                    <div className="court-illustration" aria-hidden="true">
+                      <div className="mini-court">
+                        <i />
+                        <i />
+                      </div>
+                      <Volleyball className="hero-ball" strokeWidth={1} />
+                    </div>
                   </div>
-                </div>
-                {item.previous_starts_at && item.status !== "cancelled" && (
-                  <div className="term-change-banner">
-                    <strong>Termin spotkania został zmieniony</strong>
-                    <p>
-                      Poprzednio: {dateLabel(item.previous_starts_at)},{" "}
-                      {hour(item.previous_starts_at)}.
-                    </p>
-                    <p>
-                      Teraz: {dateLabel(item.starts_at)}, {hour(item.starts_at)}
-                      .
-                    </p>
-                  </div>
-                )}
-                <div className="meeting-meta">
-                  <span className={`meeting-state ${item.status}`}>
-                    {statusLabel[item.status]}
-                  </span>
-                  <span>
-                    {item.participant_count} / {item.capacity} uczestników
-                  </span>
-                </div>
-                {item.status === "cancelled" ? (
-                  <p className="meeting-message">
-                    Spotkanie zostało odwołane. Nie powoduje oznaczeń
-                    nieobecności.
-                  </p>
-                ) : item.status === "completed" ? (
-                  <p className="meeting-message">
-                    To spotkanie jest już zakończone.
-                  </p>
-                ) : (
-                  <ParticipationCard key={item.id} meeting={item} />
-                )}
-                <AddToCalendar meeting={item} />
-              </section>
-              {item.status === "scheduled" && (
-                <PreliminaryCourt
-                  key={`preliminary-${item.id}`}
-                  meeting={item}
-                />
-              )}
-              {adminView && item.persisted && item.status === "scheduled" && (
-                <OfferManager
-                  meetingId={item.id}
-                  termVersion={item.term_version}
-                />
-              )}
-              {adminView && item.persisted && (
-                <MeetingActions key={item.id} meeting={item} />
-              )}
-              {item.persisted &&
-                item.status !== "cancelled" &&
-                (adminView ? (
-                  <RoomPanel key={`room-${item.id}`} meetingId={item.id} />
-                ) : (
-                  <ConfirmedCourt
-                    key={`court-${item.id}`}
-                    meetingId={item.id}
-                  />
-                ))}
-              {item.persisted && item.status === "completed" && !adminView && (
-                <ResultCard meetingId={item.id} />
-              )}
-              {!!item.awaiting_confirmation.length && (
-                <Roster
-                  title="Oczekują na potwierdzenie"
-                  players={item.awaiting_confirmation}
-                />
-              )}
-              <Roster title="Uczestnicy" players={item.participants} />
-              {item.status !== "completed" && (
-                <Roster title="Rezerwa" players={item.waitlist} />
-              )}
-            </div>
-            <aside className="right-column">
-              <section className="card upcoming">
-                <div className="section-title">
-                  <h2>Zaplanuj kolejną grę</h2>
-                  <CalendarDays size={19} />
-                </div>
-                <p>
-                  Sprawdź terminy na kolejne miesiące i znajdź czas dla ekipy.
-                </p>
-                <Link className="text-link" to="/calendar">
-                  Otwórz kalendarz <ArrowRight size={15} />
-                </Link>
-              </section>
-              {!id && !item.persisted && (
-                <section className="card">
-                  <h2>Ten termin</h2>
-                  <p className="form-note">
-                    Otwórz szczegóły spotkania. Samo otwarcie nie zapisuje Cię
-                    na grę.
-                  </p>
-                  <button
-                    className="button primary"
-                    disabled={!!opener.busy}
-                    onClick={() => void opener.open(item)}
-                  >
-                    Otwórz spotkanie <ArrowRight size={16} />
-                  </button>
-                  {opener.error && (
-                    <p className="form-error" role="alert">
-                      {opener.error}
-                    </p>
+                  {item.previous_starts_at && item.status !== "cancelled" && (
+                    <div className="term-change-banner">
+                      <strong>Termin spotkania został zmieniony</strong>
+                      <p>
+                        Poprzednio: {dateLabel(item.previous_starts_at)},{" "}
+                        {hour(item.previous_starts_at)}.
+                      </p>
+                      <p>
+                        Teraz: {dateLabel(item.starts_at)},{" "}
+                        {hour(item.starts_at)}.
+                      </p>
+                    </div>
                   )}
+                  <div className="meeting-meta">
+                    <span className={`meeting-state ${item.status}`}>
+                      {statusLabel[item.status]}
+                    </span>
+                    <span>
+                      {item.participant_count} / {item.capacity} uczestników
+                    </span>
+                  </div>
+                  {item.status === "cancelled" ? (
+                    <p className="meeting-message">
+                      Spotkanie zostało odwołane. Nie powoduje oznaczeń
+                      nieobecności.
+                    </p>
+                  ) : item.status === "completed" ? (
+                    <p className="meeting-message">
+                      To spotkanie jest już zakończone.
+                    </p>
+                  ) : (
+                    <ParticipationCard key={item.id} meeting={item} />
+                  )}
+                  <AddToCalendar meeting={item} />
                 </section>
-              )}
-            </aside>
-          </div>
+                {item.status === "scheduled" && (
+                  <PreliminaryCourt
+                    key={`preliminary-${item.id}`}
+                    meeting={item}
+                  />
+                )}
+                {adminView && item.persisted && item.status === "scheduled" && (
+                  <OfferManager
+                    meetingId={item.id}
+                    termVersion={item.term_version}
+                  />
+                )}
+                {adminView && item.persisted && (
+                  <MeetingActions key={item.id} meeting={item} />
+                )}
+                {item.persisted &&
+                  item.status !== "cancelled" &&
+                  (adminView ? (
+                    <RoomPanel key={`room-${item.id}`} meetingId={item.id} />
+                  ) : (
+                    <ConfirmedCourt
+                      key={`court-${item.id}`}
+                      meetingId={item.id}
+                    />
+                  ))}
+                {item.persisted &&
+                  item.status === "completed" &&
+                  !adminView && <ResultCard meetingId={item.id} />}
+                {!!item.awaiting_confirmation.length && (
+                  <Roster
+                    title="Oczekują na potwierdzenie"
+                    players={item.awaiting_confirmation}
+                  />
+                )}
+                <Roster title="Uczestnicy" players={item.participants} />
+                {item.status !== "completed" && (
+                  <Roster title="Rezerwa" players={item.waitlist} />
+                )}
+              </div>
+              <aside className="right-column">
+                <section className="card upcoming">
+                  <div className="section-title">
+                    <h2>Zaplanuj kolejną grę</h2>
+                    <CalendarDays size={19} />
+                  </div>
+                  <p>
+                    Sprawdź terminy na kolejne miesiące i znajdź czas dla ekipy.
+                  </p>
+                  <Link className="text-link" to="/calendar">
+                    Otwórz kalendarz <ArrowRight size={15} />
+                  </Link>
+                </section>
+                {!id && !item.persisted && (
+                  <section className="card">
+                    <h2>Ten termin</h2>
+                    <p className="form-note">
+                      Otwórz szczegóły spotkania. Samo otwarcie nie zapisuje Cię
+                      na grę.
+                    </p>
+                    <button
+                      className="button primary"
+                      disabled={!!opener.busy}
+                      onClick={() => void opener.open(item)}
+                    >
+                      Otwórz spotkanie <ArrowRight size={16} />
+                    </button>
+                    {opener.error && (
+                      <p className="form-error" role="alert">
+                        {opener.error}
+                      </p>
+                    )}
+                  </section>
+                )}
+              </aside>
+            </div>
+          </MeetingNavigation>
         </>
       )}
     </>

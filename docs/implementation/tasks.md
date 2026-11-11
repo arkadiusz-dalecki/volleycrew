@@ -185,3 +185,7 @@ Aktualizacja 2026-11-09: eksport zbiorczy miesiąca/12 miesięcy wycofany na pro
 ## Uzupełnienie E4/E6/E9 — wstępne drużyny
 
 Zlecone 2026-11-09: boisko z potwierdzonych zapisów przed obecnością, domyślnie ELO, automatyczne odświeżanie po deklaracjach i rezygnacjach, zapisane losowanie/ręczna zamiana administratora oraz wykorzystanie podglądu po sprawdzeniu obecności. Odbiór: limit 14 i jedno miejsce na osobę, brak rezerwy/ofert, aktualne ELO, konflikty listy/drugiej karty, prywatność, brak skutków w obecności/ELO i widok mobile. Zakres i wyniki: [raport](preliminary-court-report.md).
+
+## Uzupełnienie E3/E9 — gesty nawigacji spotkań
+
+Zlecone 2026-11-11: gest w lewo/prawo oraz przyciski następnego/poprzedniego spotkania na głównym ekranie i szczegółach. Odbiór: chronologia także dla przesuniętych terminów i granic miesięcy/lat, pomijanie usuniętych, brak deklaracji przy nawigacji, brak kolizji z przewijaniem/formularzami/dotknięciami i obsługa błędu odczytu.

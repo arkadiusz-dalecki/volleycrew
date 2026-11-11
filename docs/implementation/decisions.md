@@ -93,3 +93,7 @@ Użytkownik zlecił boisko przed sprawdzeniem obecności, przeliczane po zapisac
 ## Etykieta deklaracji udziału — 2026-11-09
 
 Na prośbę użytkownika przycisk „Będę” zmieniono na „Potwierdzam obecność”. To nadal deklaracja udziału przed spotkaniem; faktyczną obecność zatwierdza osobno administrator.
+
+## Przesuwanie między spotkaniami — 2026-11-11
+
+Użytkownik zlecił przechodzenie do kolejnego i poprzedniego spotkania gestem w głównym widoku. W lewo przechodzimy do następnego terminu, w prawo do poprzedniego, w kolejności kalendarza (aktualny start, następnie ID). Dostępne są także przyciski. Usunięte terminy pomijamy, odwołane pozostają widoczne jak w kalendarzu. Samo przejście nie deklaruje udziału.

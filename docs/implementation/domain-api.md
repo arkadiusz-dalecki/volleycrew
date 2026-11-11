@@ -272,3 +272,7 @@ Administrator może zapisać podział losowy, ręczną zamianę lub wrócić do 
 - GET `/api/v1/meetings/{id}/preliminary-teams`: dla zalogowanych, podgląd lub null po zatwierdzeniu obecności/zmianie statusu; usunięte spotkanie daje 404.
 - PUT `/api/v1/admin/meetings/{id}/preliminary-teams`: administrator i CSRF, `roster_token`, `revision`, tryb `balanced`, `random` lub `manual`; ręczny podział wymaga każdej uprawnionej osoby dokładnie raz.
 - Istniejące generowanie oficjalnych drużyn przyjmuje też tryb `preliminary`. Nadal wymaga zatwierdzonej obecności. Zgodna lista i punkty zachowują podział wstępny; różnica osób lub punktów daje wyrównany podział faktycznie obecnych.
+
+## Sąsiednie spotkania — 2026-11-11
+
+`GET /api/v1/meetings/adjacent?starts_at=<czas ze strefą>&meeting_id=<UUID>` wymaga sesji i zwraca `previous` oraz `next` jako `MeetingSummary | null`. Kotwica odpowiada wyświetlanemu terminowi, także jeszcze wirtualnemu. Porządek `(starts_at, ID)` odpowiada kalendarzowi, obejmuje zapisane historyczne i odwołane terminy oraz przyszłe/niezakończone wystąpienia aktywnych serii. Usunięcia i przesunięcia tłumią źródłowe wystąpienia. Odczyt nie utrwala spotkań ani nie zmienia deklaracji; nie ma ograniczenia do bieżącego miesiąca lub roku.
