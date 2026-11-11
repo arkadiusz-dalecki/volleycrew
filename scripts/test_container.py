@@ -13,8 +13,10 @@ import tempfile
 import time
 import urllib.error
 import urllib.request
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from uuid import UUID, uuid4
+from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[1]
 ORIGIN = "https://127.0.0.1:18443"
@@ -90,6 +92,19 @@ class Client:
         status, body, _ = self.call("/api/v1/auth/csrf", prefix=prefix)
         assert status == 200
         return {"X-CSRF-Token": body["token"]}
+
+
+def signup_occurrence(client, at=None):
+    # /meetings/next deliberately includes an ongoing meeting. Enrollment tests
+    # need an unstarted occurrence, even when CI runs during Tuesday's game.
+    tomorrow = (at or datetime.now(UTC)).astimezone(ZoneInfo("Europe/Warsaw")).date()
+    tomorrow += timedelta(days=1)
+    end = tomorrow + timedelta(days=14)
+    status, calendar, _ = client.call(f"/api/v1/calendar?from={tomorrow}&to={end}")
+    assert status == 200, (status, calendar)
+    candidates = [item for item in calendar["items"] if item["status"] == "scheduled"]
+    assert candidates, "The disposable fixture needs a future scheduled occurrence"
+    return min(candidates, key=lambda item: item["starts_at"])
 
 
 def main():
@@ -418,7 +433,7 @@ http {
                 )
                 players.append(person["id"])
                 actors.append(actor)
-            upcoming = client.call("/api/v1/meetings/next")[1]
+            upcoming = signup_occurrence(client)
             meeting = mutate(
                 "/meetings/resolve",
                 {

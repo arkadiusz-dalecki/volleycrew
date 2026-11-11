@@ -39,3 +39,9 @@ Na prośbę użytkownika „Będę” zastąpiono „Potwierdzam obecność”. 
 ## Przygotowanie PR 0.3.2 — 2026-11-10
 
 Manifest HA podbity z 0.3.1 do 0.3.2; changelog zawiera cały zakres gałęzi. Przed publikacją ponownie zaliczone lint, typecheck, kontrakt OpenAPI, `git diff --check` oraz 13 testów konfiguracji/pakietu. Wcześniejsze pełne wyniki 144 backend / 71 E2E oraz końcowe 3 E2E po zmianie etykiety pozostają dowodami funkcjonalnymi. CI sprawdzi bieżący commit i obrazy obu architektur. PR nie wdraża aplikacji na HA.
+
+## Poprawka CI PR #6 — 2026-11-11
+
+Oba obrazy zbudowały się, lecz scenariusz `scripts/test_container.py` próbował deklaracji na trwające najbliższe spotkanie. Uruchomienie CI 2026-11-10 o 17:09–17:14 UTC przypadło po wtorkowym starcie 18:00 w Warszawie; API słusznie zwracało 409 `enrollment_closed`. Endpoint najbliższego spotkania celowo uwzględnia trwający mecz.
+
+Fixture wybiera teraz zaplanowane wystąpienie z kalendarza od jutra w strefie Europe/Warsaw, z dwutygodniowym oknem. Dalszy cykl nadal zapisuje deklaracje przez rzeczywiste API, a dopiero potem przesuwa testowe spotkanie na salę. Nie zmieniono reguł produkcyjnych ani limitów zapisów. Dodano 4 regresje na rzeczywistym API/PostgreSQL: wtorek przed startem, w godzinie startu, w trakcie i po spotkaniu; każda rozwiązuje przyszły termin i skutecznie zapisuje deklarację. Wszystkie 4 zaliczone, lint i kompilacja skryptu zaliczone. Pełne testy obrazów obu CPU weryfikuje ponowny przebieg CI po publikacji poprawki.
