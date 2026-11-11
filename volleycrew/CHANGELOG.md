@@ -4,6 +4,7 @@
 
 - Swipe left or right on the meeting screen to open the next or previous meeting; offer matching navigation buttons.
 - Follow calendar order across months and years, including rescheduled and cancelled meetings while skipping deleted entries. Navigating does not change participation declarations.
+- Keep the login profile list usable when a private request returns 401 after logout.
 - No new database migrations. Update the Home Assistant app normally after taking a backup.
 
 ## 0.3.2

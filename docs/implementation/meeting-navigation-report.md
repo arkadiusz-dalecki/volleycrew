@@ -21,3 +21,9 @@ Stan przed publikacją PR: lokalne kontrole zaliczone; wyniki zdalnego CI będą
 ## Synchronizacja testu po pierwszym CI
 
 Ślad pierwszego CI wykazał, że URL zmieniał się przed zakończeniem renderowania nowego spotkania. Gdy poprzedni ekran również miał aktywny przycisk „Poprzednie”, test wysyłał gest powrotu do starego komponentu, zanim pobrano nowych sąsiadów. Dodano identyfikator wyświetlanego spotkania na kontenerze i oczekiwanie na ten konkretny ekran przed kolejnym gestem. Zachowano asercje dokładnych adresów oraz brak zmian deklaracji.
+
+## Opóźnione 401 po wylogowaniu
+
+Drugi przebieg CI ujawnił istniejący wyścig: odpowiedź administracyjnego odczytu 401 dotarła po wylogowaniu i montażu listy profili, a globalny handler usunął nowy publiczny query z cache. Lista pozostawała w stanie ładowania mimo odpowiedzi 200. Dodany kontrolowany test `auth-races.spec.ts` odtworzył błąd lokalnie (1 niezaliczony przed poprawką). Handler ignoruje teraz zdarzenie, jeżeli nie ma zalogowanej sesji; czyszczenie prywatnych danych aktywnej sesji pozostaje bez zmian.
+
+Po poprawce: `auth-races.spec.ts`, `mobile-improvements.spec.ts` i `meeting-navigation.spec.ts` — 21 zaliczonych w Chromium desktop/mobile i WebKit. Lint, typy, build i diff-check ponownie zaliczone.
