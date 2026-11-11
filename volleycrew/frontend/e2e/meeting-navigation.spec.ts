@@ -57,6 +57,28 @@ test("meeting swipes and buttons preserve declarations and recover from errors",
     await swipe(hero, from, to);
     await expect(page).toHaveURL(/\/$/);
   }
+  const card = page.locator(".meeting-card");
+  await expect
+    .poll(() => card.evaluate((element) => getComputedStyle(element).transform))
+    .toBe("matrix(1, 0, 0, 1, 0, 0)");
+  const position = await card.boundingBox();
+  await hero.dispatchEvent("touchstart", { touches: [left] });
+  await hero.dispatchEvent("touchmove", {
+    touches: [{ ...left, clientX: 250 }],
+  });
+  await expect
+    .poll(async () => (await card.boundingBox())!.x)
+    .toBeLessThan(position!.x - 20);
+  await page.screenshot({ path: info.outputPath("meeting-drag.png") });
+  await hero.dispatchEvent("touchend", {
+    touches: [],
+    changedTouches: [{ ...left, clientX: 250 }],
+  });
+  await expect
+    .poll(async () => Math.abs((await card.boundingBox())!.x - position!.x))
+    .toBeLessThan(1);
+  await expect(page).toHaveURL(/\/$/);
+
   await swipe(next, left, right);
   await expect(page).toHaveURL(/\/$/);
   await hero.dispatchEvent("touchstart", { touches: [left] });
@@ -106,6 +128,15 @@ test("meeting swipes and buttons preserve declarations and recover from errors",
   await expect(page).toHaveURL(new RegExp(`/meetings/${initial.id}$`));
   await expect(surface).toHaveAttribute("data-meeting-id", initial.id);
   await expect(next).toBeEnabled();
+  await page.route(`**/api/v1/meetings/${pair.next.id}`, (route) =>
+    route.abort(),
+  );
+  await next.click();
+  await expect(page.locator(".form-error").last()).toBeVisible();
+  await expect(surface).toHaveAttribute("data-meeting-id", initial.id);
+  await expect(card).toBeVisible();
+  await page.unroute(`**/api/v1/meetings/${pair.next.id}`);
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await next.click();
   await expect(page).toHaveURL(new RegExp(`/meetings/${pair.next.id}$`));
   await expect(surface).toHaveAttribute("data-meeting-id", pair.next.id);

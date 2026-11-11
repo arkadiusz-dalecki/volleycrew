@@ -2664,7 +2664,21 @@ select {
 }
 
 .meeting-navigation-surface {
+  overflow-x: clip;
+}
+.meeting-navigation-surface .meeting-card {
   touch-action: pan-y pinch-zoom;
+  transform: translateX(var(--meeting-drag, 0px));
+  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.meeting-navigation-surface[data-dragging] .meeting-card {
+  transition: none;
+  user-select: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .meeting-navigation-surface .meeting-card {
+    transition: none;
+  }
 }
 .meeting-navigation {
   display: flex;

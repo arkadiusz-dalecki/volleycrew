@@ -189,3 +189,8 @@ Zlecone 2026-11-09: boisko z potwierdzonych zapisów przed obecnością, domyśl
 ## Uzupełnienie E3/E9 — gesty nawigacji spotkań
 
 Zlecone 2026-11-11: gest w lewo/prawo oraz przyciski następnego/poprzedniego spotkania na głównym ekranie i szczegółach. Odbiór: chronologia także dla przesuniętych terminów i granic miesięcy/lat, pomijanie usuniętych, brak deklaracji przy nawigacji, brak kolizji z przewijaniem/formularzami/dotknięciami i obsługa błędu odczytu.
+
+
+### Płynny kafelek — uzupełnienie 2026-11-11
+
+Zlecone i zaimplementowane: ruch całego kafelka za palcem, powrót po krótkim/anulowanym geście, kierunkowe przejście także z przycisków, pobranie nowego terminu przed animacją i ograniczenie ruchu według ustawienia systemu. Dowody i ograniczenia: [raport nawigacji](meeting-navigation-report.md#płynny-kafelek--uzupełnienie-2026-11-11).

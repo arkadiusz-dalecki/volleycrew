@@ -27,3 +27,19 @@ Stan przed publikacją PR: lokalne kontrole zaliczone; wyniki zdalnego CI będą
 Drugi przebieg CI ujawnił istniejący wyścig: odpowiedź administracyjnego odczytu 401 dotarła po wylogowaniu i montażu listy profili, a globalny handler usunął nowy publiczny query z cache. Lista pozostawała w stanie ładowania mimo odpowiedzi 200. Dodany kontrolowany test `auth-races.spec.ts` odtworzył błąd lokalnie (1 niezaliczony przed poprawką). Handler ignoruje teraz zdarzenie, jeżeli nie ma zalogowanej sesji; czyszczenie prywatnych danych aktywnej sesji pozostaje bez zmian.
 
 Po poprawce: `auth-races.spec.ts`, `mobile-improvements.spec.ts` i `meeting-navigation.spec.ts` — 21 zaliczonych w Chromium desktop/mobile i WebKit. Lint, typy, build i diff-check ponownie zaliczone.
+
+
+## Płynny kafelek — uzupełnienie 2026-11-11
+
+Gałąź `feat/meeting-card-animation`, kontynuacja E3/E9 na zlecenie użytkownika. Cała karta spotkania (data, status, udział i osobisty kalendarz) podąża za palcem. Gest rozpoczyna się na karcie poza kontrolkami; pozostałe sekcje nie uruchamiają nawigacji. Krótki/anulowany gest wraca łagodnie do zera; brak sąsiada ogranicza przesunięcie i daje odczucie oporu. Pełny gest i przyciski uruchamiają wyjazd w kierunku nawigacji (220 ms), a nowy kafelek wjeżdża z przeciwnej strony (300 ms). Pionowe przewijanie i dotychczasowe zabezpieczenia gestów pozostają.
+
+Szczegóły trwałego terminu pobieramy przed wyjazdem, także gdy są już w cache. Wirtualny termin nadal korzysta z resolve. Błąd zachowuje obecną kartę i cofa przesunięcie. Przy przejściu dane są w cache, więc nie ma pośredniego ekranu ładowania. `prefers-reduced-motion: reduce` wyłącza przesuwanie i animacje. Bez zmian API i migracji. Na zlecenie użytkownika wersja pakietu podniesiona z 0.3.3 do 0.3.4; standardowa aktualizacja HA po kopii zapasowej.
+
+Weryfikacja lokalna:
+
+- Osobna PostgreSQL 17 na 55439, baza `volleycrew_swipe_test`; testy nie korzystały z bazy developerskiej ani produkcyjnej.
+- `npm run test:e2e -- e2e/meeting-navigation.spec.ts e2e/calendar.spec.ts`: 6 zaliczonych (Chromium desktop/mobile i WebKit). Kontrola pozycji kafelka podczas ruchu i po krótkim geście, natywny dotyk Chromium, oba kierunki, przyciski, przewijanie/gesty ignorowane, błędy szczegółów i sąsiadów, ponowienie, tryb ograniczonego ruchu, zachowanie deklaracji i brak poziomego przepełnienia.
+- Lint, typecheck, build, 4 istniejące testy frontendowe i `git diff --check`: zaliczone.
+- Screenshot mobilny w trakcie gestu sprawdzony wizualnie; pliki w ignorowanym `volleycrew/frontend/test-results/`.
+
+Publikacja PR i pełne CI zlecone w kolejnym kroku; wyniki dla końcowego commita będą dostępne w PR. Nie wykonywano wdrożenia Home Assistant. Odczucie animacji i gestów na fizycznym iPhonie/Androidzie pozostaje do odbioru. Nie zmieniano backendu ani infrastruktury; nie uruchamiano ich pełnych zestawów testów.

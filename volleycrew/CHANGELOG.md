@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.4
+
+- Move the entire meeting card with the swipe gesture and smoothly return it after a short or cancelled drag.
+- Animate next/previous meeting transitions from gestures and buttons; load meeting details before sliding out to avoid a loading-screen flash.
+- Keep the current meeting on a loading error and respect the system reduced-motion preference.
+- No new database migrations. Update the Home Assistant app normally after taking a backup.
+
 ## 0.3.3
 
 - Swipe left or right on the meeting screen to open the next or previous meeting; offer matching navigation buttons.
