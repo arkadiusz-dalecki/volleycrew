@@ -20,7 +20,7 @@ spec.loader.exec_module(smoke)
 @pytest.mark.parametrize("hour", [16, 17, 18, 19])
 def test_signup_fixture_skips_todays_meeting_even_while_it_is_next(calendar_system, hour):
     # Warsaw Tuesday 18:00 = 17:00 UTC; test before, at, during and after start.
-    from tests.test_enrollment import setup_group
+    from tests.test_enrollment import declaration, setup_group
 
     _, clock, admin, _, _, _, _, _ = setup_group(calendar_system, 0)
     clock.at = datetime(2026, 11, 10, hour, 14, tzinfo=UTC)
@@ -46,10 +46,5 @@ def test_signup_fixture_skips_todays_meeting_even_while_it_is_next(calendar_syst
     )
     assert resolved.status_code == 200, resolved.text
     meeting = resolved.json()
-    declared = mutate(
-        admin,
-        f"/meetings/{meeting['id']}/my-declaration",
-        {"declaration": "going", "term_version": meeting["term_version"]},
-        "PUT",
-    )
+    declared = declaration(admin, meeting)
     assert declared.status_code == 200, declared.text
