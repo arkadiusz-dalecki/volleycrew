@@ -188,3 +188,8 @@ Po zatwierdzeniu obecności podgląd znika, a krok „Drużyny” ma „Użyj ws
 Na `/` i `/meetings/:id` przesunięcie w lewo otwiera następne spotkanie, w prawo poprzednie. Te same akcje są dostępne przyciskami z nazwami dostępnymi dla czytnika i klawiatury. Kolejność według aktualnego czasu startu i ID, jak w kalendarzu; usunięte pomijamy, odwołane pokazujemy. Brak sąsiada wyłącza przycisk. Wirtualny termin otwieramy dotychczasowym rozwiązaniem wystąpienia, bez deklaracji udziału.
 
 Gest wymaga wyraźnego poziomego ruchu jednego palca. Pionowe przewijanie, krótki ruch, gest wielopalcowy i ruch rozpoczęty na kontrolce/formularzu/dialogu nie nawigują. Błąd odczytu sąsiednich terminów ma komunikat i ponowienie, bez usuwania bieżącego spotkania.
+
+
+## Płynne przesuwanie kafelka — 2026-11-11
+
+Użytkownik zlecił graficzne przejście między terminami: cały kafelek spotkania podąża za poziomym gestem; krótki/anulowany gest wraca do pozycji początkowej. Po zmianie obecny kafelek wyjeżdża w kierunku gestu, a nowy wjeżdża z przeciwnej strony. Przyciski korzystają z tego samego przejścia. Pobranie szczegółów poprzedza animację wyjścia; błąd zachowuje bieżący termin. Gest jest ograniczony do kafelka, z zachowaniem przewijania i wykluczeniem kontrolek. Preferencja ograniczenia ruchu wyłącza animacje.

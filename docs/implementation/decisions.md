@@ -97,3 +97,8 @@ Na prośbę użytkownika przycisk „Będę” zmieniono na „Potwierdzam obecn
 ## Przesuwanie między spotkaniami — 2026-11-11
 
 Użytkownik zlecił przechodzenie do kolejnego i poprzedniego spotkania gestem w głównym widoku. W lewo przechodzimy do następnego terminu, w prawo do poprzedniego, w kolejności kalendarza (aktualny start, następnie ID). Dostępne są także przyciski. Usunięte terminy pomijamy, odwołane pozostają widoczne jak w kalendarzu. Samo przejście nie deklaruje udziału.
+
+
+## Płynne przesuwanie kafelka — 2026-11-11
+
+Użytkownik zlecił graficzne przejście między terminami: cały kafelek spotkania podąża za poziomym gestem; krótki/anulowany gest wraca do pozycji początkowej. Po zmianie obecny kafelek wyjeżdża w kierunku gestu, a nowy wjeżdża z przeciwnej strony. Przyciski korzystają z tego samego przejścia. Pobranie szczegółów poprzedza animację wyjścia; błąd zachowuje bieżący termin. Gest jest ograniczony do kafelka, z zachowaniem przewijania i wykluczeniem kontrolek. Preferencja ograniczenia ruchu wyłącza animacje.
