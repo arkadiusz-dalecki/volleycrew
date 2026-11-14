@@ -7,6 +7,7 @@ test("invite, remembered session, masked login, profile, reset and blocking", as
 }, info) => {
   const nickname = `Misiek-${info.project.name}`;
   await page.goto(`/join#${process.env.E2E_INVITE}`);
+  await expect(page).toHaveURL(/\/join$/);
   await page.getByLabel("Imię", { exact: true }).fill("Michał");
   await page.getByLabel("Nazwisko", { exact: true }).fill("Nowak");
   await page.getByLabel("Przydomek (opcjonalnie)").fill(nickname);
@@ -67,6 +68,7 @@ test("invite, remembered session, masked login, profile, reset and blocking", as
   await row.getByRole("button", { name: "Reset PIN-u" }).click();
   const url = await adminPage.getByLabel("Link do przekazania").inputValue();
   await page.goto(url);
+  await expect(page).toHaveURL(/\/reset-pin$/);
   await page.getByLabel("Nowy PIN", { exact: true }).fill("333333");
   await page.getByLabel("Powtórz nowy PIN", { exact: true }).fill("333333");
   await page.getByRole("button", { name: "Ustaw nowy PIN" }).click();

@@ -55,9 +55,14 @@ export function unwrap<T>(result: {
   if (result.error || result.data === undefined) {
     const error = result.error as
       { code?: string; message?: string } | undefined;
+    const seconds = Number(result.response.headers.get("Retry-After"));
+    const retryMessage =
+      result.response.status === 429 && Number.isFinite(seconds) && seconds > 0
+        ? `Za dużo prób. Spróbuj ponownie za ${Math.ceil(seconds)} s.`
+        : undefined;
     throw new ApiFailure(
       error?.code ?? "request_failed",
-      error?.message ?? "Nie udało się wykonać czynności.",
+      retryMessage ?? error?.message ?? "Nie udało się wykonać czynności.",
       result.response.status,
     );
   }

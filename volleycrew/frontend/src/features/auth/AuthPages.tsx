@@ -1,19 +1,14 @@
 import { useEffect, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Link,
-  Navigate,
-  useLocation,
-  useNavigate,
-  useParams,
-} from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { KeyRound, LoaderCircle, ShieldCheck, Volleyball } from "lucide-react";
 import { api, message, unwrap } from "../../lib/api/client";
 import { PreviewProfiles } from "./PreviewProfiles";
 import { useSession } from "./useSession";
 import { useAdminView } from "./ViewMode";
 import { rememberedProfile, rememberProfile } from "./rememberedProfile";
+import { useAuthLinkToken } from "./useAuthLinkToken";
 import { InstallApp } from "../install/InstallApp";
 
 export function Protected({
@@ -235,9 +230,7 @@ export function LoginPage({ preview = false }: { preview?: boolean }) {
 }
 
 export function RegisterPage({ bootstrap = false }: { bootstrap?: boolean }) {
-  const location = useLocation(),
-    params = useParams();
-  const token = location.hash.slice(1) || params.token || "";
+  const token = useAuthLinkToken();
   const [firstName, setFirstName] = useState(bootstrap ? "Arkadiusz" : "");
   const [lastName, setLastName] = useState(bootstrap ? "Dalecki" : "");
   const [nickname, setNickname] = useState("");
@@ -294,7 +287,8 @@ export function RegisterPage({ bootstrap = false }: { bootstrap?: boolean }) {
     >
       {!token ? (
         <p role="alert" className="form-error">
-          Otwórz pełny link przekazany przez organizatora.
+          Otwórz ponownie pełny link przekazany przez organizatora. Ze względów
+          bezpieczeństwa odświeżenie strony wymaga ponownego otwarcia linku.
         </p>
       ) : (
         <form onSubmit={(e) => void submit(e)}>
@@ -387,9 +381,7 @@ export function RegisterPage({ bootstrap = false }: { bootstrap?: boolean }) {
 }
 
 export function ResetPinPage() {
-  const location = useLocation(),
-    params = useParams();
-  const token = location.hash.slice(1) || params.token || "";
+  const token = useAuthLinkToken();
   const [pin, setPin] = useState("");
   const [repeat, setRepeat] = useState("");
   const [busy, setBusy] = useState(false);
@@ -430,7 +422,8 @@ export function ResetPinPage() {
     >
       {!token ? (
         <p className="form-error" role="alert">
-          Brakuje pełnego linku do resetu PIN-u.
+          Otwórz ponownie pełny link do resetu PIN-u. Ze względów bezpieczeństwa
+          odświeżenie strony wymaga ponownego otwarcia linku.
         </p>
       ) : (
         <form onSubmit={(e) => void submit(e)}>

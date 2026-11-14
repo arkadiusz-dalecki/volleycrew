@@ -12,6 +12,7 @@ from app.api.meetings import router as meetings_router
 from app.api.results import router as results_router
 from app.api.room import router as room_router
 from app.api.schedule_changes import router as schedule_router
+from app.core.auth_protection import AuthProtection, SecurityMonitor
 from app.core.clock import Clock, SystemClock
 from app.core.config import Settings, get_settings
 from app.core.database import Database
@@ -28,12 +29,14 @@ def create_app(settings: Settings | None = None, clock: Clock | None = None) -> 
         app.state.clock = clock or SystemClock()
         app.state.settings = settings
         app.state.auth_key = load_auth_key(settings)
+        app.state.security_monitor = SecurityMonitor(app.state.auth_key)
         try:
             yield
         finally:
             await app.state.database.engine.dispose()
 
     app = FastAPI(title="Volleycrew API", version="0.1.0", lifespan=lifespan)
+    app.add_middleware(AuthProtection)
     app.add_middleware(ProxyContext, enabled=settings.behind_proxy)
     register_error_handlers(app)
     app.include_router(health_router, prefix="/api/v1")

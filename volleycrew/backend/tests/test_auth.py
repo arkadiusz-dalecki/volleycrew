@@ -409,3 +409,43 @@ def test_operator_rotates_initial_link_and_cannot_replace_admin(system):
         check=False,
     )
     assert closed.returncode != 0 and "permanently closed" in closed.stderr
+
+
+def test_security_logs_report_auth_outcomes_without_request_secrets(system, caplog):
+    import json
+
+    device, _, _, _, _, player, _, _ = group(system)
+    client = device()
+    with caplog.at_level("INFO", logger="volleycrew.security"):
+        assert login(client, player, "999999").status_code == 401
+        assert login(client, player).status_code == 200
+        assert (
+            mutate(
+                client, "/auth/reset-pin", {"token": "sensitive-reset-token", "pin": "888888"}
+            ).status_code
+            == 400
+        )
+        assert (
+            client.post(
+                PREFIX + "/auth/login", json={"profile_id": player["id"], "pin": "654321"}
+            ).status_code
+            == 403
+        )
+    events = [json.loads(r.message) for r in caplog.records if r.name == "volleycrew.security"]
+    assert {e["event"] for e in events} == {
+        "auth_failed",
+        "auth_succeeded",
+        "auth_invalid_link",
+        "auth_csrf_rejected",
+    }
+    for secret in (
+        "999999",
+        "888888",
+        "654321",
+        "sensitive-reset-token",
+        player["id"],
+        "testclient",
+    ):
+        assert secret not in " ".join(
+            json.dumps({k: v for k, v in e.items() if k != "at"}) for e in events
+        )

@@ -123,3 +123,13 @@ Aby wydrukować listę przed wyjściem z domu, otwórz spotkanie jako administra
 Przed sprawdzeniem obecności szczegóły spotkania pokazują boisko z osób z potwierdzonym miejscem, domyślnie wyrównane według ELO. Po własnym zapisie lub rezygnacji boisko odświeża się od razu; pozostali widzą zmiany najpóźniej przy kolejnym odświeżeniu co 30 sekund.
 
 Administrator może losować, zamieniać osoby przez dotknięcie zawodników z przeciwnych stron lub wrócić do „Według ELO”. Podział widzi cała ekipa, a zmiana deklaracji resetuje go do aktualnego ELO. Na sali sprawdź i zatwierdź obecność, następnie w kroku „Drużyny” wybierz „Użyj wstępnego podziału”. Gdy obecni różnią się od zapisanych, aplikacja wyrówna faktyczny skład od nowa.
+
+## Obserwowanie prób logowania
+
+W logach aplikacji HA wyszukuj zdarzenia JSON z nazwami `auth_failed`, `auth_invalid_link`, `auth_csrf_rejected`, `auth_invalid_input`, `auth_rate_limited`, `auth_burst_limited` i `auth_succeeded`. Pole `operation` wskazuje login/rejestrację/bootstrap/reset, a `source` to odcisk HMAC źródła pozwalający porównać próby bez wypisywania adresu IP w tych zdarzeniach. Klucz instancji musi pozostać ten sam, aby odciski były porównywalne po restarcie. Osobny log dostępu Nginx nadal zawiera adres zgodnie z wcześniej opisaną konfiguracją.
+
+Powtarzające się błędy jednego źródła lub limity z wielu źródeł wymagają sprawdzenia ruchu na tunelu/proxy. Błędy CSRF po zmianie adresu mogą wskazywać również błędny origin/proxy. `security_logs_suppressed` oznacza przekroczenie 60 wpisów bezpieczeństwa/minutę/proces; kolejne wpisy są pomijane do końca okna, aby ruch nie zapełniał logów. Liczba wpisów nie jest więc liczbą wszystkich prób. Logi nie stanowią automatycznych alertów ani zewnętrznego monitoringu.
+
+Dodatkowe ograniczenie serii żądań działa przed bazą: na źródło seria 10 i odnawianie 30/min, globalnie seria 20 i odnawianie 4/s, dla czterech operacji wejścia. Poprawnie skonfiguruj zaufane proxy; bez tego wielu użytkowników może dzielić limit jednego adresu proxy, a Ingress dzieli źródło Supervisor. HTTP 429 zawiera czas ponowienia. Restart zeruje wyłącznie dodatkowy limiter w pamięci; właściwe liczniki błędnych PIN-ów i operacji pozostają w PostgreSQL. Zmiana na wiele workerów wymaga ponownego doboru ochrony wspólnej dla procesów. Ochronę przed zalaniem łącza/połączeń konfiguruje się na proxy/tunelu.
+
+Linki `#…` po otwarciu znikają z adresu. Po odświeżeniu strony otwórz ponownie oryginalny link z wiadomości. Dawny format z tokenem w ścieżce nie jest już obsługiwany; poproś o aktualny link. Samo otwarcie linku resetu nadal go nie zużywa. Nie udostępniaj linków ani plików diagnostycznych zawierających sekrety.
