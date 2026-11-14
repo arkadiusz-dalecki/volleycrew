@@ -193,3 +193,7 @@ Gest wymaga wyraźnego poziomego ruchu jednego palca. Pionowe przewijanie, krót
 ## Płynne przesuwanie kafelka — 2026-11-11
 
 Użytkownik zlecił graficzne przejście między terminami: cały kafelek spotkania podąża za poziomym gestem; krótki/anulowany gest wraca do pozycji początkowej. Po zmianie obecny kafelek wyjeżdża w kierunku gestu, a nowy wjeżdża z przeciwnej strony. Przyciski korzystają z tego samego przejścia. Pobranie szczegółów poprzedza animację wyjścia; błąd zachowuje bieżący termin. Gest jest ograniczony do kafelka, z zachowaniem przewijania i wykluczeniem kontrolek. Preferencja ograniczenia ruchu wyłącza animacje.
+
+## Linki dostępu — uzupełnienie E2/E9, 2026-11-14
+
+Rejestracja, bootstrap i reset odczytują sekret wyłącznie z fragmentu `#…`. Po odczycie przeglądarka zastępuje bieżący adres adresem bez fragmentu i query, zachowując bazę Ingress. Sekret zostaje tylko w pamięci zamontowanego formularza, bez localStorage/sessionStorage i bez stanu historii routera. Odświeżenie wymaga ponownego otwarcia pełnego linku; ekran wyjaśnia tę sytuację. Otwarcie kolejnego fragmentu na tej samej trasie działa również bez pełnego przeładowania dokumentu. Dawne `/join/:token` i `/reset-pin/:token` usuwają token z adresu i pokazują informację o ponownym otwarciu pełnego linku, bez używania sekretu ze ścieżki. Poprawne istniejące linki `#…` nadal działają, a samo otwarcie nie zużywa resetu. Przy HTTP 429 formularz podaje przekazany przez serwer czas `Retry-After`, bez automatycznego ponawiania mutacji.

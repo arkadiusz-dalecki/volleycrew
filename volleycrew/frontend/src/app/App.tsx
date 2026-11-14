@@ -26,7 +26,14 @@ import {
 import { ProfilePage } from "../features/auth/ProfilePage";
 import { AdminSettings } from "../features/auth/AdminSettings";
 import { useSession } from "../features/auth/useSession";
-import { NavLink, Route, Routes, useLocation, Link } from "react-router-dom";
+import {
+  NavLink,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  Link,
+} from "react-router-dom";
 import {
   CalendarDays,
   House,
@@ -303,14 +310,17 @@ export function App() {
           <Route path="/join" element={<RegisterPage key="join" />} />
           <Route
             path="/join/:token"
-            element={<RegisterPage key="join-legacy" />}
+            element={<Navigate to="/join" replace />}
           />
           <Route
             path="/setup"
             element={<RegisterPage bootstrap key="setup" />}
           />
           <Route path="/reset-pin" element={<ResetPinPage />} />
-          <Route path="/reset-pin/:token" element={<ResetPinPage />} />
+          <Route
+            path="/reset-pin/:token"
+            element={<Navigate to="/reset-pin" replace />}
+          />
           <Route
             path="*"
             element={

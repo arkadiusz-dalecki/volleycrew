@@ -194,3 +194,7 @@ Zlecone 2026-11-11: gest w lewo/prawo oraz przyciski następnego/poprzedniego sp
 ### Płynny kafelek — uzupełnienie 2026-11-11
 
 Zlecone i zaimplementowane: ruch całego kafelka za palcem, powrót po krótkim/anulowanym geście, kierunkowe przejście także z przycisków, pobranie nowego terminu przed animacją i ograniczenie ruchu według ustawienia systemu. Dowody i ograniczenia: [raport nawigacji](meeting-navigation-report.md#płynny-kafelek--uzupełnienie-2026-11-11).
+
+## Uzupełnienie E2/E9 — linki, monitoring i odporność na nadużycia
+
+Zlecone 2026-11-14 po recenzji logowania. Zakres: usuwanie sekretu z adresu po otwarciu linku, odrzucenie tokenów w ścieżce, obsługa Retry-After, ograniczone i pozbawione sekretów logi zdarzeń oraz ograniczanie gwałtownych serii żądań uwierzytelniania przed dostępem do DB. Odbiór: testy PostgreSQL trwałych limitów/resetów, kontrolowany zegar dodatkowego limitera, sprawdzenie logów na brak sekretów oraz E2E rejestracji/resetu z czystym adresem i ponownego otwarcia linku. Bez wdrożenia i bez zmiany pozostałych decyzji o logowaniu.

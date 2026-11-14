@@ -102,3 +102,7 @@ Użytkownik zlecił przechodzenie do kolejnego i poprzedniego spotkania gestem w
 ## Płynne przesuwanie kafelka — 2026-11-11
 
 Użytkownik zlecił graficzne przejście między terminami: cały kafelek spotkania podąża za poziomym gestem; krótki/anulowany gest wraca do pozycji początkowej. Po zmianie obecny kafelek wyjeżdża w kierunku gestu, a nowy wjeżdża z przeciwnej strony. Przyciski korzystają z tego samego przejścia. Pobranie szczegółów poprzedza animację wyjścia; błąd zachowuje bieżący termin. Gest jest ograniczony do kafelka, z zachowaniem przewijania i wykluczeniem kontrolek. Preferencja ograniczenia ruchu wyłącza animacje.
+
+## Uzupełnienie E2/E9 — linki i ochrona dostępu, 2026-11-14
+
+Użytkownik zlecił punkt 5 recenzji: dopracowanie linków, monitoringu i odporności na nadużycia. Zakres: token linku wyłącznie we fragmencie, usunięcie go z bieżącego adresu po odczycie do pamięci formularza; odrzucenie dawnych tokenów w ścieżce, komunikaty Retry-After, bezpieczne i ograniczone objętościowo logi bezpieczeństwa oraz dodatkowe ograniczenie nagłych serii żądań przed bazą. To uzupełnienie E2/E9; polityka PIN-u, katalog profili, ważność/wielokrotność zaproszeń i dotychczasowe trwałe limity pozostają zgodne z wcześniejszymi decyzjami.
