@@ -168,7 +168,7 @@ Poza HA alternatywą jest `npm run auth:bootstrap -- --rotate` w prawidłowym ś
 
 Zawodnik rejestruje się z zaproszenia przez Google lub podając własny login i hasło. Organizator wydaje 30-minutowy link resetu, którym można ustawić hasło i odzyskać/zastąpić login. Zmiana/reset hasła wylogowuje inne urządzenia. Reset od organizatora odłącza również Google. Login nie pojawia się na listach uczestników ani wydruku. Publiczny katalog profili i dawne endpointy PIN-u usunięto.
 
-Cofnięcie migracji nie odtwarza PIN-ów ani loginów. Do rollbacku dostępu przywróć zgodną kopię bazy i wcześniejszy obraz. Wersja pakietu pozostaje bez zmiany w tym PR.
+Cofnięcie migracji nie odtwarza PIN-ów ani loginów. Do rollbacku dostępu przywróć zgodną kopię bazy i wcześniejszy obraz. Zmiany logowania są dostępne w pakiecie 0.3.5.
 
 ## Dołączanie przez Google
 

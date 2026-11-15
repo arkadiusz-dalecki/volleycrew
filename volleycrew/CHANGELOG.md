@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.5
+
+- Replace profile selection and PINs with a private username and password. Keep existing profiles, participation history and ELO; old PINs and sessions no longer work.
+- Add optional Google login and invite-only Google registration, with editable first/last name suggestions and no password required. Protect the last login method and allow adding a local password after confirming the same Google account again.
+- Keep invitation/reset secrets out of request URLs, show retry delays, and add bounded security logs and protection against bursts of authentication requests.
+- Apply migrations 0011–0013 on upgrade from 0.3.4. Back up the app/database first. Set a new random BOOTSTRAP_TOKEN in HA, restart, and open PUBLIC_URL/setup#TOKEN to choose the existing organizer's username/password; then clear the token. See [the migration guide](DOCS.md#przejście-z-pin-u-na-login-i-hasło).
+- Google remains disabled until both client credentials and the canonical callback are configured. Rollback requires a matching database backup and app version; older versions do not support Google-only accounts.
+
 ## 0.3.4
 
 - Move the entire meeting card with the swipe gesture and smoothly return it after a short or cancelled drag.
