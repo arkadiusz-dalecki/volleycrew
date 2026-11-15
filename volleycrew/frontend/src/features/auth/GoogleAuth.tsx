@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, message, unwrap } from "../../lib/api/client";
 import { PasswordField } from "./CredentialFields";
 import { basePath } from "../../lib/base";
+import { useSession } from "./useSession";
 
 function useGoogleConfig() {
   return useQuery({
@@ -15,6 +16,8 @@ function useGoogleConfig() {
 }
 
 const notices: Record<string, string> = {
+  invite:
+    "Zaproszenie jest nieaktywne. Poproś organizatora o nowy link do dołączenia.",
   limited:
     "Za dużo prób logowania Google. Odczekaj chwilę i rozpocznij logowanie ponownie.",
   linked: "Konto Google zostało połączone z Twoim profilem.",
@@ -25,7 +28,7 @@ const notices: Record<string, string> = {
   unavailable:
     "Google jest teraz niedostępne. Spróbuj ponownie lub zaloguj się hasłem.",
   unlinked:
-    "To konto Google nie jest połączone z profilem. Zaloguj się hasłem i połącz je w swoim profilu.",
+    "To konto Google nie jest połączone z profilem. Dołącz przez link zaproszenia albo zaloguj się hasłem i połącz Google w swoim profilu.",
   conflict:
     "To konto Google lub profil ma już inne powiązanie. Zaloguj się hasłem, aby je sprawdzić.",
   session:
@@ -53,11 +56,11 @@ export function GoogleNotice() {
   ) : null;
 }
 
-function GoogleLabel() {
+function GoogleLabel({ join = false }: { join?: boolean }) {
   return (
     <>
       <img src={`${basePath}/google-g.png`} alt="" width="20" height="20" />
-      Zaloguj przez Google
+      {join ? "Dołącz przez Google" : "Zaloguj przez Google"}
     </>
   );
 }
@@ -126,6 +129,7 @@ export function GoogleLogin({ destination = "/" }: { destination?: string }) {
 }
 
 export function GoogleConnection() {
+  const { data: me } = useSession();
   const config = useGoogleConfig();
   const connection = useQuery({
     queryKey: ["google-connection"],
@@ -194,6 +198,11 @@ export function GoogleConnection() {
             Otwórz mój profil w nowej karcie
           </a>
         </>
+      ) : me && !me.has_password ? (
+        <p className="form-note">
+          Google jest Twoją jedyną metodą logowania. Aby je odłączyć, najpierw
+          ustaw login i hasło w swoim profilu.
+        </p>
       ) : (
         <>
           <p>
@@ -222,5 +231,123 @@ export function GoogleConnection() {
         </p>
       )}
     </section>
+  );
+}
+
+export function GoogleJoin({ token }: { token: string }) {
+  const config = useGoogleConfig();
+  const external = usePublicGoogle(config.data?.public_url);
+  const [busy, setBusy] = useState(false),
+    [error, setError] = useState("");
+  if (!config.data?.enabled || !token) return null;
+  async function start() {
+    setBusy(true);
+    setError("");
+    try {
+      const result = unwrap(
+        await api.POST("/api/v1/auth/google/start", {
+          body: { mode: "register", invite_token: token, return_to: "/" },
+        }),
+      );
+      window.location.assign(result.url);
+    } catch (e) {
+      setError(message(e));
+      setBusy(false);
+    }
+  }
+  return (
+    <div className="google-access">
+      {external ? (
+        <a
+          className="google-button"
+          href={`${config.data.public_url}/join#${encodeURIComponent(token)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <GoogleLabel join />
+        </a>
+      ) : (
+        <button
+          type="button"
+          className="google-button"
+          disabled={busy}
+          onClick={() => void start()}
+        >
+          {busy ? "Łączymy z Google…" : <GoogleLabel join />}
+        </button>
+      )}
+      <p className="form-note">
+        Po wyborze Google sprawdzisz i poprawisz imię oraz nazwisko. Login i
+        hasło nie będą wymagane.
+        {external &&
+          " Dołączenie otworzy główny adres Volleycrew w nowej karcie."}
+      </p>
+      {error && (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      )}
+      <p className="form-note">
+        Możesz też dołączyć poniżej, wybierając login i hasło.
+      </p>
+    </div>
+  );
+}
+
+export function GooglePasswordStart() {
+  const config = useGoogleConfig();
+  const external = usePublicGoogle(config.data?.public_url);
+  const [busy, setBusy] = useState(false),
+    [error, setError] = useState("");
+  async function start() {
+    setBusy(true);
+    setError("");
+    try {
+      const result = unwrap(
+        await api.POST("/api/v1/auth/google/start", {
+          body: { mode: "password", return_to: "/profile" },
+        }),
+      );
+      window.location.assign(result.url);
+    } catch (e) {
+      setError(message(e));
+      setBusy(false);
+    }
+  }
+  return (
+    <>
+      <p className="form-note">
+        Logujesz się przez Google. Możesz dodać login i hasło jako drugi sposób
+        dostępu. Najpierw potwierdzisz to samo konto Google.
+      </p>
+      {!config.data?.enabled ? (
+        <p className="form-note">
+          Google jest teraz niedostępne. Organizator może przekazać Ci link do
+          ustawienia loginu i hasła.
+        </p>
+      ) : external ? (
+        <a
+          className="button"
+          href={`${config.data.public_url}/profile`}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Otwórz profil pod głównym adresem
+        </a>
+      ) : (
+        <button
+          className="button primary"
+          disabled={busy}
+          onClick={() => void start()}
+        >
+          Ustaw login i hasło
+        </button>
+      )}
+      {error && (
+        <p role="alert" className="form-error">
+          {error}
+        </p>
+      )}
+    </>
   );
 }

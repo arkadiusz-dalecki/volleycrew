@@ -23,6 +23,7 @@ import {
   ResetPasswordPage,
   Protected,
 } from "../features/auth/AuthPages";
+import { GoogleCompletionPage } from "../features/auth/GoogleCompletionPage";
 import { ProfilePage } from "../features/auth/ProfilePage";
 import { AdminSettings } from "../features/auth/AdminSettings";
 import { useSession } from "../features/auth/useSession";
@@ -307,6 +308,15 @@ export function App() {
           {import.meta.env.DEV && (
             <Route path="/preview/login" element={<LoginPage preview />} />
           )}
+          <Route path="/join/google" element={<GoogleCompletionPage />} />
+          <Route
+            path="/profile/password"
+            element={
+              <Protected>
+                <GoogleCompletionPage passwordSetup />
+              </Protected>
+            }
+          />
           <Route path="/join" element={<RegisterPage key="join" />} />
           <Route
             path="/join/:token"

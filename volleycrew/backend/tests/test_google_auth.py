@@ -83,15 +83,23 @@ def google(system, signing):
         return enable(device())
 
     def begin(
-        client, mode="login", password=None, subject="google-subject-1", return_to="/", **claims
+        client,
+        mode="login",
+        password=None,
+        subject="google-subject-1",
+        return_to="/",
+        invite_token=None,
+        **claims,
     ):
         body = {"mode": mode, "return_to": return_to}
+        if invite_token is not None:
+            body["invite_token"] = invite_token
         if password is not None:
             body["password"] = password
         response = mutate(client, "/auth/google/start", body)
         assert response.status_code == 200, response.text
         query = parse_qs(urlsplit(response.json()["url"]).query)
-        assert query["scope"] == ["openid"]
+        assert query["scope"] == ["openid profile"]
         assert query["code_challenge_method"] == ["S256"]
         assert query["prompt"] == ["select_account"]
         assert query["redirect_uri"] == [ORIGIN + "/api/v1/auth/google/callback"]

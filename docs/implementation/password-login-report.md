@@ -1,5 +1,7 @@
 # E2/E9 — wpisywany login i hasło
 
+Aktualizacja: rejestracja przez Google z zaproszenia i konta bez hasła rozszerzają opisany zakres. Końcowy stan i wyniki: [raport rejestracji Google](google-registration-report.md).
+
 Data: 2026-11-15. Użytkownik zastąpił wcześniejszy wybór profilu i PIN osobną nazwą użytkownika i hasłem. Potwierdził, że jedyny zarejestrowany profil to organizator; migracja graczy nie jest potrzebna. Zmiana rozszerza otwarty PR #11 z Google. Bez wdrożenia i bez zmian w produkcyjnej bazie.
 
 ## Zachowanie

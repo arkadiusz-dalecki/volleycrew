@@ -51,6 +51,8 @@ def transport(request):
             "nonce": data["nonce"],
             "iat": int(time.time()),
             "exp": int(time.time()) + 300,
+            "given_name": data.get("given_name", "Google"),
+            "family_name": data.get("family_name", "Testowy"),
         }
         token = jwt.encode(claims, key, algorithm="RS256", headers={"kid": "browser-test"})
         return httpx.Response(

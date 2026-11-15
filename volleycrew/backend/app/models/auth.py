@@ -31,6 +31,10 @@ class Player(Base):
     password_hash: Mapped[str | None] = mapped_column(String(255))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
+    @property
+    def has_password(self) -> bool:
+        return self.password_hash is not None
+
 
 class Session(Base):
     __tablename__ = "auth_sessions"
@@ -100,11 +104,35 @@ class GoogleIdentity(Base):
 
 class GoogleFlow(Base):
     __tablename__ = "google_flows"
+    mode: Mapped[str] = mapped_column(String(8), default="login", server_default="login")
+    invite_id: Mapped[UUID | None] = mapped_column(ForeignKey("invites.id"))
     return_to: Mapped[str] = mapped_column(String(512))
     state_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
     browser_hash: Mapped[str] = mapped_column(String(64))
     nonce_hash: Mapped[str] = mapped_column(String(64))
     session_id: Mapped[UUID | None] = mapped_column(ForeignKey("auth_sessions.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class GoogleActionGrant(Base):
+    __tablename__ = "google_action_grants"
+    __table_args__ = (
+        CheckConstraint("purpose IN ('register','password')"),
+        CheckConstraint(
+            "(purpose = 'register' AND invite_id IS NOT NULL AND session_id IS NULL) OR "
+            "(purpose = 'password' AND invite_id IS NULL AND session_id IS NOT NULL)"
+        ),
+    )
+    token_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    browser_hash: Mapped[str] = mapped_column(String(64))
+    purpose: Mapped[str] = mapped_column(String(8))
+    subject: Mapped[str] = mapped_column(String(255))
+    invite_id: Mapped[UUID | None] = mapped_column(ForeignKey("invites.id"))
+    session_id: Mapped[UUID | None] = mapped_column(ForeignKey("auth_sessions.id"))
+    first_name: Mapped[str] = mapped_column(String(80), default="")
+    last_name: Mapped[str] = mapped_column(String(80), default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
     used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

@@ -1,5 +1,7 @@
 # E2/E9 — opcjonalne logowanie Google
 
+Aktualizacja: rejestracja przez Google z zaproszenia i konta bez hasła rozszerzają opisany zakres. Końcowy stan i wyniki: [raport rejestracji Google](google-registration-report.md).
+
 Data: 2026-11-15. Gałąź `feat/google-login`, baza `1962d88` (main po #10). Zakres: dodatkowe Google dla istniejących profili, bez otwierania rejestracji. Wyniki lokalne poniżej; bieżący status obrazów i GitHub Actions w PR. Bez wdrożenia HA ani użycia rzeczywistych kont Google.
 
 Aktualizacja: bieżący PR zastępuje PIN loginem i hasłem; dawne dowody poniżej opisują pierwszą wersję integracji. Aktualne potwierdzenia Google wymagają hasła. Końcowa weryfikacja i procedura organizatora: [raport loginu i hasła](password-login-report.md).

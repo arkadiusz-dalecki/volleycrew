@@ -27,7 +27,7 @@ from app.core.security import (
     valid_csrf,
     verify_password,
 )
-from app.models.auth import AuditEvent, AuthThrottle, Player, Session
+from app.models.auth import AuditEvent, AuthThrottle, GoogleIdentity, Player, Session
 
 
 async def auth_lock(db: AsyncSession) -> None:
@@ -38,6 +38,10 @@ async def auth_lock(db: AsyncSession) -> None:
 
 def now(request: Request) -> datetime:
     return request.app.state.clock.now()
+
+
+async def account_ready(db: AsyncSession, player: Player) -> bool:
+    return bool(player.password_hash or await db.get(GoogleIdentity, player.id))
 
 
 def audit(
@@ -95,7 +99,7 @@ async def current_session(db: AsyncSession, request: Request) -> tuple[Player, S
     if (
         not pair
         or not pair.Player.is_active
-        or not pair.Player.password_hash
+        or not await account_ready(db, pair.Player)
         or pair.Session.revoked_at is not None
         or pair.Session.expires_at <= at
         or pair.Session.absolute_expires_at <= at

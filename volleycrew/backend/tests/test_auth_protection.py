@@ -138,3 +138,44 @@ async def test_google_callback_has_its_own_budget_and_cleans_rejected_urls():
     assert headers[b"location"].endswith(b"/login#google=limited")
     assert b"secret" not in headers[b"location"]
     assert headers[b"retry-after"] == b"2"
+
+
+@pytest.mark.asyncio
+async def test_completion_reads_have_an_independent_bounded_admission_budget():
+    messages, calls = [], []
+    state = SimpleNamespace(settings=Settings(), security_monitor=SecurityMonitor(b"test-key"))
+
+    async def downstream(scope, receive, send):
+        calls.append(scope["path"])
+        await send({"type": "http.response.start", "status": 200, "headers": []})
+        await send({"type": "http.response.body", "body": b"{}"})
+
+    async def receive():
+        raise AssertionError("The test downstream never reads a body")
+
+    async def send(message):
+        messages.append(message)
+
+    protection = AuthProtection(downstream)
+    protection.admission = AuthAdmission(lambda: 0)
+    protection.completion_admission = AuthAdmission(lambda: 0)
+    for _ in range(10):
+        assert protection.admission.check("192.0.2.1") == 0
+    scope = {
+        "type": "http",
+        "method": "POST",
+        "root_path": "",
+        "path": "/api/v1/auth/google/completion",
+        "query_string": b"",
+        "headers": [],
+        "client": ("192.0.2.1", 1234),
+        "app": SimpleNamespace(state=state),
+    }
+    for _ in range(10):
+        await protection(scope, receive, send)
+        assert messages[-2]["status"] == 200
+    await protection(scope, receive, send)
+    assert messages[-2]["status"] == 429
+    scope["path"] = "/api/v1/auth/login"
+    await protection(scope, receive, send)
+    assert messages[-2]["status"] == 429 and len(calls) == 10

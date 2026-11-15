@@ -11,7 +11,7 @@ from app.core.config import get_settings
 from app.core.database import Database
 from app.core.security import new_token, token_hash
 from app.models.auth import BootstrapGrant, Player
-from app.services.auth import auth_lock
+from app.services.auth import account_ready, auth_lock
 
 
 async def create_bootstrap() -> None:
@@ -20,11 +20,8 @@ async def create_bootstrap() -> None:
     try:
         async with db.sessions() as session:
             await auth_lock(session)
-            if await session.scalar(
-                select(Player.id)
-                .where(Player.role == "admin", Player.password_hash.is_not(None))
-                .limit(1)
-            ):
+            organizer = await session.scalar(select(Player).where(Player.role == "admin").limit(1))
+            if organizer and await account_ready(session, organizer):
                 raise SystemExit("Administrator already exists; bootstrap is permanently closed.")
             grant = await session.get(BootstrapGrant, 1)
             if grant and "--rotate" not in sys.argv:

@@ -85,6 +85,7 @@ class PlayerView(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: UUID
     username: str | None
+    has_password: bool
     first_name: str
     last_name: str
     nickname: str | None
@@ -139,7 +140,8 @@ class GoogleStart(Input):
             raise ValueError("Use an internal page path")
         return value
 
-    mode: Literal["login", "link"] = "login"
+    mode: Literal["login", "link", "register", "password"] = "login"
+    invite_token: SecretStr | None = Field(default=None, min_length=1, max_length=128)
     password: SecretStr | None = Field(default=None, min_length=1, max_length=128)
 
 
@@ -154,3 +156,21 @@ class GoogleConnection(BaseModel):
 
 class GoogleRedirect(BaseModel):
     url: str
+
+
+class GoogleActionToken(Input):
+    token: SecretStr = Field(min_length=43, max_length=43)
+
+
+class GoogleActionView(BaseModel):
+    purpose: Literal["register", "password"]
+    first_name: str
+    last_name: str
+
+
+class GoogleRegistration(ProfileInput, GoogleActionToken):
+    pass
+
+
+class GooglePassword(UsernameInput, NewPassword, GoogleActionToken):
+    pass

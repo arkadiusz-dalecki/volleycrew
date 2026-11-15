@@ -6,6 +6,7 @@ import hashlib
 import hmac
 import re
 import time
+from dataclasses import dataclass
 
 import httpx
 import jwt
@@ -31,6 +32,13 @@ class GoogleUnavailable(Exception):
     pass
 
 
+@dataclass(frozen=True)
+class GoogleProfile:
+    subject: str
+    first_name: str = ""
+    last_name: str = ""
+
+
 class GoogleProvider:
     def __init__(self, settings: Settings, key: bytes, transport=None, timer=time.monotonic):
         self.settings, self.key, self.transport = settings, key, transport
@@ -52,7 +60,7 @@ class GoogleProvider:
         return AsyncOAuth2Client(
             self.settings.google_client_id,
             self.settings.google_client_secret.get_secret_value(),
-            scope="openid",
+            scope="openid profile",
             redirect_uri=self.callback_url,
             code_challenge_method="S256",
             token_endpoint_auth_method="client_secret_post",
@@ -67,7 +75,7 @@ class GoogleProvider:
         client = OAuth2Client(
             session=None,
             client_id=self.settings.google_client_id,
-            scope="openid",
+            scope="openid profile",
             redirect_uri=self.callback_url,
             code_challenge_method="S256",
         )
@@ -109,7 +117,7 @@ class GoogleProvider:
                 raise GoogleUnavailable() from None
             return self._keys
 
-    async def verify(self, encoded: str, nonce_hash: str) -> str:
+    async def verify_profile(self, encoded: str, nonce_hash: str) -> GoogleProfile:
         try:
             if not isinstance(encoded, str) or len(encoded) > 16384:
                 raise GoogleRejected()
@@ -141,11 +149,18 @@ class GoogleProvider:
                 raise GoogleRejected()
             if not isinstance(subject, str) or not 1 <= len(subject) <= 255:
                 raise GoogleRejected()
-            return subject
+            return GoogleProfile(
+                subject,
+                claims.get("given_name") if isinstance(claims.get("given_name"), str) else "",
+                claims.get("family_name") if isinstance(claims.get("family_name"), str) else "",
+            )
         except (jwt.PyJWTError, ValueError, KeyError, TypeError):
             raise GoogleRejected() from None
 
-    async def exchange(self, code: str, state: str, nonce_hash: str) -> str:
+    async def verify(self, encoded: str, nonce_hash: str) -> str:
+        return (await self.verify_profile(encoded, nonce_hash)).subject
+
+    async def exchange_profile(self, code: str, state: str, nonce_hash: str) -> GoogleProfile:
         try:
             async with self.client() as client:
                 token = await client.fetch_token(
@@ -159,4 +174,7 @@ class GoogleProvider:
                 raise GoogleRejected()
         except (httpx.HTTPError, OAuthError, OAuth2Error, ValueError, KeyError, TypeError):
             raise GoogleUnavailable() from None
-        return await self.verify(encoded, nonce_hash)
+        return await self.verify_profile(encoded, nonce_hash)
+
+    async def exchange(self, code: str, state: str, nonce_hash: str) -> str:
+        return (await self.exchange_profile(code, state, nonce_hash)).subject

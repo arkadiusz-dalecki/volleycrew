@@ -206,3 +206,7 @@ Zlecone: połączenie Google z istniejącym profilem po potwierdzeniu PIN-u, log
 ## Uzupełnienie E2/E9 — login i hasło, 2026-11-15
 
 Zlecone: osobna nazwa użytkownika i hasło zamiast katalogu profili/PIN-u; rejestracja, bootstrap, zmiana/reset hasła i potwierdzenia Google. Użytkownik nie wymaga migracji graczy (jedyny zarejestrowany to organizator). Odbiór: brak publicznego katalogu/endpointu PIN; unikalność loginu bez względu na wielkość liter; poprawne hashowanie i błędy, trwałe limity i wygaśnięcie sesji; zachowanie danych profilu organizatora i jednorazowa konfiguracja; testy PostgreSQL, przeglądarek i obu pakietów.
+
+## Uzupełnienie E2/E9 — Dołącz przez Google, 2026-11-15
+
+Zlecone: rejestracja z aktywnego zaproszenia przez Google, podpowiedź edytowalnego imienia/nazwiska, potwierdzenie i konto bez hasła. Odbiór: powiązanie grantu z przeglądarką/zaproszeniem, unieważnienie zaproszenia w trakcie procesu, wygaśnięcie/replay/konkurencja, brak duplikacji i eskalacji uprawnień, opcjonalne ustawienie loginu/hasła po nowym dowodzie Google, ochrona przed odłączeniem ostatniej metody; PostgreSQL, UI mobile/WebKit i obrazy HA.

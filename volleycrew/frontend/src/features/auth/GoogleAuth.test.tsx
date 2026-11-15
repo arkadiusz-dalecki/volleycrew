@@ -2,7 +2,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { api } from "../../lib/api/client";
-import { GoogleConnection, GoogleLogin } from "./GoogleAuth";
+import { GoogleConnection, GoogleJoin, GoogleLogin } from "./GoogleAuth";
 
 vi.mock("../../lib/base", () => ({
   basePath: "/api/hassio_ingress/test-prefix",
@@ -55,4 +55,21 @@ it("Ingress manages linking at the canonical profile instead of transferring its
   expect(
     screen.queryByLabelText("Hasło potwierdzające zmianę"),
   ).not.toBeInTheDocument();
+});
+
+it("Ingress carries the invitation only in the canonical join fragment", async () => {
+  vi.spyOn(api, "GET").mockResolvedValue({
+    data: { enabled: true, public_url: "https://volleycrew.test" },
+    response: new Response(),
+  } as never);
+  const token = "isolated-invitation-token";
+  show(<GoogleJoin token={token} />);
+  const link = await screen.findByRole("link", { name: "Dołącz przez Google" });
+  const target = new URL(link.getAttribute("href")!);
+  expect(target.origin).toBe("https://volleycrew.test");
+  expect(target.pathname).toBe("/join");
+  expect(target.hash).toBe("#" + token);
+  expect(target.search).toBe("");
+  expect(link).toHaveAttribute("target", "_blank");
+  expect(link).toHaveAttribute("rel", "noopener noreferrer");
 });

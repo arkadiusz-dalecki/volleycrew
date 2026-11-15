@@ -3,14 +3,20 @@ from fastapi import APIRouter, Depends, Request, Response
 from app.api.auth import DB, User, guard
 from app.api.auth_schemas import (
     Done,
+    GoogleActionToken,
+    GoogleActionView,
     GoogleConfig,
     GoogleConnection,
+    GooglePassword,
     GoogleRedirect,
+    GoogleRegistration,
     GoogleStart,
     PasswordInput,
+    PlayerView,
 )
 from app.api.errors import ApiError
 from app.models.auth import GoogleIdentity
+from app.services import google_actions as actions
 from app.services import google_auth as service
 
 router = APIRouter(
@@ -40,6 +46,7 @@ async def start(body: GoogleStart, request: Request, response: Response, db: DB)
         body.mode,
         body.password.get_secret_value() if body.password is not None else None,
         body.return_to,
+        body.invite_token.get_secret_value() if body.invite_token is not None else None,
     )
     return GoogleRedirect(url=url)
 
@@ -57,3 +64,27 @@ async def disconnect(
         db, player, body.password.get_secret_value(), request, response
     )
     return Done()
+
+
+@router.post(
+    "/auth/google/completion", response_model=GoogleActionView, operation_id="getGoogleCompletion"
+)
+async def completion(body: GoogleActionToken, request: Request, db: DB) -> GoogleActionView:
+    grant = await actions.peek(db, request, body.token.get_secret_value())
+    return GoogleActionView(
+        purpose=grant.purpose, first_name=grant.first_name, last_name=grant.last_name
+    )
+
+
+@router.post("/auth/google/register", response_model=PlayerView, operation_id="registerWithGoogle")
+async def register_google(body: GoogleRegistration, request: Request, response: Response, db: DB):
+    return await actions.register(db, request, response, body)
+
+
+@router.post(
+    "/me/google/password", response_model=PlayerView, operation_id="setGoogleAccountPassword"
+)
+async def set_google_password(
+    body: GooglePassword, player: User, request: Request, response: Response, db: DB
+):
+    return await actions.set_password(db, request, response, body, player)

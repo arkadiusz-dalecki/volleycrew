@@ -9,7 +9,7 @@ import { useSession } from "./useSession";
 import { useAdminView } from "./ViewMode";
 import { rememberedUsername, rememberUsername } from "./rememberedUsername";
 import { useAuthLinkToken } from "./useAuthLinkToken";
-import { GoogleLogin, GoogleNotice } from "./GoogleAuth";
+import { GoogleJoin, GoogleLogin, GoogleNotice } from "./GoogleAuth";
 import { UsernameField, PasswordField } from "./CredentialFields";
 import { InstallApp } from "../install/InstallApp";
 
@@ -59,7 +59,7 @@ export function Protected({
   return children;
 }
 
-function AuthCard({
+export function AuthCard({
   title,
   subtitle,
   children,
@@ -86,7 +86,13 @@ function AuthCard({
   );
 }
 
-function Pending({ busy, children }: { busy: boolean; children: ReactNode }) {
+export function Pending({
+  busy,
+  children,
+}: {
+  busy: boolean;
+  children: ReactNode;
+}) {
   return (
     <button className="button primary wide" type="submit" disabled={busy}>
       {busy ? (
@@ -235,6 +241,7 @@ export function RegisterPage({ bootstrap = false }: { bootstrap?: boolean }) {
           : "Zaproszenie otwiera drzwi do naszej ekipy."
       }
     >
+      {!bootstrap && token && <GoogleJoin token={token} />}
       {!token ? (
         <p role="alert" className="form-error">
           Otwórz ponownie pełny link przekazany przez organizatora. Ze względów

@@ -86,7 +86,7 @@ async def bootstrap(body: Registration, request: Request, response: Response, db
     existing = await db.scalar(select(Player).where(Player.role == "admin").limit(1))
     at = service.now(request)
     if (
-        (existing is not None and existing.password_hash is not None)
+        (existing is not None and await service.account_ready(db, existing))
         or not grant
         or grant.used_at
         or grant.expires_at <= at

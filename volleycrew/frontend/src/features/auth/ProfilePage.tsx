@@ -8,7 +8,11 @@ import { LockKeyhole, UserRound } from "lucide-react";
 import { api, message, unwrap } from "../../lib/api/client";
 import { useSession } from "./useSession";
 
-import { GoogleConnection, GoogleNotice } from "./GoogleAuth";
+import {
+  GoogleConnection,
+  GoogleNotice,
+  GooglePasswordStart,
+} from "./GoogleAuth";
 import { PasswordField } from "./CredentialFields";
 import { priorityLabel } from "./labels";
 
@@ -95,7 +99,13 @@ export function ProfilePage() {
             <UserRound size={20} />
           </div>
           <p className="form-note">
-            Login: <strong>{me.username}</strong>
+            {me.username ? (
+              <>
+                Login: <strong>{me.username}</strong>
+              </>
+            ) : (
+              "Logujesz się przez Google"
+            )}
           </p>
           <p className="private-status">
             Twój status: {priorityLabel(me.priority_status)}
@@ -144,37 +154,43 @@ export function ProfilePage() {
         </section>
         <section className="card">
           <div className="section-title">
-            <h2>Zmiana hasła</h2>
+            <h2>
+              {me.has_password ? "Zmiana hasła" : "Login i hasło (opcjonalnie)"}
+            </h2>
             <LockKeyhole size={20} />
           </div>
-          <form onSubmit={(e) => void change(e)}>
-            <PasswordField
-              label="Obecne hasło"
-              value={currentPassword}
-              onChange={setCurrentPassword}
-              disabled={busy}
-            />
-            <PasswordField
-              label="Nowe hasło"
-              value={password}
-              onChange={setPassword}
-              fresh
-              disabled={busy}
-            />
-            <PasswordField
-              label="Powtórz nowe hasło"
-              value={repeat}
-              onChange={setRepeat}
-              fresh
-              disabled={busy}
-            />
-            <button className="button primary" disabled={busy}>
-              Zmień hasło
-            </button>
-            <p className="form-notice" role="status">
-              {passwordNotice}
-            </p>
-          </form>
+          {!me.has_password ? (
+            <GooglePasswordStart />
+          ) : (
+            <form onSubmit={(e) => void change(e)}>
+              <PasswordField
+                label="Obecne hasło"
+                value={currentPassword}
+                onChange={setCurrentPassword}
+                disabled={busy}
+              />
+              <PasswordField
+                label="Nowe hasło"
+                value={password}
+                onChange={setPassword}
+                fresh
+                disabled={busy}
+              />
+              <PasswordField
+                label="Powtórz nowe hasło"
+                value={repeat}
+                onChange={setRepeat}
+                fresh
+                disabled={busy}
+              />
+              <button className="button primary" disabled={busy}>
+                Zmień hasło
+              </button>
+              <p className="form-notice" role="status">
+                {passwordNotice}
+              </p>
+            </form>
+          )}
         </section>
       </div>
       <GoogleConnection />

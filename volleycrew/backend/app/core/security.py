@@ -25,6 +25,24 @@ HASHER = PasswordHasher(time_cost=2, memory_cost=19456, parallelism=1, type=Type
 DUMMY_HASH = HASHER.hash(secrets.token_urlsafe(12))
 
 
+def google_flow_cookie(request: Request) -> str:
+    return (
+        "__Host-vc_google_flow"
+        if request.app.state.settings.cookie_secure
+        else "vc_google_flow_dev"
+    )
+
+
+def clear_google_flow(response: Response, request: Request) -> None:
+    response.delete_cookie(
+        google_flow_cookie(request),
+        path="/",
+        httponly=True,
+        samesite="lax",
+        secure=request.app.state.settings.cookie_secure,
+    )
+
+
 def token_hash(value: str) -> str:
     return hashlib.sha256(value.encode()).hexdigest()
 

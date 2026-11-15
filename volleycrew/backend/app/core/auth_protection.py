@@ -22,6 +22,9 @@ OPERATIONS = {
     "/api/v1/auth/login": "login",
     "/api/v1/auth/google/start": "google_start",
     "/api/v1/auth/google/callback": "google_callback",
+    "/api/v1/auth/google/completion": "google_completion",
+    "/api/v1/auth/google/register": "google_registration",
+    "/api/v1/me/google/password": "google_password",
     "/api/v1/auth/register": "registration",
     "/api/v1/auth/bootstrap": "bootstrap",
     "/api/v1/auth/reset-password": "reset",
@@ -96,6 +99,7 @@ class AuthProtection:
         self.app = app
         self.admission = AuthAdmission()
         self.callback_admission = AuthAdmission()
+        self.completion_admission = AuthAdmission()
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":
@@ -116,6 +120,8 @@ class AuthProtection:
         monitor = request.app.state.security_monitor
         is_callback = scope["method"] == "GET"
         gate = self.callback_admission if is_callback else self.admission
+        if operation == "google_completion":
+            gate = self.completion_admission
         retry = gate.check(source)
         if retry:
             monitor.record("auth_burst_limited", operation, source)
