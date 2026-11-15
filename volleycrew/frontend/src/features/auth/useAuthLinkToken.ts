@@ -2,9 +2,11 @@ import { useLayoutEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 
 // Keep the secret only in the mounted form. Reloading requires reopening the link.
-export function useAuthLinkToken() {
+export function useAuthLinkToken({ allowQuery = false } = {}) {
   const location = useLocation();
-  const incoming = location.hash.slice(1);
+  const incoming =
+    (allowQuery && new URLSearchParams(location.search).get("token")) ||
+    location.hash.slice(1);
   const [token, setToken] = useState(incoming);
   // Opening another fragment on this route may not remount the form.
   if (incoming && incoming !== token) setToken(incoming);

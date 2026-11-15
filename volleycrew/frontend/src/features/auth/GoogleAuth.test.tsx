@@ -57,7 +57,7 @@ it("Ingress manages linking at the canonical profile instead of transferring its
   ).not.toBeInTheDocument();
 });
 
-it("Ingress carries the invitation only in the canonical join fragment", async () => {
+it("Ingress carries the invitation only in the canonical invitation query", async () => {
   vi.spyOn(api, "GET").mockResolvedValue({
     data: { enabled: true, public_url: "https://volleycrew.test" },
     response: new Response(),
@@ -68,8 +68,8 @@ it("Ingress carries the invitation only in the canonical join fragment", async (
   const target = new URL(link.getAttribute("href")!);
   expect(target.origin).toBe("https://volleycrew.test");
   expect(target.pathname).toBe("/join");
-  expect(target.hash).toBe("#" + token);
-  expect(target.search).toBe("");
+  expect(target.hash).toBe("");
+  expect(target.searchParams.get("token")).toBe(token);
   expect(link).toHaveAttribute("target", "_blank");
   expect(link).toHaveAttribute("rel", "noopener noreferrer");
 });

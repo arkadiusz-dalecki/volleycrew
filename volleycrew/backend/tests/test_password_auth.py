@@ -34,12 +34,48 @@ def test_invalid_usernames(username):
         Login(username=username, password=PASSWORD)
 
 
-@pytest.mark.parametrize("password", ["123456", "short password", "x" * 129])
+@pytest.mark.parametrize("password", ["123456", "x" * 7, "x" * 129])
 def test_new_password_length(password):
     with pytest.raises(ValidationError):
         Registration(
             username="valid-user", password=password, first_name="A", last_name="B", token="secret"
         )
+
+
+@pytest.mark.parametrize("password", ["abcdefgh", "12345678", "🏐" * 8, "  żółw  ", "x" * 128])
+def test_new_password_accepts_eight_characters_without_composition_rules(password):
+    data = Registration(
+        username="valid-user", password=password, first_name="A", last_name="B", token="secret"
+    )
+    assert data.password.get_secret_value() == password
+
+
+def test_eight_character_password_registration_change_reset_and_login(system):
+    device, _, admin, _, _, _, _, token = group(system)
+    member = device()
+    response = register(member, token, username="short-pass", password="abcdefgh")
+    assert response.status_code == 200, response.text
+    player = response.json()
+    assert login(device(), player, "abcdefgh").status_code == 200
+    assert (
+        mutate(
+            member, "/me/password", {"current_password": "abcdefgh", "password": "12345678"}
+        ).status_code
+        == 200
+    )
+    assert login(device(), player, "12345678").status_code == 200
+    reset = (
+        mutate(admin, f"/admin/players/{player['id']}/password-reset").json()["url"].split("#")[1]
+    )
+    assert (
+        mutate(
+            device(),
+            "/auth/reset-password",
+            {"token": reset, "username": player["username"], "password": "aaaaaaaa"},
+        ).status_code
+        == 200
+    )
+    assert login(device(), player, "aaaaaaaa").status_code == 200
 
 
 def test_whitespace_unicode_case_and_private_credentials(system):
@@ -114,8 +150,8 @@ def test_uniform_login_errors_limits_and_removed_pin_routes(system):
     )
     assert mutate(device(), "/auth/reset-pin", {}).status_code == 404
     assert mutate(admin, "/me/pin", {}).status_code == 404
-    invalid = register(device(), "bad-token", password="tiny-secret")
-    assert invalid.status_code == 422 and "tiny-secret" not in invalid.text
+    invalid = register(device(), "bad-token", password="tiny")
+    assert invalid.status_code == 422 and "tiny" not in invalid.text
 
 
 def test_reset_recovers_username_and_keeps_grant_on_collision(system):

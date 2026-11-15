@@ -271,7 +271,9 @@ async def create_invite(actor: Admin, db: DB, request: Request) -> LinkCreated:
     await db.flush()
     service.audit(db, actor.id, "create_invite", invite.id, service.now(request))
     await db.commit()
-    return LinkCreated(id=invite.id, url=f"{request.app.state.settings.public_url}/join#{value}")
+    return LinkCreated(
+        id=invite.id, url=f"{request.app.state.settings.public_url}/join?token={value}"
+    )
 
 
 @router.post("/admin/invites/{invite_id}/revoke", response_model=Done, operation_id="revokeInvite")

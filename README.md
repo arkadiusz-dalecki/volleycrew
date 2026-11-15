@@ -39,7 +39,7 @@ Po uruchomieniu lokalnych serwerów wygeneruj link inicjalizacji:
 npm run auth:bootstrap
 ```
 
-Otwórz wypisany adres `/setup#…` w przeglądarce i sam ustaw login i hasło (15–128 znaków). Link działa raz przez 30 minut. Gdy wygaśnie, `npm run auth:bootstrap -- --rotate` unieważni stary i wygeneruje nowy. Po utworzeniu administratora komenda odmawia ponownej inicjalizacji. Nie ma domyślnego hasła ani konta produkcyjnego zasianego testowymi danymi.
+Otwórz wypisany adres `/setup#…` w przeglądarce i sam ustaw login i hasło (8–128 znaków). Link działa raz przez 30 minut. Gdy wygaśnie, `npm run auth:bootstrap -- --rotate` unieważni stary i wygeneruje nowy. Po utworzeniu administratora komenda odmawia ponownej inicjalizacji. Nie ma domyślnego hasła ani konta produkcyjnego zasianego testowymi danymi.
 
 W „Mój profil” → „Ustawienia ekipy” organizator tworzy link zaproszenia, unieważnia go, wydaje jednorazowe linki resetu hasła, zmienia prywatny status priorytetu i blokuje dostęp. Nowy profil zawsze jest gościem; inne urządzenie wymaga wpisania loginu i hasła. Link pokazujemy w całości tylko po utworzeniu — skopiuj go przed opuszczeniem widoku. Przy zmianie/resetowaniu hasła pozostałe urządzenia tracą sesje.
 
