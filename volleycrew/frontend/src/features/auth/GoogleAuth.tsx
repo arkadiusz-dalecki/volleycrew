@@ -260,7 +260,7 @@ export function GoogleJoin({ token }: { token: string }) {
       {external ? (
         <a
           className="google-button"
-          href={`${config.data.public_url}/join#${encodeURIComponent(token)}`}
+          href={`${config.data.public_url}/join?token=${encodeURIComponent(token)}`}
           target="_blank"
           rel="noopener noreferrer"
         >

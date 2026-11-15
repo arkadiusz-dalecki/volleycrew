@@ -210,3 +210,7 @@ Zlecone: osobna nazwa użytkownika i hasło zamiast katalogu profili/PIN-u; reje
 ## Uzupełnienie E2/E9 — Dołącz przez Google, 2026-11-15
 
 Zlecone: rejestracja z aktywnego zaproszenia przez Google, podpowiedź edytowalnego imienia/nazwiska, potwierdzenie i konto bez hasła. Odbiór: powiązanie grantu z przeglądarką/zaproszeniem, unieważnienie zaproszenia w trakcie procesu, wygaśnięcie/replay/konkurencja, brak duplikacji i eskalacji uprawnień, opcjonalne ustawienie loginu/hasła po nowym dowodzie Google, ochrona przed odłączeniem ostatniej metody; PostgreSQL, UI mobile/WebKit i obrazy HA.
+
+## Uzupełnienie E2/E9 — hasła i zaproszenia Messenger, 2026-11-15
+
+Zlecone: minimum hasła 8 znaków bez wymuszania rodzajów znaków oraz otwieranie zaproszeń z Messengera. Nowe zaproszenia przenoszą token w query, stare fragmenty pozostają obsługiwane. Odbiór: walidacja UI/API, rejestracja/zmiana/reset z krótkim hasłem, usunięcie query/fragmentu bez storage, dodatkowe parametry i zmieniony fragment, unieważnianie zaproszeń oraz zgodność ze starym formatem. [Raport](messenger-invites-report.md).

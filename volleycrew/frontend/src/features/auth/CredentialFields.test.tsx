@@ -13,8 +13,12 @@ function PasswordExample() {
 it("counts Unicode code points and preserves password whitespace", () => {
   render(<PasswordExample />);
   const input = screen.getByLabelText("Hasło") as HTMLInputElement;
-  fireEvent.change(input, { target: { value: "🏐".repeat(8) } });
-  expect(input.validationMessage).toContain("15");
+  fireEvent.change(input, { target: { value: "🏐".repeat(7) } });
+  expect(input.validationMessage).toContain("8");
+  for (const value of ["abcdefgh", "12345678", "🏐".repeat(8)]) {
+    fireEvent.change(input, { target: { value } });
+    expect(input.validationMessage).toBe("");
+  }
   fireEvent.change(input, { target: { value: "🏐".repeat(128) } });
   expect(input.validationMessage).toBe("");
   expect(input.value).toBe("🏐".repeat(128));

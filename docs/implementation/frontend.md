@@ -15,7 +15,7 @@ Odtworzyć UI jako komponenty z rzeczywistymi danymi. Główna struktura: `AppSh
 | `/calendar` | Miesiąc i lista terminów, nawigacja dalej bez limitu tygodni |
 | `/ranking` | Ranking i wyniki z linkiem do meczu |
 | `/profile` | Dane, status, zmiana hasła i prywatna historia |
-| `/join#token` | Walidacja zaproszenia, imię/nazwisko, login, hasło i jego powtórzenie |
+| `/join?token=token` | Walidacja zaproszenia, imię/nazwisko, login, hasło i jego powtórzenie |
 | `/login` | Wpisywany login oraz hasło, opcjonalnie przycisk Google |
 | `/reset-password#token` | Ustawienie loginu i nowego hasła przez jednorazowy grant |
 | `/admin/settings` | Statusy i blokady, link zaproszenia, reset hasła |
@@ -196,7 +196,7 @@ Użytkownik zlecił graficzne przejście między terminami: cały kafelek spotka
 
 ## Linki dostępu — uzupełnienie E2/E9, 2026-11-14
 
-Rejestracja, bootstrap i reset odczytują sekret wyłącznie z fragmentu `#…`. Po odczycie przeglądarka zastępuje bieżący adres adresem bez fragmentu i query, zachowując bazę Ingress. Sekret zostaje tylko w pamięci zamontowanego formularza, bez localStorage/sessionStorage i bez stanu historii routera. Odświeżenie wymaga ponownego otwarcia pełnego linku; ekran wyjaśnia tę sytuację. Otwarcie kolejnego fragmentu na tej samej trasie działa również bez pełnego przeładowania dokumentu. Dawne `/join/:token` i `/reset-pin/:token` usuwają token z adresu i pokazują informację o ponownym otwarciu pełnego linku, bez używania sekretu ze ścieżki. Poprawne istniejące linki `#…` nadal działają, a samo otwarcie nie zużywa resetu. Przy HTTP 429 formularz podaje przekazany przez serwer czas `Retry-After`, bez automatycznego ponawiania mutacji.
+Zaproszenie odczytuje token z query `?token=…` (zmiana 2026-11-15 dla Messengera) albo ze starego fragmentu `#…`. Bootstrap, reset i granty Google odczytują sekret wyłącznie z fragmentu `#…`. Po odczycie przeglądarka zastępuje bieżący adres adresem bez fragmentu i query, zachowując bazę Ingress. Sekret zostaje tylko w pamięci zamontowanego formularza, bez localStorage/sessionStorage i bez stanu historii routera. Odświeżenie wymaga ponownego otwarcia pełnego linku; ekran wyjaśnia tę sytuację. Otwarcie kolejnego fragmentu na tej samej trasie działa również bez pełnego przeładowania dokumentu. Dawne `/join/:token` i `/reset-pin/:token` usuwają token z adresu i pokazują informację o ponownym otwarciu pełnego linku, bez używania sekretu ze ścieżki. Poprawne istniejące linki `#…` nadal działają, a samo otwarcie nie zużywa resetu. Przy HTTP 429 formularz podaje przekazany przez serwer czas `Retry-After`, bez automatycznego ponawiania mutacji.
 
 ## Opcjonalne Google — 2026-11-15
 
@@ -206,10 +206,12 @@ W Ingress lub przy innym origin niż PUBLIC_URL przycisk otwiera główną domen
 
 ## Login i hasło — aktualizacja 2026-11-15
 
-Zastępuje wcześniejsze reguły katalogu logowania/PIN-u: dwa wpisywane pola Login/Hasło, bez listy profili ani pobierania publicznego katalogu. Login ma autocomplete=username, wyłączoną korektę i kapitalizację; hasła current-password/new-password, bez klawiatury numerycznej i limitu 6 cyfr. Nowe hasło i powtórzenie: 15–128 znaków, frazy ze spacjami/Unicode, zgodność przed wysłaniem. Formularz zachowuje dane przy błędzie. Po sukcesie sekrety są czyszczone; pamiętamy najwyżej nazwę użytkownika, nigdy hasło. Profil pokazuje własny login i zmianę hasła z potwierdzeniem obecnym. Google łączy/odłącza po haśle, komunikaty odsyłają do loginu i hasła. Reset pozwala odzyskać login i hasło; bootstrap istniejącego organizatora ustawia nowe dane bez zmiany jego profilu. Fragmenty linków nadal usuwane z adresu.
+Zastępuje wcześniejsze reguły katalogu logowania/PIN-u: dwa wpisywane pola Login/Hasło, bez listy profili ani pobierania publicznego katalogu. Login ma autocomplete=username, wyłączoną korektę i kapitalizację; hasła current-password/new-password, bez klawiatury numerycznej i limitu 6 cyfr. Nowe hasło i powtórzenie: 8–128 znaków, frazy ze spacjami/Unicode, zgodność przed wysłaniem. Formularz zachowuje dane przy błędzie. Po sukcesie sekrety są czyszczone; pamiętamy najwyżej nazwę użytkownika, nigdy hasło. Profil pokazuje własny login i zmianę hasła z potwierdzeniem obecnym. Google łączy/odłącza po haśle, komunikaty odsyłają do loginu i hasła. Reset pozwala odzyskać login i hasło; bootstrap istniejącego organizatora ustawia nowe dane bez zmiany jego profilu. Fragmenty linków nadal usuwane z adresu.
 
 ## Dołącz przez Google — 2026-11-15
 
-Na `/join#token` po włączeniu Google pokazujemy Dołącz przez Google niezależnie od pól zwykłej rejestracji. W Ingress otwieramy kanoniczne `/join#token` z noopener/noreferrer. Po OAuth `/join/google#token` czyści sekret z adresu i pobiera podpowiedzi POST-em; formularz ma edytowalne Imię/Nazwisko i opcjonalny przydomek, bez loginu/hasła. Zatwierdzenie zakłada profil i loguje. Brak nazw u dostawcy pozwala uzupełnić puste pola; błąd odczytu ma ponowienie. Odświeżenie wymaga ponownego otwarcia zaproszenia, bez sekretu w storage/query key.
+Na `/join?token=token` po włączeniu Google pokazujemy Dołącz przez Google niezależnie od pól zwykłej rejestracji. W Ingress otwieramy kanoniczne `/join?token=token` z noopener/noreferrer. Po OAuth `/join/google#token` czyści sekret z adresu i pobiera podpowiedzi POST-em; formularz ma edytowalne Imię/Nazwisko i opcjonalny przydomek, bez loginu/hasła. Zatwierdzenie zakłada profil i loguje. Brak nazw u dostawcy pozwala uzupełnić puste pola; błąd odczytu ma ponowienie. Odświeżenie wymaga ponownego otwarcia zaproszenia, bez sekretu w storage/query key.
 
 Profil Google-only pokazuje własne dane, informację o Google jako metodzie logowania i przycisk dodania opcjonalnego loginu/hasła. Nowy dowód Google prowadzi do `/profile/password#token`; formularz respektuje istniejącą politykę loginu/hasła. Odłączenie Google bez hasła nie jest oferowane. Po dodaniu hasła dostępne są dotychczasowe zmiana hasła i odłączenie. Znany sub po ponownym zaproszeniu nie pokazuje formularza nadpisującego istniejące nazwisko. Zablokowanie, utrata sesji, wygasły/cofnięty link i HTTP 429 mają bezpieczne komunikaty; brak automatycznego ponawiania mutacji.
+
+Uzupełnienie komunikatu braku tokenu (2026-11-15): wskazówka dla Messengera o skopiowaniu pełnego linku z oryginalnej wiadomości i wklejeniu go do Safari lub Chrome.

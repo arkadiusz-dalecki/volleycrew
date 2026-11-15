@@ -143,7 +143,7 @@ def group(system):
     admin, member = device(), device()
     actor = bootstrap(admin)
     invite = invitation(admin)
-    token = invite["url"].split("#")[1]
+    token = invite["url"].split("?token=")[1]
     response = register(member, token)
     assert response.status_code == 200, response.text
     return device, clock, admin, actor, member, response.json(), invite, token

@@ -64,23 +64,23 @@ export function PasswordField({
           const value = e.target.value;
           const length = Array.from(value).length;
           e.target.setCustomValidity(
-            length > 128 || (fresh && length < 15)
+            length > 128 || (fresh && length < 8)
               ? fresh
-                ? "Hasło musi mieć od 15 do 128 znaków."
+                ? "Hasło musi mieć od 8 do 128 znaków."
                 : "Hasło może mieć najwyżej 128 znaków."
               : "",
           );
           onChange(value);
         }}
         autoComplete={fresh ? "new-password" : "current-password"}
-        minLength={fresh ? 15 : 1}
+        minLength={fresh ? 8 : 1}
         maxLength={256}
         required
         disabled={disabled}
       />
       {fresh && (
         <small id={hint}>
-          15–128 znaków. Możesz użyć frazy ze spacjami i polskimi znakami.
+          8–128 znaków. Możesz użyć frazy ze spacjami i polskimi znakami.
         </small>
       )}
     </label>

@@ -10,7 +10,7 @@
 4. Wypełnij opcje poniżej. Przygotuj własny adres HTTPS aplikacji i skieruj istniejący tunel/proxy na port **8200**. Konfiguracja Cloudflare pozostaje po Twojej stronie. Nie kieruj publicznego tunelu na port Ingress **8099**.
 5. Wygeneruj losowy token co najmniej 32 znaków z liter, cyfr, `-` i `_`, np. w menedżerze haseł, i wpisz go jako `BOOTSTRAP_TOKEN`. To token pierwszego administratora **Volleycrew**. Wygeneruj osobny ciąg — nie używaj tokenu GitHub ani API Home Assistant. Nie wysyłaj go na czat ani nie umieszczaj w repozytorium.
 6. Zapisz opcje i uruchom aplikację. Kolejność startu: walidacja → maksymalnie około 60 s oczekiwania na DB → wymagana kopia przed aktualizacją → migracje → API/Nginx. Błąd konfiguracji lub migracji zatrzymuje start. Logi nie wypisują tokenu ani hasła DB.
-7. Otwórz `https://twoja-domena-aplikacji/setup#TWÓJ_TOKEN`, podaj imię, nazwisko i login i własne hasło (15–128 znaków). Token jest ważny przez 30 minut od utworzenia grantu. Restart nie przedłuża ważności. Gdy wygaśnie, wpisz nowy token w opcjach i uruchom ponownie.
+7. Otwórz `https://twoja-domena-aplikacji/setup#TWÓJ_TOKEN`, podaj imię, nazwisko i login i własne hasło (8–128 znaków). Token jest ważny przez 30 minut od utworzenia grantu. Restart nie przedłuża ważności. Gdy wygaśnie, wpisz nowy token w opcjach i uruchom ponownie.
 8. Po utworzeniu administratora usuń wartość `BOOTSTRAP_TOKEN` z opcji. Bootstrap pozostaje zamknięty w bazie, również po restarcie i zmianie tokenu. Dalszych zawodników zapraszasz z ustawień ekipy w Volleycrew.
 9. Włącz uruchamianie przy starcie HA i opcjonalnie pozycję w panelu bocznym. Sprawdź normalny adres domeny oraz **Otwórz interfejs WWW** przez Ingress. W obu wejściach obowiązuje hasło Volleycrew; uprawnienia HA nie nadają administratora aplikacji.
 
@@ -161,7 +161,7 @@ Po aktualizacji wykonaj jednorazową konfigurację dostępu organizatora:
 
 1. Przed aktualizacją zrób kopię aplikacji/bazy.
 2. W HA wpisz **nowy**, losowy `BOOTSTRAP_TOKEN` (minimum 32 znaki) i uruchom ponownie Volleycrew. Stary użyty token nie jest reaktywowany przez restart.
-3. Otwórz `PUBLIC_URL/setup#NOWY_TOKEN`, wybierz własny login i hasło (15–128 znaków). Istniejący profil administratora zachowa ID, dane i historię; pola imienia/nazwiska służą nowej instalacji. Nie powstaje drugi administrator.
+3. Otwórz `PUBLIC_URL/setup#NOWY_TOKEN`, wybierz własny login i hasło (8–128 znaków). Istniejący profil administratora zachowa ID, dane i historię; pola imienia/nazwiska służą nowej instalacji. Nie powstaje drugi administrator.
 4. Sprawdź logowanie loginem i hasłem; wyczyść BOOTSTRAP_TOKEN w opcjach. Bootstrap zamyka się ponownie po ustawieniu hasła. Jeżeli Google było połączone z tym kontem, połącz je ponownie w profilu, potwierdzając nowe hasło.
 
 Poza HA alternatywą jest `npm run auth:bootstrap -- --rotate` w prawidłowym środowisku aplikacji. Link ma 30 minut i jest jednorazowy. Nie ma hasła domyślnego, automatycznego użycia starego PIN-u ani kasowania produkcyjnej bazy. Login jest osobną nazwą 3–32 znaków: litery ASCII, cyfry, kropka, myślnik i podkreślenie; wielkość liter nie rozróżnia kont. Hasła zachowują spacje i Unicode dokładnie.
@@ -184,3 +184,7 @@ Ponowne dołączanie tym samym kontem Google otwiera istniejący profil, bez zmi
 Formularz potwierdzenia wygasa po 10 minutach od rozpoczęcia Google i jest związany z tą przeglądarką. Odświeżenie wymaga ponownego otwarcia zaproszenia; sekret nie jest utrwalany w adresie/storage. Ingress otwiera zaproszenie pod głównym PUBLIC_URL w osobnej karcie, bez przenoszenia sesji. Przy limicie prób odczekaj czas pokazany przez aplikację i ponów kliknięcie; przy błędzie odczytu formularza jest przycisk ponowienia.
 
 Migracja `0013_google_registration` dodaje jednorazowe potwierdzenia i kontekst zaproszenia/rodzaj przepływu Google. Nie zmienia zapisów, historii ani ELO. Usuwa dawne powiązania Google profili bez ustawionych danych po przejściu z PIN-u; nie nadaje im wstecznie dostępu Google-only. Podczas cofania kodu przywróć zgodny backup — wcześniejsze wersje nie obsługują kont bez hasła. Dane klienta Google i callback pozostają te same; w Google Auth Platform sprawdź deklarację podstawowego zakresu `profile`. Rzeczywiste konta i fizyczny HA/telefon/PWA wymagają osobnego odbioru po konfiguracji.
+
+### Zaproszenia i Messenger
+
+Nowe zaproszenia mają postać `/join?token=…`; utwórz i skopiuj nowy link po aktualizacji. Starsze linki `/join#…` nadal działają w przeglądarkach. Token znika z adresu po odczycie; odświeżenie wymaga ponownego otwarcia pełnego linku. Nginx aplikacji nie loguje adresów, a strona wyłącza Referer. Przy własnym proxy/tunelu nie zapisuj query zaproszeń w logach ani analityce. Reset hasła i inicjalizacja nadal używają fragmentu `#…`.

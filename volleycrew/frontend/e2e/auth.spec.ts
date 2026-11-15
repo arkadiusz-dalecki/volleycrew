@@ -7,18 +7,14 @@ test("invite, remembered session, private username login, profile, reset and blo
 }, info) => {
   const nickname = `Misiek-${info.project.name}`;
   const username = `misiek-${info.project.name}`;
-  await page.goto(`/join#${process.env.E2E_INVITE}`);
+  await page.goto(`/join?token=${process.env.E2E_INVITE}&fbclid=tracking#_=_`);
   await expect(page).toHaveURL(/\/join$/);
   await page.getByLabel("Imię", { exact: true }).fill("Michał");
   await page.getByLabel("Nazwisko", { exact: true }).fill("Nowak");
   await page.getByLabel("Przydomek (opcjonalnie)").fill(nickname);
   await page.getByLabel("Login", { exact: true }).fill(username);
-  await page
-    .getByLabel("Twoje hasło", { exact: true })
-    .fill("Player-test-passphrase-456");
-  await page
-    .getByLabel("Powtórz hasło", { exact: true })
-    .fill("Player-test-passphrase-456");
+  await page.getByLabel("Twoje hasło", { exact: true }).fill("abcdefgh");
+  await page.getByLabel("Powtórz hasło", { exact: true }).fill("abcdefgh");
   await page.getByRole("button", { name: "Dołączam do gry" }).click();
   await expect(
     page.getByRole("heading", { name: "Najbliższe spotkanie" }),
@@ -49,9 +45,7 @@ test("invite, remembered session, private username login, profile, reset and blo
     scale: "css",
   });
   await page.getByLabel("Login", { exact: true }).fill(username);
-  await page
-    .getByLabel("Hasło", { exact: true })
-    .fill("Player-test-passphrase-456");
+  await page.getByLabel("Hasło", { exact: true }).fill("abcdefgh");
   await page.getByRole("button", { name: "Wejdź na boisko" }).click();
   await expect(
     page.getByRole("heading", { name: "Mój profil", exact: true }),
@@ -74,12 +68,8 @@ test("invite, remembered session, private username login, profile, reset and blo
   await page.goto(url);
   await expect(page).toHaveURL(/\/reset-password$/);
   await page.getByLabel("Login", { exact: true }).fill(username);
-  await page
-    .getByLabel("Nowe hasło", { exact: true })
-    .fill("Other-test-passphrase-333");
-  await page
-    .getByLabel("Powtórz nowe hasło", { exact: true })
-    .fill("Other-test-passphrase-333");
+  await page.getByLabel("Nowe hasło", { exact: true }).fill("12345678");
+  await page.getByLabel("Powtórz nowe hasło", { exact: true }).fill("12345678");
   await page.getByRole("button", { name: "Ustaw nowe hasło" }).click();
   await expect(
     page.getByRole("heading", { name: "Najbliższe spotkanie" }),
@@ -117,7 +107,7 @@ test("invite, remembered session, private username login, profile, reset and blo
     .getByRole("button", { name: "Utwórz link z zaproszeniem" })
     .click();
   await expect(adminPage.getByLabel("Link do przekazania")).toHaveValue(
-    /\/join#/,
+    /\/join\?token=/,
   );
   const inviteUrl = await adminPage
     .getByLabel("Link do przekazania")
@@ -140,12 +130,8 @@ test("invite, remembered session, private username login, profile, reset and blo
   await page
     .getByLabel("Login", { exact: true })
     .fill(`member-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`);
-  await page
-    .getByLabel("Twoje hasło", { exact: true })
-    .fill("Player-test-passphrase-456");
-  await page
-    .getByLabel("Powtórz hasło", { exact: true })
-    .fill("Player-test-passphrase-456");
+  await page.getByLabel("Twoje hasło", { exact: true }).fill("abcdefgh");
+  await page.getByLabel("Powtórz hasło", { exact: true }).fill("abcdefgh");
   await page.getByRole("button", { name: "Dołączam do gry" }).click();
   await expect(page.getByRole("alert")).toHaveText(
     "Link jest nieprawidłowy, wygasł lub został wykorzystany.",

@@ -184,7 +184,7 @@ export function LoginPage({ preview = false }: { preview?: boolean }) {
 }
 
 export function RegisterPage({ bootstrap = false }: { bootstrap?: boolean }) {
-  const token = useAuthLinkToken();
+  const token = useAuthLinkToken({ allowQuery: !bootstrap });
   const [firstName, setFirstName] = useState(bootstrap ? "Arkadiusz" : "");
   const [lastName, setLastName] = useState(bootstrap ? "Dalecki" : "");
   const [nickname, setNickname] = useState("");
@@ -246,6 +246,8 @@ export function RegisterPage({ bootstrap = false }: { bootstrap?: boolean }) {
         <p role="alert" className="form-error">
           Otwórz ponownie pełny link przekazany przez organizatora. Ze względów
           bezpieczeństwa odświeżenie strony wymaga ponownego otwarcia linku.
+          Jeśli otwierasz go w Messengerze, skopiuj pełny link z wiadomości i
+          wklej go do przeglądarki, np. Safari lub Chrome.
         </p>
       ) : (
         <form onSubmit={(e) => void submit(e)}>

@@ -27,7 +27,11 @@ def pending_join(google, *, subject="new-google-subject", names=True):
     client = device()
     claims = {"given_name": "Anna", "family_name": "Google"} if names else {}
     flow = begin(
-        client, "register", invite_token=invite["url"].split("#")[1], subject=subject, **claims
+        client,
+        "register",
+        invite_token=invite["url"].split("?token=")[1],
+        subject=subject,
+        **claims,
     )
     response = finish(client, flow)
     assert response.status_code == 303
@@ -105,7 +109,7 @@ def test_confirmation_browser_binding_expiry_and_only_hashed_tokens(google):
 def test_revoked_invite_cannot_register_at_any_stage(google, stage):
     device, _, admin, _, _, _, begin, finish, _ = google
     invite = invitation(admin)
-    token = invite["url"].split("#")[1]
+    token = invite["url"].split("?token=")[1]
     client = device()
     if stage == "start":
         mutate(admin, f"/admin/invites/{invite['id']}/revoke")
@@ -153,7 +157,7 @@ def test_concurrent_google_joins_never_duplicate_or_overwrite_profile(google):
     first.portal.call(count)
     # Starting another invite flow with an already registered subject logs into the same account.
     device, _, admin, _, _, _, begin, finish, _ = google
-    invite = invitation(admin)["url"].split("#")[1]
+    invite = invitation(admin)["url"].split("?token=")[1]
     another = device()
     result = finish(
         another,

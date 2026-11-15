@@ -470,7 +470,7 @@ http {
                 assert status == 200, (path, status, value)
                 return value
 
-            invite = mutate("/admin/invites", {})["url"].split("#")[1]
+            invite = mutate("/admin/invites", {})["url"].split("?token=")[1]
             players = [admin["id"]]
             actors = [client]
             for first in ["Agnieszka", "Michał"]:

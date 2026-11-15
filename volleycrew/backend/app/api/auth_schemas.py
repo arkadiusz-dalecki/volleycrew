@@ -30,8 +30,8 @@ class NewPassword(PasswordInput):
     @field_validator("password")
     @classmethod
     def validate_password(cls, value: SecretStr) -> SecretStr:
-        if len(value.get_secret_value()) < 15:
-            raise ValueError("Hasło musi mieć od 15 do 128 znaków.")
+        if len(value.get_secret_value()) < 8:
+            raise ValueError("Hasło musi mieć od 8 do 128 znaków.")
         return value
 
 
