@@ -2,7 +2,7 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request, Response
-from sqlalchemy import select, update
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.auth_schemas import (
@@ -31,7 +31,7 @@ from app.core.security import (
     set_csrf,
     token_hash,
 )
-from app.models.auth import BootstrapGrant, Invite, PinResetGrant, Player, Session
+from app.models.auth import BootstrapGrant, GoogleIdentity, Invite, PinResetGrant, Player, Session
 from app.services import auth as service
 from app.services.enrollment import update_player_allocations
 
@@ -249,6 +249,8 @@ async def reset_pin(body: ResetPin, request: Request, response: Response, db: DB
     )
     await service.revoke_sessions(db, player.id, at)
     await service.new_session(db, player, request, response)
+    # Organizer-issued recovery also removes a possibly hostile external login.
+    await db.execute(delete(GoogleIdentity).where(GoogleIdentity.player_id == player.id))
     service.audit(db, player.id, "reset_pin", player.id, at)
     await db.commit()
     return player

@@ -8,6 +8,7 @@ import { LockKeyhole, UserRound } from "lucide-react";
 import { api, message, unwrap } from "../../lib/api/client";
 import { useSession } from "./useSession";
 
+import { GoogleConnection, GoogleNotice } from "./GoogleAuth";
 import { priorityLabel } from "./labels";
 
 export function ProfilePage() {
@@ -76,6 +77,7 @@ export function ProfilePage() {
         <h1>Mój profil</h1>
         <p>Twoje dane i ustawienia dostępu do ekipy.</p>
       </div>
+      <GoogleNotice />
       {adminView && (
         <Link className="button profile-admin-link" to="/admin/settings">
           Ustawienia ekipy
@@ -191,6 +193,7 @@ export function ProfilePage() {
           </form>
         </section>
       </div>
+      <GoogleConnection />
       <HistoryPanel />
     </>
   );

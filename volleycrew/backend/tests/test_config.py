@@ -24,3 +24,22 @@ def test_clock_is_injected_and_timezone_aware():
     with TestClient(app):
         assert app.state.clock.now() == moment
         assert app.state.clock.now().tzinfo == UTC
+
+
+def test_google_credentials_are_optional_and_must_be_a_pair():
+    import pytest
+    from pydantic import ValidationError
+
+    from app.core.config import Settings
+
+    assert not Settings().google_enabled
+    assert Settings(
+        google_client_id="test.apps.googleusercontent.com", google_client_secret="secret"
+    ).google_enabled
+    for changes in [
+        {"google_client_id": "test.apps.googleusercontent.com"},
+        {"google_client_secret": "secret"},
+        {"google_client_id": "bad", "google_client_secret": "secret"},
+    ]:
+        with pytest.raises(ValidationError):
+            Settings(**changes)

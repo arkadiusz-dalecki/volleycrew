@@ -2,6 +2,7 @@ import re
 import unicodedata
 from datetime import datetime
 from typing import Literal
+from urllib.parse import urlsplit
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
@@ -109,3 +110,45 @@ class CsrfView(BaseModel):
 
 class Done(BaseModel):
     ok: bool = True
+
+
+class GoogleStart(Input):
+    return_to: str = Field(default="/", max_length=512)
+
+    @field_validator("return_to")
+    @classmethod
+    def internal_target(cls, value: str) -> str:
+        parsed = urlsplit(value)
+        if (
+            not value.startswith("/")
+            or value.startswith("//")
+            or "\\" in value
+            or parsed.scheme
+            or parsed.netloc
+            or parsed.fragment
+            or parsed.path.startswith("/api/")
+            or any(ord(c) < 32 or ord(c) == 127 for c in value)
+        ):
+            raise ValueError("Use an internal page path")
+        return value
+
+    mode: Literal["login", "link"] = "login"
+    pin: SecretStr | None = None
+
+    @field_validator("pin")
+    @classmethod
+    def validate_optional_pin(cls, value: SecretStr | None) -> SecretStr | None:
+        return PinInput.validate_pin(value) if value is not None else None
+
+
+class GoogleConfig(BaseModel):
+    enabled: bool
+    public_url: str
+
+
+class GoogleConnection(BaseModel):
+    connected: bool
+
+
+class GoogleRedirect(BaseModel):
+    url: str

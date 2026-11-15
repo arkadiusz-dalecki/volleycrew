@@ -40,6 +40,8 @@ options:
   TRUSTED_PROXY_CIDRS: []
   SESSION_SECRET: ""
   BOOTSTRAP_TOKEN: ""
+  GOOGLE_CLIENT_ID: ""
+  GOOGLE_CLIENT_SECRET: ""
   BACKUP_HOUR: 3
 schema:
   DATABASE_MODE: list(auto|embedded|external)
@@ -56,4 +58,6 @@ schema:
     - str
   SESSION_SECRET: password
   BOOTSTRAP_TOKEN: password
+  GOOGLE_CLIENT_ID: str?
+  GOOGLE_CLIENT_SECRET: password?
   BACKUP_HOUR: int(0,23)

@@ -7,6 +7,7 @@ from app.api.auth import router as auth_router
 from app.api.documents import router as documents_router
 from app.api.enrollment import router as enrollment_router
 from app.api.errors import register_error_handlers
+from app.api.google_auth import router as google_router
 from app.api.health import router as health_router
 from app.api.meetings import router as meetings_router
 from app.api.results import router as results_router
@@ -18,6 +19,7 @@ from app.core.config import Settings, get_settings
 from app.core.database import Database
 from app.core.proxy import ProxyContext
 from app.core.security import load_auth_key
+from app.services.google_provider import GoogleProvider
 
 
 def create_app(settings: Settings | None = None, clock: Clock | None = None) -> FastAPI:
@@ -30,6 +32,7 @@ def create_app(settings: Settings | None = None, clock: Clock | None = None) -> 
         app.state.settings = settings
         app.state.auth_key = load_auth_key(settings)
         app.state.security_monitor = SecurityMonitor(app.state.auth_key)
+        app.state.google_provider = GoogleProvider(settings, app.state.auth_key)
         try:
             yield
         finally:
@@ -41,6 +44,7 @@ def create_app(settings: Settings | None = None, clock: Clock | None = None) -> 
     register_error_handlers(app)
     app.include_router(health_router, prefix="/api/v1")
     app.include_router(auth_router, prefix="/api/v1")
+    app.include_router(google_router, prefix="/api/v1")
     app.include_router(meetings_router, prefix="/api/v1")
     app.include_router(enrollment_router, prefix="/api/v1")
     app.include_router(schedule_router, prefix="/api/v1")

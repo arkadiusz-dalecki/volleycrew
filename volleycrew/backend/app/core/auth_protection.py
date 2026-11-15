@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 
 from starlette.requests import Request
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse, RedirectResponse
 from starlette.routing import get_route_path
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
@@ -20,6 +20,8 @@ from app.core.security import source_address
 
 OPERATIONS = {
     "/api/v1/auth/login": "login",
+    "/api/v1/auth/google/start": "google_start",
+    "/api/v1/auth/google/callback": "google_callback",
     "/api/v1/auth/register": "registration",
     "/api/v1/auth/bootstrap": "bootstrap",
     "/api/v1/auth/reset-pin": "reset",
@@ -93,21 +95,38 @@ class AuthProtection:
     def __init__(self, app: ASGIApp):
         self.app = app
         self.admission = AuthAdmission()
+        self.callback_admission = AuthAdmission()
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        if scope["type"] != "http" or scope["method"] != "POST":
+        if scope["type"] != "http":
             await self.app(scope, receive, send)
             return
-        operation = OPERATIONS.get(get_route_path(scope).rstrip("/"))
+        path = get_route_path(scope).rstrip("/")
+        if scope["method"] != "POST" and not (
+            scope["method"] == "GET" and path == "/api/v1/auth/google/callback"
+        ):
+            await self.app(scope, receive, send)
+            return
+        operation = OPERATIONS.get(path)
         if not operation:
             await self.app(scope, receive, send)
             return
         request = Request(scope)
         source = source_address(request)
         monitor = request.app.state.security_monitor
-        retry = self.admission.check(source)
+        is_callback = scope["method"] == "GET"
+        gate = self.callback_admission if is_callback else self.admission
+        retry = gate.check(source)
         if retry:
             monitor.record("auth_burst_limited", operation, source)
+            if is_callback:
+                response = RedirectResponse(
+                    request.app.state.settings.public_url + "/login#google=limited",
+                    303,
+                    headers={"Retry-After": str(retry)},
+                )
+                await response(scope, receive, send)
+                return
             await JSONResponse(
                 {"code": "rate_limited", "message": "Za dużo prób. Spróbuj ponownie później."},
                 status_code=429,

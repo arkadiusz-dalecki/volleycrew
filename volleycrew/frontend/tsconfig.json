@@ -17,6 +17,8 @@
     "vite.config.ts",
     "playwright.config.ts",
     "e2e",
+    "google-tests",
+    "playwright.google.config.ts",
     "container-tests",
     "playwright.container.config.ts"
   ]

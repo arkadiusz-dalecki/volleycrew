@@ -106,3 +106,9 @@ Użytkownik zlecił graficzne przejście między terminami: cały kafelek spotka
 ## Uzupełnienie E2/E9 — linki i ochrona dostępu, 2026-11-14
 
 Użytkownik zlecił punkt 5 recenzji: dopracowanie linków, monitoringu i odporności na nadużycia. Zakres: token linku wyłącznie we fragmencie, usunięcie go z bieżącego adresu po odczycie do pamięci formularza; odrzucenie dawnych tokenów w ścieżce, komunikaty Retry-After, bezpieczne i ograniczone objętościowo logi bezpieczeństwa oraz dodatkowe ograniczenie nagłych serii żądań przed bazą. To uzupełnienie E2/E9; polityka PIN-u, katalog profili, ważność/wielokrotność zaproszeń i dotychczasowe trwałe limity pozostają zgodne z wcześniejszymi decyzjami.
+
+## Google jako opcjonalne logowanie — zatwierdzone 2026-11-15
+
+Użytkownik zaakceptował dodanie opcji opisanej po recenzji: istniejący profil łączy się z Google po zalogowaniu i świeżym potwierdzeniu PIN-u; później można logować się Google. PIN pozostaje dostępny. Nowe profile nadal powstają wyłącznie z zaproszenia; bez automatycznego łączenia po e-mailu lub nazwisku. Tożsamością zewnętrzną jest zweryfikowany Google `sub`, przypisany do jednego profilu. Zakres wykonawczy E2/E9: odłączanie po PIN-ie z unieważnieniem sesji, OAuth/OIDC authorization code z PKCE, nonce i jednorazowym stanem związanym z przeglądarką oraz krótkim terminem. Stały callback pod PUBLIC_URL; Ingress otwiera główny adres w nowej karcie, bez przenoszenia sesji między wejściami. Konfiguracja własnego klienta OAuth w Google i prawdziwy odbiór z kontem Google pozostają po stronie operatora. Integracja domyślnie wyłączona przy braku obu danych klienta.
+
+Doprecyzowanie odzyskiwania: wykorzystanie resetu PIN-u wydanego przez organizatora odłącza również Google, aby odzyskanie dostępu usuwało ewentualne obce powiązanie. Samodzielna zmiana PIN-u zachowuje Google.

@@ -198,3 +198,7 @@ Zlecone i zaimplementowane: ruch całego kafelka za palcem, powrót po krótkim/
 ## Uzupełnienie E2/E9 — linki, monitoring i odporność na nadużycia
 
 Zlecone 2026-11-14 po recenzji logowania. Zakres: usuwanie sekretu z adresu po otwarciu linku, odrzucenie tokenów w ścieżce, obsługa Retry-After, ograniczone i pozbawione sekretów logi zdarzeń oraz ograniczanie gwałtownych serii żądań uwierzytelniania przed dostępem do DB. Odbiór: testy PostgreSQL trwałych limitów/resetów, kontrolowany zegar dodatkowego limitera, sprawdzenie logów na brak sekretów oraz E2E rejestracji/resetu z czystym adresem i ponownego otwarcia linku. Bez wdrożenia i bez zmiany pozostałych decyzji o logowaniu.
+
+## Uzupełnienie E2/E9 — opcjonalne Google, 2026-11-15
+
+Zlecone: połączenie Google z istniejącym profilem po potwierdzeniu PIN-u, logowanie po `sub`, odłączenie po PIN-ie, konfiguracja HA oraz UI i instrukcja operatora. Odbiór: migracja, sesje i unikalne powiązania na PostgreSQL; podpis/issuer/audience/exp/nonce, PKCE, związanie stanu z przeglądarką i sesją łączącą, jednorazowość i wygaśnięcie, blokada konta, błędy dostawcy i brak automatycznej rejestracji. E2E z lokalnym dostawcą testowym i osobny jawny odbiór z rzeczywistym klientem Google. PIN i polityka zaproszeń pozostają dostępne; Ingress odsyła do PUBLIC_URL.

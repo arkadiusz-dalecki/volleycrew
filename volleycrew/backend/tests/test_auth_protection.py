@@ -87,3 +87,54 @@ async def test_gate_rejects_before_downstream_or_body_and_preserves_ingress(pref
         {**scope, "method": "GET", "path": prefix + "/api/v1/health/live"}, receive, send
     )
     assert len(calls) == 12
+
+
+@pytest.mark.asyncio
+async def test_google_callback_has_its_own_budget_and_cleans_rejected_urls():
+    calls = []
+    responses = []
+    state = SimpleNamespace(settings=Settings(), security_monitor=SecurityMonitor(b"test-key"))
+
+    async def downstream(scope, receive, send):
+        calls.append(scope["path"])
+        await send({"type": "http.response.start", "status": 200, "headers": []})
+        await send({"type": "http.response.body", "body": b"{}"})
+
+    async def receive():
+        raise AssertionError("Admission does not read the body")
+
+    async def send(message):
+        responses.append(message)
+
+    protection = AuthProtection(downstream)
+    protection.admission = AuthAdmission(lambda: 0)
+    protection.callback_admission = AuthAdmission(lambda: 0)
+    scope = {
+        "type": "http",
+        "method": "POST",
+        "root_path": "",
+        "path": "/api/v1/auth/google/start",
+        "query_string": b"",
+        "headers": [],
+        "client": ("192.0.2.7", 1234),
+        "app": SimpleNamespace(state=state),
+    }
+    for _ in range(10):
+        await protection(scope, receive, send)
+    callback = {
+        **scope,
+        "method": "GET",
+        "path": "/api/v1/auth/google/callback",
+        "query_string": b"code=secret&state=secret",
+    }
+    for _ in range(10):
+        await protection(callback, receive, send)
+    assert len(calls) == 20
+    responses.clear()
+    await protection(callback, receive, send)
+    assert len(calls) == 20
+    assert responses[0]["status"] == 303
+    headers = dict(responses[0]["headers"])
+    assert headers[b"location"].endswith(b"/login#google=limited")
+    assert b"secret" not in headers[b"location"]
+    assert headers[b"retry-after"] == b"2"

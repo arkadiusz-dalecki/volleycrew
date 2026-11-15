@@ -43,6 +43,8 @@ jobs:
       - run: npm run build
       - run: npm --prefix volleycrew/frontend exec -- playwright install --with-deps chromium webkit
       - run: npm run test:e2e
+      - name: Google login with isolated OIDC provider
+        run: npm --prefix volleycrew/frontend run test:google
       - name: Preserve application browser failure diagnostics
         uses: actions/upload-artifact@v4
         if: failure()

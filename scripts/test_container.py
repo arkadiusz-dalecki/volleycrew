@@ -31,6 +31,46 @@ def docker(*args, check=True):
     return (result.stdout + (result.stderr if args[0] == "logs" or not check else "")).strip()
 
 
+def google_crypto_smoke(container):
+    # Exercise the shipped native crypto wheels on each CPU, without Google
+    # credentials, outbound identity requests or a test bypass in the app.
+    docker(
+        "exec",
+        container,
+        "python",
+        "-c",
+        r"""
+import asyncio, json, time
+import jwt
+from cryptography.hazmat.primitives.asymmetric import rsa
+from app.core.config import Settings
+from app.core.security import token_hash
+from app.services.google_provider import GoogleProvider, GoogleRejected
+key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+jwk = json.loads(jwt.algorithms.RSAAlgorithm.to_jwk(key.public_key()))
+jwk.update(kid="package-test", alg="RS256", use="sig")
+client = "package-test.apps.googleusercontent.com"
+provider = GoogleProvider(Settings(_env_file=None, google_client_id=client,
+    google_client_secret="package-test-secret"), b"package-test-key")
+async def keys(kid): return [jwk]
+provider.keys = keys
+claims = dict(iss="https://accounts.google.com", aud=client, sub="package-subject",
+    nonce="package-nonce", iat=int(time.time()), exp=int(time.time()) + 300)
+async def verify():
+    good = jwt.encode(claims, key, algorithm="RS256", headers={"kid": "package-test"})
+    assert await provider.verify(good, token_hash("package-nonce")) == "package-subject"
+    bad = jwt.encode({**claims, "aud": "wrong"}, key, algorithm="RS256",
+        headers={"kid": "package-test"})
+    try:
+        await provider.verify(bad, token_hash("package-nonce"))
+    except GoogleRejected:
+        return
+    raise AssertionError("Wrong audience was accepted")
+asyncio.run(verify())
+""",
+    )
+
+
 def migration_head(container):
     return docker(
         "exec",
@@ -188,6 +228,8 @@ def main():
             docker("start", app)
             wait("http://127.0.0.1:18200/api/v1/health/ready", container=app)
             print("PASS: real image startup, migrations and readiness", flush=True)
+            google_crypto_smoke(app)
+            print("PASS: packaged Google JWT crypto and invalid-audience rejection", flush=True)
             if args.backend_tests:
                 docker("exec", containers[0], "createdb", "-U", "volleycrew", "regression_test")
                 backend = subprocess.run(

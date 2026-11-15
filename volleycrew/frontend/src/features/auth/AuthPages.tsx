@@ -9,6 +9,7 @@ import { useSession } from "./useSession";
 import { useAdminView } from "./ViewMode";
 import { rememberedProfile, rememberProfile } from "./rememberedProfile";
 import { useAuthLinkToken } from "./useAuthLinkToken";
+import { GoogleLogin, GoogleNotice } from "./GoogleAuth";
 import { InstallApp } from "../install/InstallApp";
 
 export function Protected({
@@ -157,6 +158,8 @@ export function LoginPage({ preview = false }: { preview?: boolean }) {
       title="Dobrze Cię widzieć"
       subtitle="Wybierz swój profil i podaj sześciocyfrowy PIN."
     >
+      <GoogleNotice />
+      {!preview && <GoogleLogin destination={destination} />}
       {!preview && <PreviewProfiles />}
       {profiles.isPending ? (
         <p role="status">Wczytujemy profile…</p>

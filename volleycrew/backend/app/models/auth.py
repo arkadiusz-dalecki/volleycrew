@@ -84,3 +84,22 @@ class AuditEvent(Base):
     object_id: Mapped[UUID | None]
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     details: Mapped[dict] = mapped_column(JSONB, default=dict)
+
+
+class GoogleIdentity(Base):
+    __tablename__ = "google_identities"
+    player_id: Mapped[UUID] = mapped_column(ForeignKey("players.id"), primary_key=True)
+    subject: Mapped[str] = mapped_column(String(255), unique=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class GoogleFlow(Base):
+    __tablename__ = "google_flows"
+    return_to: Mapped[str] = mapped_column(String(512))
+    state_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    browser_hash: Mapped[str] = mapped_column(String(64))
+    nonce_hash: Mapped[str] = mapped_column(String(64))
+    session_id: Mapped[UUID | None] = mapped_column(ForeignKey("auth_sessions.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

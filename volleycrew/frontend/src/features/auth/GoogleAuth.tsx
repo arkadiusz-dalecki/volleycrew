@@ -1,0 +1,232 @@
+import { useLayoutEffect, useState } from "react";
+import type { FormEvent } from "react";
+import { useLocation } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { api, message, unwrap } from "../../lib/api/client";
+import { basePath } from "../../lib/base";
+
+function useGoogleConfig() {
+  return useQuery({
+    queryKey: ["google-config"],
+    queryFn: async () => unwrap(await api.GET("/api/v1/auth/google/config")),
+    staleTime: 60_000,
+  });
+}
+
+const notices: Record<string, string> = {
+  limited:
+    "Za dużo prób logowania Google. Odczekaj chwilę i rozpocznij logowanie ponownie.",
+  linked: "Konto Google zostało połączone z Twoim profilem.",
+  cancelled:
+    "Logowanie Google zostało anulowane. Możesz spróbować ponownie lub użyć PIN-u.",
+  invalid:
+    "Nie udało się potwierdzić logowania Google. Rozpocznij je ponownie.",
+  unavailable:
+    "Google jest teraz niedostępne. Spróbuj ponownie lub zaloguj się PIN-em.",
+  unlinked:
+    "To konto Google nie jest połączone z profilem. Zaloguj się PIN-em i połącz je w swoim profilu.",
+  conflict:
+    "To konto Google lub profil ma już inne powiązanie. Zaloguj się PIN-em, aby je sprawdzić.",
+  session:
+    "Sesja użyta do łączenia wygasła lub została zmieniona. Zaloguj się PIN-em i spróbuj ponownie.",
+};
+
+export function GoogleNotice() {
+  const location = useLocation();
+  const [code] = useState(() =>
+    location.hash.startsWith("#google=") ? location.hash.slice(8) : "",
+  );
+  useLayoutEffect(() => {
+    if (window.location.hash.startsWith("#google=")) {
+      window.history.replaceState(
+        window.history.state,
+        "",
+        window.location.pathname + window.location.search,
+      );
+    }
+  }, [location.key]);
+  return notices[code] ? (
+    <p className="form-notice" role="status">
+      {notices[code]}
+    </p>
+  ) : null;
+}
+
+function GoogleLabel() {
+  return (
+    <>
+      <img src={`${basePath}/google-g.png`} alt="" width="20" height="20" />
+      Zaloguj przez Google
+    </>
+  );
+}
+
+function usePublicGoogle(publicUrl: string | undefined) {
+  return Boolean(
+    basePath ||
+    (publicUrl && new URL(publicUrl).origin !== window.location.origin),
+  );
+}
+
+export function GoogleLogin({ destination = "/" }: { destination?: string }) {
+  const config = useGoogleConfig();
+  const external = usePublicGoogle(config.data?.public_url);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  if (!config.data?.enabled) return null;
+  async function start() {
+    setError("");
+    setBusy(true);
+    try {
+      const result = unwrap(
+        await api.POST("/api/v1/auth/google/start", {
+          body: { mode: "login", return_to: destination },
+        }),
+      );
+      window.location.assign(result.url);
+    } catch (e) {
+      setError(message(e));
+      setBusy(false);
+    }
+  }
+  return (
+    <div className="google-access">
+      {external ? (
+        <>
+          <a
+            className="google-button"
+            href={`${config.data.public_url}/login`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <GoogleLabel />
+          </a>
+          <p className="form-note">
+            Logowanie Google otworzy główny adres Volleycrew w nowej karcie.
+            Sesja Home Assistant pozostaje osobna.
+          </p>
+        </>
+      ) : (
+        <button
+          className="google-button"
+          disabled={busy}
+          onClick={() => void start()}
+        >
+          {busy ? "Łączymy z Google…" : <GoogleLabel />}
+        </button>
+      )}
+      {error && (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+export function GoogleConnection() {
+  const config = useGoogleConfig();
+  const connection = useQuery({
+    queryKey: ["google-connection"],
+    queryFn: async () => unwrap(await api.GET("/api/v1/me/google")),
+  });
+  const external = usePublicGoogle(config.data?.public_url);
+  const client = useQueryClient();
+  const [pin, setPin] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState("");
+  if (!config.data?.enabled && !connection.data?.connected) return null;
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    setNotice("");
+    setBusy(true);
+    try {
+      if (connection.data?.connected) {
+        unwrap(
+          await api.POST("/api/v1/me/google/disconnect", { body: { pin } }),
+        );
+        setPin("");
+        setNotice("Konto Google zostało odłączone. Pozostałe sesje wygasły.");
+        await client.invalidateQueries({ queryKey: ["google-connection"] });
+        await client.invalidateQueries({ queryKey: ["me"] });
+      } else {
+        const result = unwrap(
+          await api.POST("/api/v1/auth/google/start", {
+            body: { mode: "link", pin, return_to: "/profile" },
+          }),
+        );
+        setPin("");
+        window.location.assign(result.url);
+      }
+    } catch (e) {
+      setNotice(message(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <section className="card google-connection">
+      <h2>Logowanie Google</h2>
+      {connection.isPending ? (
+        <p role="status">Sprawdzamy połączenie…</p>
+      ) : connection.isError ? (
+        <>
+          <p role="alert">Nie udało się sprawdzić połączenia Google.</p>
+          <button className="button" onClick={() => void connection.refetch()}>
+            Ponów
+          </button>
+        </>
+      ) : external ? (
+        <>
+          <p className="form-note">
+            Połączeniem konta Google zarządzasz pod głównym adresem Volleycrew.
+            Zaloguj się tam PIN-em.
+          </p>
+          <a
+            className="button"
+            href={`${config.data?.public_url}/profile`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Otwórz mój profil w nowej karcie
+          </a>
+        </>
+      ) : (
+        <>
+          <p>
+            {connection.data?.connected
+              ? "Konto Google jest połączone. Nadal możesz logować się PIN-em."
+              : "Połącz Google ze swoim istniejącym profilem. Przy kolejnych wejściach wystarczy przycisk Google."}
+          </p>
+          <form onSubmit={(event) => void submit(event)}>
+            <label className="form-field">
+              PIN potwierdzający zmianę
+              <input
+                type="password"
+                inputMode="numeric"
+                autoComplete="current-password"
+                value={pin}
+                onChange={(event) => setPin(event.target.value)}
+                pattern="[0-9]{6}"
+                minLength={6}
+                maxLength={6}
+                required
+                disabled={busy}
+              />
+            </label>
+            <button className="button" disabled={busy}>
+              {connection.data?.connected
+                ? "Odłącz konto Google"
+                : "Połącz konto Google"}
+            </button>
+          </form>
+        </>
+      )}
+      {notice && (
+        <p className="form-notice" role="status">
+          {notice}
+        </p>
+      )}
+    </section>
+  );
+}
