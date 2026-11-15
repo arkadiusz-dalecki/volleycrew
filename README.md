@@ -6,7 +6,7 @@ Aplikacja do organizacji spotkań siatkarskich. Docelowo instalowana jako aplika
 
 ## Aktualny stan
 
-E1 dostarcza uruchamialny szkielet: React/TypeScript/Vite w zaakceptowanym układzie A, API FastAPI, PostgreSQL, migracje, kontrakt OpenAPI i testy. E2 dodaje rejestrację z zaproszenia, maskowany katalog profili, PIN, trwałe sesje, reset i blokowanie dostępu. E3 dodaje kalendarz z harmonogramem, najbliższy termin i trwałe szczegóły spotkania. E4 dodaje zapisy, prywatne priorytety, rezerwę i propozycje miejsc. E5 dodaje harmonogram od wybranej daty, pojedyncze przesunięcia, odwołania i nowe potwierdzenia udziału. E6 dodaje obecność, prywatną historię i korekty oraz drużyny na boisku wariantu A. E7 dodaje administracyjny podgląd i pobranie listy podpisów PDF. E8 dodaje wyniki, ranking ELO, historię punktów i pełne korekty z przeliczeniem późniejszych spotkań. E9 dopracowuje dostępność i obsługę telefonu, dialogi, utratę sieci/sesji oraz dodaje manifest. Lokalna kontrola Chromium/WebKit jest wykonana; fizyczne telefony i akceptacja porównania UI pozostają do odbioru.
+E1 dostarcza uruchamialny szkielet: React/TypeScript/Vite w zaakceptowanym układzie A, API FastAPI, PostgreSQL, migracje, kontrakt OpenAPI i testy. E2 dodaje rejestrację z zaproszenia, loginy i hasła, trwałe sesje, reset i blokowanie dostępu. E3 dodaje kalendarz z harmonogramem, najbliższy termin i trwałe szczegóły spotkania. E4 dodaje zapisy, prywatne priorytety, rezerwę i propozycje miejsc. E5 dodaje harmonogram od wybranej daty, pojedyncze przesunięcia, odwołania i nowe potwierdzenia udziału. E6 dodaje obecność, prywatną historię i korekty oraz drużyny na boisku wariantu A. E7 dodaje administracyjny podgląd i pobranie listy podpisów PDF. E8 dodaje wyniki, ranking ELO, historię punktów i pełne korekty z przeliczeniem późniejszych spotkań. E9 dopracowuje dostępność i obsługę telefonu, dialogi, utratę sieci/sesji oraz dodaje manifest. Lokalna kontrola Chromium/WebKit jest wykonana; fizyczne telefony i akceptacja porównania UI pozostają do odbioru.
 
 [Plan implementacji](docs/implementation/README.md) · [Raport i ograniczenia E1](docs/implementation/e1-report.md) · [Decyzje produktu](docs/implementation/decisions.md) · [Raport E2](docs/implementation/e2-report.md) · [Raport E3](docs/implementation/e3-report.md) · [Raport E4](docs/implementation/e4-report.md) · [Raport E5](docs/implementation/e5-report.md) · [Raport E6](docs/implementation/e6-report.md) · [Raport E7](docs/implementation/e7-report.md) · [Raport E8](docs/implementation/e8-report.md) · [Raport E9 i porównanie UI](docs/implementation/e9-report.md) · [Pakiet HA — E10](docs/implementation/e10-report.md)
 
@@ -39,9 +39,9 @@ Po uruchomieniu lokalnych serwerów wygeneruj link inicjalizacji:
 npm run auth:bootstrap
 ```
 
-Otwórz wypisany adres `/setup#…` w przeglądarce i sam ustaw sześciocyfrowy PIN. Link działa raz przez 30 minut. Gdy wygaśnie, `npm run auth:bootstrap -- --rotate` unieważni stary i wygeneruje nowy. Po utworzeniu administratora komenda odmawia ponownej inicjalizacji. Nie ma domyślnego PIN-u ani konta produkcyjnego zasianego testowymi danymi.
+Otwórz wypisany adres `/setup#…` w przeglądarce i sam ustaw login i hasło (15–128 znaków). Link działa raz przez 30 minut. Gdy wygaśnie, `npm run auth:bootstrap -- --rotate` unieważni stary i wygeneruje nowy. Po utworzeniu administratora komenda odmawia ponownej inicjalizacji. Nie ma domyślnego hasła ani konta produkcyjnego zasianego testowymi danymi.
 
-W „Mój profil” → „Ustawienia ekipy” organizator tworzy link zaproszenia, unieważnia go, wydaje jednorazowe linki resetu PIN-u, zmienia prywatny status priorytetu i blokuje dostęp. Nowy profil zawsze jest gościem; inne urządzenie wymaga wyboru maskowanego profilu i PIN-u. Link pokazujemy w całości tylko po utworzeniu — skopiuj go przed opuszczeniem widoku. Przy zmianie/resetowaniu PIN-u pozostałe urządzenia tracą sesje.
+W „Mój profil” → „Ustawienia ekipy” organizator tworzy link zaproszenia, unieważnia go, wydaje jednorazowe linki resetu hasła, zmienia prywatny status priorytetu i blokuje dostęp. Nowy profil zawsze jest gościem; inne urządzenie wymaga wpisania loginu i hasła. Link pokazujemy w całości tylko po utworzeniu — skopiuj go przed opuszczeniem widoku. Przy zmianie/resetowaniu hasła pozostałe urządzenia tracą sesje.
 
 Ustawienia lokalne: `VOLLEYCREW_PUBLIC_URL=http://localhost:5173`, `VOLLEYCREW_COOKIE_SECURE=false`. Poza localhost wymagane HTTPS i domyślne Secure=true. Sekret podpisujący CSRF jest generowany w `.runtime/auth.key` z prawami 0600; zachowaj go między restartami albo podaj `VOLLEYCREW_SESSION_SECRET` (min. 32 znaki) przez środowisko. Nie dodawaj go do repozytorium. Ruch proxy jest domyślnie niezaufany; `VOLLEYCREW_TRUSTED_PROXY_CIDRS` i `VOLLEYCREW_ADDITIONAL_ORIGINS` to jawne listy JSON, do konfiguracji i sprawdzenia w E10. Uvicorn działa z `--no-proxy-headers`, weryfikację wykonuje aplikacja.
 
@@ -136,7 +136,7 @@ npm run prototype
 - http://localhost:4173/prototype/?variant=A
 - http://localhost:4173/prototype/phone.html — interaktywny podgląd w ramce telefonu
 
-W prototypie zmiany znikają po odświeżeniu. Nie używaj prawdziwego PIN-u. Przełącznik zawodnik/organizator to demonstracja, nie mechanizm uprawnień.
+W prototypie zmiany znikają po odświeżeniu. Nie używaj prawdziwego hasła. Przełącznik zawodnik/organizator to demonstracja, nie mechanizm uprawnień.
 
 
 ## Instalacja Home Assistant (E10)
@@ -169,4 +169,4 @@ CI weryfikuje zgodność tego pliku z `uv.lock`, buduje i testuje oba CPU bez pu
 
 ### Lokalny podgląd obu ról
 
-`npm run dev:preview` tworzy w lokalnej bazie `*_dev` 14 kont: **Admin Demo**, **User Demo** i 12 zawodników demo, wszystkie z PIN-em `123456`, i uruchamia aplikację z przyciskami „Wejdź jako Admin” / „Wejdź jako User”. Przyciski działają na ekranie logowania i nad treścią aplikacji, używając zwykłego logowania API. Seeder odmawia pracy z bazą poza loopback lub bez końcówki `_dev`; nie usuwa istniejących profili. Zwykły `npm run dev` oraz produkcyjny build nie pokazują przełącznika.
+`npm run dev:preview` tworzy w lokalnej bazie `*_dev` 14 kont: **Admin Demo**, **User Demo** i 12 zawodników demo, z hasłem `Preview-test-password-123` (loginy `admin-demo` i `user-demo` dla przełącznika), i uruchamia aplikację z przyciskami „Wejdź jako Admin” / „Wejdź jako User”. Przyciski działają na ekranie logowania i nad treścią aplikacji, używając zwykłego logowania API. Seeder odmawia pracy z bazą poza loopback lub bez końcówki `_dev`; nie usuwa istniejących profili. Zwykły `npm run dev` oraz produkcyjny build nie pokazują przełącznika.

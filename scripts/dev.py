@@ -66,6 +66,7 @@ def dev():
             "app.main:app",
             "--reload",
             "--no-proxy-headers",
+            "--no-access-log",
             "--host",
             ENV.get("VOLLEYCREW_API_HOST", "127.0.0.1"),
             "--port",
@@ -116,13 +117,14 @@ def main():
         dev()
     elif task == "migrate":
         run(backend("alembic", "upgrade", "head"))
-    elif task == "api-server":
+    elif task in {"api-server", "google-e2e-server"}:
         run(backend("alembic", "upgrade", "head"))
         run(
             backend(
                 "uvicorn",
-                "app.main:app",
+                "tests.google_e2e_app:app" if task == "google-e2e-server" else "app.main:app",
                 "--no-proxy-headers",
+                "--no-access-log",
                 "--host",
                 "127.0.0.1",
                 "--port",

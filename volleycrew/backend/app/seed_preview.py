@@ -8,7 +8,7 @@ from sqlalchemy.engine import make_url
 from app.core.clock import SystemClock
 from app.core.config import get_settings
 from app.core.database import Database
-from app.core.security import hash_pin
+from app.core.security import hash_password
 from app.models.auth import Player
 
 PROFILES = (
@@ -48,33 +48,38 @@ async def seed():
                     db.add(
                         Player(
                             id=identifier,
+                            username=("admin-demo" if role == "admin" else "user-demo"),
                             first_name=name,
                             last_name="Demo",
                             nickname="Podgląd lokalny",
                             role=role,
                             priority_status=priority,
-                            pin_hash=await hash_pin("123456"),
+                            password_hash=await hash_password("Preview-test-password-123"),
                             created_at=SystemClock().now(),
                         )
                     )
-            pin_hash = await hash_pin("123456")
+            password_hash = await hash_password("Preview-test-password-123")
             for first_name, last_name in DEMO_PLAYERS:
                 identifier = uuid5(PROFILES[0][0], f"{first_name}:{last_name}")
                 if await db.get(Player, identifier) is None:
                     db.add(
                         Player(
                             id=identifier,
+                            username="demo-" + identifier.hex[:24],
                             first_name=first_name,
                             last_name=last_name,
                             nickname="Podgląd lokalny",
                             role="player",
                             priority_status="player",
-                            pin_hash=pin_hash,
+                            password_hash=password_hash,
                             created_at=SystemClock().now(),
                         )
                     )
             await db.commit()
-        print("Local preview: Admin Demo / User Demo + 12 players, PIN 123456.")
+        print(
+            "Local preview: admin-demo / user-demo + 12 players; "
+            "password Preview-test-password-123."
+        )
     finally:
         await database.engine.dispose()
 

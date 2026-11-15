@@ -19,15 +19,15 @@ from app.core.security import (
     allowed_origins,
     cookie_name,
     cookie_path,
-    hash_pin,
+    hash_password,
     new_token,
     set_csrf,
     source_address,
     token_hash,
     valid_csrf,
-    verify_pin,
+    verify_password,
 )
-from app.models.auth import AuditEvent, AuthThrottle, Player, Session
+from app.models.auth import AuditEvent, AuthThrottle, GoogleIdentity, Player, Session
 
 
 async def auth_lock(db: AsyncSession) -> None:
@@ -38,6 +38,10 @@ async def auth_lock(db: AsyncSession) -> None:
 
 def now(request: Request) -> datetime:
     return request.app.state.clock.now()
+
+
+async def account_ready(db: AsyncSession, player: Player) -> bool:
+    return bool(player.password_hash or await db.get(GoogleIdentity, player.id))
 
 
 def audit(
@@ -95,6 +99,7 @@ async def current_session(db: AsyncSession, request: Request) -> tuple[Player, S
     if (
         not pair
         or not pair.Player.is_active
+        or not await account_ready(db, pair.Player)
         or pair.Session.revoked_at is not None
         or pair.Session.expires_at <= at
         or pair.Session.absolute_expires_at <= at
@@ -171,21 +176,27 @@ def require_under_limit(items: list[AuthThrottle], limits: list[int], at: dateti
 
 
 async def credential(
-    db: AsyncSession, request: Request, player: Player | None, profile_id: UUID, pin: str
+    db: AsyncSession, request: Request, player: Player | None, username: str | UUID, password: str
 ) -> Player:
     at = now(request)
-    items = await buckets(db, [f"pin:{profile_id}", f"source:{source_address(request)}"], at)
+    identity = player.id if player else f"unknown:{username}"
+    items = await buckets(db, [f"password:{identity}", f"source:{source_address(request)}"], at)
     require_under_limit(items, [5, 30], at)
-    valid = await verify_pin(player.pin_hash if player and player.is_active else DUMMY_HASH, pin)
-    if not player or not player.is_active or not valid:
+    valid = await verify_password(
+        player.password_hash
+        if player and player.is_active and player.password_hash
+        else DUMMY_HASH,
+        password,
+    )
+    if not player or not player.is_active or not player.password_hash or not valid:
         for item in items:
             item.count += 1
         # Failed attempts must survive the error response and a process restart.
         await db.commit()
-        raise DomainError(401, "invalid_credentials", "Nieprawidłowy profil lub PIN.")
+        raise DomainError(401, "invalid_credentials", "Nieprawidłowy login lub hasło.")
     items[0].count = 0
-    if HASHER.check_needs_rehash(player.pin_hash):
-        player.pin_hash = await hash_pin(pin)
+    if HASHER.check_needs_rehash(player.password_hash):
+        player.password_hash = await hash_password(password)
     return player
 
 
@@ -201,3 +212,12 @@ async def invalid_token(db: AsyncSession) -> None:
     raise DomainError(
         400, "invalid_token", "Link jest nieprawidłowy, wygasł lub został wykorzystany."
     )
+
+
+async def require_available_username(
+    db: AsyncSession, username: str, player_id: UUID | None = None
+) -> None:
+    existing = await db.scalar(select(Player.id).where(Player.username == username))
+    if existing and existing != player_id:
+        await db.commit()  # Keep the attempt counter, without consuming the setup/reset link.
+        raise DomainError(409, "username_taken", "Ten login jest już zajęty. Wybierz inny.")

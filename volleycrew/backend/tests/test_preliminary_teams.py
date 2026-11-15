@@ -51,7 +51,7 @@ def test_live_read_has_exact_roster_and_no_mutations(calendar_system, count):
     assert set(a + b) == (set(players[:count]) if count >= 2 else set())
     assert len(a + b) == len(set(a + b)) and abs(len(a) - len(b)) <= 1
     assert fresh(admin, meeting) == before
-    assert "priority_status" not in str(first) and "pin_hash" not in str(first)
+    assert "priority_status" not in str(first) and "password_hash" not in str(first)
 
     async def inspect():
         async with admin.app.state.database.sessions() as db:
@@ -138,7 +138,7 @@ def test_admin_permissions_invalid_members_duplicates_and_simultaneous_overrides
     assert save(admin, meeting, shown, "manual", a, a).status_code == 422
     assert save(admin, meeting, shown, "manual", [str(uuid4()), *a[1:]], b).status_code == 422
     other = device()
-    assert login(other, actor, "123456").status_code == 200
+    assert login(other, actor, "Admin-test-passphrase-123").status_code == 200
     with ThreadPoolExecutor(max_workers=2) as pool:
         results = list(
             pool.map(lambda client: save(client, meeting, shown, "random"), [admin, other])

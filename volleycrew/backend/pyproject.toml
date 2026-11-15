@@ -11,6 +11,9 @@ dependencies = [
   "alembic>=1.14,<2",
   "argon2-cffi>=25.1,<26",
   "reportlab>=4.4,<5",
+  "authlib>=1.6,<2",
+  "httpx>=0.28,<1",
+  "pyjwt[crypto]>=2.10,<3",
 ]
 
 [dependency-groups]

@@ -260,3 +260,25 @@ def test_startup_validation_lists_fields_without_secret_values(monkeypatch, capl
         runtime.main()
     assert "BOOTSTRAP_TOKEN" in caplog.text
     assert "private-short-token" not in caplog.text
+
+
+def test_google_options_reach_private_environment_and_can_be_disabled(tmp_path):
+    nginx = tmp_path / "nginx"
+    nginx.mkdir()
+    (nginx / "nginx.conf.template").write_bytes((NGINX / "nginx.conf.template").read_bytes())
+    file = tmp_path / "options.json"
+    value = options(GOOGLE_CLIENT_ID="test.apps.googleusercontent.com").model_dump(mode="json")
+    value["GOOGLE_CLIENT_SECRET"] = "test-google-secret"
+    value["POSTGRES_PASSWORD"] = "db-test-password"
+    value["SESSION_SECRET"] = ""
+    value["BOOTSTRAP_TOKEN"] = ""
+    file.write_text(json.dumps(value))
+    env = tmp_path / "env"
+    prepare(file, tmp_path, env, nginx)
+    secret = env / "VOLLEYCREW_GOOGLE_CLIENT_SECRET"
+    assert secret.read_text() == "test-google-secret"
+    assert secret.stat().st_mode & 0o777 == 0o600
+    value["GOOGLE_CLIENT_ID"] = value["GOOGLE_CLIENT_SECRET"] = ""
+    file.write_text(json.dumps(value))
+    prepare(file, tmp_path, env, nginx)
+    assert secret.read_text() == ""

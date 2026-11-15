@@ -2,22 +2,21 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request, Response
-from sqlalchemy import select, update
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.auth_schemas import (
     AdminPlayerPatch,
-    ChangePin,
+    ChangePassword,
     CsrfView,
     Done,
     InviteView,
     LinkCreated,
     Login,
-    LoginProfile,
     PlayerView,
     ProfileInput,
     Registration,
-    ResetPin,
+    ResetPassword,
 )
 from app.api.errors import ApiError, DomainError
 from app.core.deps import get_session
@@ -26,12 +25,19 @@ from app.core.security import (
     SESSION_COOKIE,
     cookie_name,
     cookie_path,
-    hash_pin,
+    hash_password,
     new_token,
     set_csrf,
     token_hash,
 )
-from app.models.auth import BootstrapGrant, Invite, PinResetGrant, Player, Session
+from app.models.auth import (
+    BootstrapGrant,
+    GoogleIdentity,
+    Invite,
+    PasswordResetGrant,
+    Player,
+    Session,
+)
 from app.services import auth as service
 from app.services.enrollment import update_player_allocations
 
@@ -73,53 +79,39 @@ async def csrf(request: Request, response: Response) -> CsrfView:
     )
 
 
-@router.get("/auth/profiles", response_model=list[LoginProfile], operation_id="getLoginProfiles")
-async def profiles(db: DB) -> list[LoginProfile]:
-    players = (await db.scalars(select(Player).where(Player.is_active.is_(True)))).all()
-    views = [
-        LoginProfile(
-            profile_id=p.id,
-            first_name=p.first_name,
-            masked_last_name=p.last_name[0] + "*****" + p.last_name[-1],
-            nickname=p.nickname,
-        )
-        for p in players
-    ]
-    return sorted(
-        views,
-        key=lambda p: (
-            p.first_name.casefold(),
-            p.masked_last_name,
-            p.nickname or "",
-            str(p.profile_id),
-        ),
-    )
-
-
 @router.post("/auth/bootstrap", response_model=PlayerView, operation_id="bootstrapAdmin")
 async def bootstrap(body: Registration, request: Request, response: Response, db: DB) -> Player:
     await service.rate_action(db, request, "bootstrap")
     grant = await db.get(BootstrapGrant, 1)
-    exists = await db.scalar(select(Player.id).where(Player.role == "admin").limit(1))
+    existing = await db.scalar(select(Player).where(Player.role == "admin").limit(1))
     at = service.now(request)
     if (
-        exists
+        (existing is not None and await service.account_ready(db, existing))
         or not grant
         or grant.used_at
         or grant.expires_at <= at
         or grant.token_hash != token_hash(body.token.get_secret_value())
     ):
         await service.invalid_token(db)
-    player = Player(
-        first_name=body.first_name,
-        last_name=body.last_name,
-        nickname=body.nickname,
-        pin_hash=await hash_pin(body.pin.get_secret_value()),
-        role="admin",
-        priority_status="founder",
-        created_at=at,
-    )
-    db.add(player)
+    await service.require_available_username(db, body.username, existing.id if existing else None)
+    if existing:
+        player = existing
+        player.username = body.username
+        player.password_hash = await hash_password(body.password.get_secret_value())
+        await service.revoke_sessions(db, player.id, at)
+        await db.execute(delete(GoogleIdentity).where(GoogleIdentity.player_id == player.id))
+    else:
+        player = Player(
+            first_name=body.first_name,
+            last_name=body.last_name,
+            nickname=body.nickname,
+            username=body.username,
+            password_hash=await hash_password(body.password.get_secret_value()),
+            role="admin",
+            priority_status="founder",
+            created_at=at,
+        )
+        db.add(player)
     await db.flush()
     grant.used_at = at
     service.audit(db, player.id, "bootstrap_admin", player.id, at)
@@ -139,11 +131,13 @@ async def register(body: Registration, request: Request, response: Response, db:
     )
     if not invite:
         await service.invalid_token(db)
+    await service.require_available_username(db, body.username)
     player = Player(
         first_name=body.first_name,
         last_name=body.last_name,
         nickname=body.nickname,
-        pin_hash=await hash_pin(body.pin.get_secret_value()),
+        username=body.username,
+        password_hash=await hash_password(body.password.get_secret_value()),
         role="player",
         priority_status="guest",
         created_at=service.now(request),
@@ -163,9 +157,9 @@ async def login(body: Login, request: Request, response: Response, db: DB) -> Pl
     player = await service.credential(
         db,
         request,
-        await db.get(Player, body.profile_id),
-        body.profile_id,
-        body.pin.get_secret_value(),
+        await db.scalar(select(Player).where(Player.username == body.username)),
+        body.username,
+        body.password.get_secret_value(),
     )
     await service.new_session(db, player, request, response)
     await db.commit()
@@ -211,45 +205,53 @@ async def update_me(body: ProfileInput, player: User, request: Request, db: DB) 
     return player
 
 
-@router.post("/me/pin", response_model=Done, operation_id="changePin")
-async def change_pin(
-    body: ChangePin, player: User, request: Request, response: Response, db: DB
+@router.post("/me/password", response_model=Done, operation_id="changePassword")
+async def change_password(
+    body: ChangePassword, player: User, request: Request, response: Response, db: DB
 ) -> Done:
-    await service.credential(db, request, player, player.id, body.current_pin.get_secret_value())
-    player.pin_hash = await hash_pin(body.pin.get_secret_value())
+    await service.credential(
+        db, request, player, player.id, body.current_password.get_secret_value()
+    )
+    player.password_hash = await hash_password(body.password.get_secret_value())
     await service.revoke_sessions(db, player.id, service.now(request))
     await db.execute(
-        update(PinResetGrant)
-        .where(PinResetGrant.player_id == player.id, PinResetGrant.used_at.is_(None))
+        update(PasswordResetGrant)
+        .where(PasswordResetGrant.player_id == player.id, PasswordResetGrant.used_at.is_(None))
         .values(used_at=service.now(request))
     )
     await service.new_session(db, player, request, response)
-    service.audit(db, player.id, "change_pin", player.id, service.now(request))
+    service.audit(db, player.id, "change_password", player.id, service.now(request))
     await db.commit()
     return Done()
 
 
-@router.post("/auth/reset-pin", response_model=PlayerView, operation_id="resetPin")
-async def reset_pin(body: ResetPin, request: Request, response: Response, db: DB) -> Player:
+@router.post("/auth/reset-password", response_model=PlayerView, operation_id="resetPassword")
+async def reset_password(
+    body: ResetPassword, request: Request, response: Response, db: DB
+) -> Player:
     await service.rate_action(db, request, "reset")
     at = service.now(request)
     grant = await db.scalar(
-        select(PinResetGrant).where(
-            PinResetGrant.token_hash == token_hash(body.token.get_secret_value())
+        select(PasswordResetGrant).where(
+            PasswordResetGrant.token_hash == token_hash(body.token.get_secret_value())
         )
     )
     player = await db.get(Player, grant.player_id) if grant else None
     if not grant or grant.used_at or grant.expires_at <= at or not player or not player.is_active:
         await service.invalid_token(db)
-    player.pin_hash = await hash_pin(body.pin.get_secret_value())
+    await service.require_available_username(db, body.username, player.id)
+    player.username = body.username
+    player.password_hash = await hash_password(body.password.get_secret_value())
     await db.execute(
-        update(PinResetGrant)
-        .where(PinResetGrant.player_id == player.id, PinResetGrant.used_at.is_(None))
+        update(PasswordResetGrant)
+        .where(PasswordResetGrant.player_id == player.id, PasswordResetGrant.used_at.is_(None))
         .values(used_at=at)
     )
     await service.revoke_sessions(db, player.id, at)
     await service.new_session(db, player, request, response)
-    service.audit(db, player.id, "reset_pin", player.id, at)
+    # Organizer-issued recovery also removes a possibly hostile external login.
+    await db.execute(delete(GoogleIdentity).where(GoogleIdentity.player_id == player.id))
+    service.audit(db, player.id, "reset_password", player.id, at)
     await db.commit()
     return player
 
@@ -316,8 +318,10 @@ async def update_player_access(
         if not player.is_active:
             await service.revoke_sessions(db, player.id, service.now(request))
             await db.execute(
-                update(PinResetGrant)
-                .where(PinResetGrant.player_id == player.id, PinResetGrant.used_at.is_(None))
+                update(PasswordResetGrant)
+                .where(
+                    PasswordResetGrant.player_id == player.id, PasswordResetGrant.used_at.is_(None)
+                )
                 .values(used_at=service.now(request))
             )
         await update_player_allocations(
@@ -341,21 +345,21 @@ async def update_player_access(
 
 
 @router.post(
-    "/admin/players/{player_id}/pin-reset",
+    "/admin/players/{player_id}/password-reset",
     response_model=LinkCreated,
-    operation_id="createPinReset",
+    operation_id="createPasswordReset",
 )
-async def pin_reset(player_id: UUID, actor: Admin, db: DB, request: Request) -> LinkCreated:
+async def password_reset(player_id: UUID, actor: Admin, db: DB, request: Request) -> LinkCreated:
     player = await db.get(Player, player_id)
     if player is None or not player.is_active:
         raise DomainError(404, "not_found", "Nie znaleziono aktywnego zawodnika.")
     at, value = service.now(request), new_token()
     await db.execute(
-        update(PinResetGrant)
-        .where(PinResetGrant.player_id == player_id, PinResetGrant.used_at.is_(None))
+        update(PasswordResetGrant)
+        .where(PasswordResetGrant.player_id == player_id, PasswordResetGrant.used_at.is_(None))
         .values(used_at=at)
     )
-    grant = PinResetGrant(
+    grant = PasswordResetGrant(
         player_id=player_id,
         created_by=actor.id,
         token_hash=token_hash(value),
@@ -364,8 +368,8 @@ async def pin_reset(player_id: UUID, actor: Admin, db: DB, request: Request) -> 
     )
     db.add(grant)
     await db.flush()
-    service.audit(db, actor.id, "create_pin_reset", player_id, at)
+    service.audit(db, actor.id, "create_password_reset", player_id, at)
     await db.commit()
     return LinkCreated(
-        id=grant.id, url=f"{request.app.state.settings.public_url}/reset-pin#{value}"
+        id=grant.id, url=f"{request.app.state.settings.public_url}/reset-password#{value}"
     )

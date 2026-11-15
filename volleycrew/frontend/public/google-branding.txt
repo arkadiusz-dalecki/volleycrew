@@ -1,0 +1,4 @@
+Google G: https://developers.google.com/static/identity/images/g-logo.png
+Usage: https://developers.google.com/identity/branding-guidelines
+Google Sans: https://fonts.google.com/specimen/Google+Sans (SIL OFL, see google-sans-OFL.txt).
+Local WOFF2 subset: Zaloguj przez Google / Dołącz przez Google, weight 500.

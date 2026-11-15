@@ -6,7 +6,7 @@ import {
   type ReactNode,
 } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { rememberProfile } from "./rememberedProfile";
+import { rememberUsername } from "./rememberedUsername";
 import { useSession } from "./useSession";
 
 const ViewModeContext = createContext({
@@ -34,7 +34,7 @@ export function ViewModeProvider({ children }: { children: ReactNode }) {
     }
   }, [storageKey, playerView]);
   useEffect(() => {
-    if (me) rememberProfile(me.id);
+    if (me) rememberUsername(me.username ?? "");
   }, [me]);
   return (
     <ViewModeContext.Provider value={{ playerView, setPlayerView }}>

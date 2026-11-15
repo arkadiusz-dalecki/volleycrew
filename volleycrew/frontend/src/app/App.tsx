@@ -20,9 +20,10 @@ import { api, message, unwrap } from "../lib/api/client";
 import {
   LoginPage,
   RegisterPage,
-  ResetPinPage,
+  ResetPasswordPage,
   Protected,
 } from "../features/auth/AuthPages";
+import { GoogleCompletionPage } from "../features/auth/GoogleCompletionPage";
 import { ProfilePage } from "../features/auth/ProfilePage";
 import { AdminSettings } from "../features/auth/AdminSettings";
 import { useSession } from "../features/auth/useSession";
@@ -307,6 +308,15 @@ export function App() {
           {import.meta.env.DEV && (
             <Route path="/preview/login" element={<LoginPage preview />} />
           )}
+          <Route path="/join/google" element={<GoogleCompletionPage />} />
+          <Route
+            path="/profile/password"
+            element={
+              <Protected>
+                <GoogleCompletionPage passwordSetup />
+              </Protected>
+            }
+          />
           <Route path="/join" element={<RegisterPage key="join" />} />
           <Route
             path="/join/:token"
@@ -316,10 +326,10 @@ export function App() {
             path="/setup"
             element={<RegisterPage bootstrap key="setup" />}
           />
-          <Route path="/reset-pin" element={<ResetPinPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route
-            path="/reset-pin/:token"
-            element={<Navigate to="/reset-pin" replace />}
+            path="/reset-password/:token"
+            element={<Navigate to="/reset-password" replace />}
           />
           <Route
             path="*"

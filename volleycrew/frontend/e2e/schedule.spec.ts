@@ -10,8 +10,15 @@ test("single exception, schedule preview, reconfirmation, stale organizer tab an
   await page.getByLabel("Imię", { exact: true }).fill("Julia");
   await page.getByLabel("Nazwisko", { exact: true }).fill("Kowalska");
   await page.getByLabel("Przydomek (opcjonalnie)").fill(nickname);
-  await page.getByLabel("Twój PIN", { exact: true }).fill("654321");
-  await page.getByLabel("Powtórz PIN", { exact: true }).fill("654321");
+  await page
+    .getByLabel("Login", { exact: true })
+    .fill(`member-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`);
+  await page
+    .getByLabel("Twoje hasło", { exact: true })
+    .fill("Player-test-passphrase-456");
+  await page
+    .getByLabel("Powtórz hasło", { exact: true })
+    .fill("Player-test-passphrase-456");
   await page.getByRole("button", { name: "Dołączam do gry" }).click();
   await expect(
     page.getByRole("heading", { name: "Najbliższe spotkanie" }),
@@ -307,8 +314,15 @@ test("organizer changes and cancels a generated slot directly on its calendar ca
   await memberPage
     .getByLabel("Przydomek (opcjonalnie)")
     .fill(`Kafelki-${info.project.name}`);
-  await memberPage.getByLabel("Twój PIN", { exact: true }).fill("654321");
-  await memberPage.getByLabel("Powtórz PIN", { exact: true }).fill("654321");
+  await memberPage
+    .getByLabel("Login", { exact: true })
+    .fill(`member-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`);
+  await memberPage
+    .getByLabel("Twoje hasło", { exact: true })
+    .fill("Player-test-passphrase-456");
+  await memberPage
+    .getByLabel("Powtórz hasło", { exact: true })
+    .fill("Player-test-passphrase-456");
   await memberPage.getByRole("button", { name: "Dołączam do gry" }).click();
   await expect(
     memberPage.getByRole("heading", { name: "Najbliższe spotkanie" }),

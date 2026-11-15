@@ -29,7 +29,7 @@ test("auth links clear the address and require reopening after reload", async ({
 test("tokens in old URL paths are discarded instead of used", async ({
   page,
 }) => {
-  for (const path of ["join", "reset-pin"]) {
+  for (const path of ["join", "reset-password"]) {
     await page.goto(`/${path}/discard-this-token`);
     await expect(page).toHaveURL(new RegExp(`/${path}$`));
     await expect(page.getByRole("alert")).toContainText(

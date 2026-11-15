@@ -25,6 +25,24 @@ HASHER = PasswordHasher(time_cost=2, memory_cost=19456, parallelism=1, type=Type
 DUMMY_HASH = HASHER.hash(secrets.token_urlsafe(12))
 
 
+def google_flow_cookie(request: Request) -> str:
+    return (
+        "__Host-vc_google_flow"
+        if request.app.state.settings.cookie_secure
+        else "vc_google_flow_dev"
+    )
+
+
+def clear_google_flow(response: Response, request: Request) -> None:
+    response.delete_cookie(
+        google_flow_cookie(request),
+        path="/",
+        httponly=True,
+        samesite="lax",
+        secure=request.app.state.settings.cookie_secure,
+    )
+
+
 def token_hash(value: str) -> str:
     return hashlib.sha256(value.encode()).hexdigest()
 
@@ -51,14 +69,14 @@ def load_auth_key(settings: Settings) -> bytes:
     return value
 
 
-async def hash_pin(pin: str) -> str:
-    return await run_in_threadpool(HASHER.hash, pin)
+async def hash_password(password: str) -> str:
+    return await run_in_threadpool(HASHER.hash, password)
 
 
-async def verify_pin(encoded: str, pin: str) -> bool:
+async def verify_password(encoded: str, password: str) -> bool:
     def verify() -> bool:
         try:
-            return HASHER.verify(encoded, pin)
+            return HASHER.verify(encoded, password)
         except (VerificationError, InvalidHashError):
             return False
 

@@ -85,8 +85,10 @@ test("network failure keeps forms; expired session clears private view and retur
       exact: true,
     }),
   ).toHaveCount(0);
-  await page.getByLabel("Twój profil").selectOption(process.env.E2E_ADMIN_ID!);
-  await page.getByLabel("PIN", { exact: true }).fill("123456");
+  await page.getByLabel("Login", { exact: true }).fill("organizer");
+  await page
+    .getByLabel("Hasło", { exact: true })
+    .fill("Admin-test-passphrase-123");
   await page.getByRole("button", { name: "Wejdź na boisko" }).click();
   await expect(page).toHaveURL(/\/profile$/);
   await expect(nickname).toHaveValue(original);
@@ -139,7 +141,7 @@ test("public access screens and local install assets", async ({ page }) => {
   for (const [route, label] of [
     ["/login", "Dobrze Cię widzieć"],
     [`/join#${process.env.E2E_INVITE}`, "Dołącz do ekipy"],
-    ["/reset-pin#invalid-test-token", "Nowy PIN, ta sama ekipa"],
+    ["/reset-password#invalid-test-token", "Nowe hasło, ta sama ekipa"],
   ]) {
     await page.goto(route);
     await expect(

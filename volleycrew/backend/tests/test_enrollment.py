@@ -49,12 +49,13 @@ def setup_group(system, count=14):
             seeded = []
             for index in range(count + 3):
                 person = Player(
+                    username="user-" + uuid4().hex[:24],
                     first_name=f"Gracz{index}",
                     last_name="Testowy",
                     priority_status="guest",
                     role="player",
                     is_active=True,
-                    pin_hash=source.pin_hash,
+                    password_hash=source.password_hash,
                     created_at=clock.at,
                 )
                 db.add(person)
@@ -190,7 +191,7 @@ def test_priority_displacement_retry_and_private_dto(calendar_system):
             for field in [
                 "priority_status",
                 "founder",
-                "pin_hash",
+                "password_hash",
                 "cancellation_kind",
                 "accepted_late_offer",
             ]

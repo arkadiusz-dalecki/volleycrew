@@ -2689,3 +2689,46 @@ select {
 .meeting-swipe-hint {
   margin-bottom: 16px;
 }
+
+@font-face {
+  font-family: "Google Sans";
+  src: url("../assets/google-sans-500.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+}
+.google-access {
+  margin: 1rem 0;
+}
+.google-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid #747775;
+  border-radius: 4px;
+  color: #1f1f1f;
+  font-family: "Google Sans", Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+}
+.google-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+.google-button img {
+  flex-shrink: 0;
+}
+
+.google-connection {
+  margin-block: 1.5rem;
+}
+.google-connection > p {
+  margin-block: 0.75rem;
+}

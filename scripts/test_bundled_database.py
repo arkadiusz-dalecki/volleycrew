@@ -91,7 +91,7 @@ for key,value in r.getheaders():
  if key.lower()=='set-cookie': cookies.load(value)
 h['Cookie']='; '.join(k+'='+v.value for k,v in cookies.items())
 h['X-CSRF-Token']=csrf; h['Content-Type']='application/json'
-c.request('POST','/api/v1/auth/bootstrap',json.dumps({'first_name':'Embedded','last_name':'Testowy','nickname':None,'pin':'123456','token':TOKEN}),h)
+c.request('POST','/api/v1/auth/bootstrap',json.dumps({'first_name':'Embedded','last_name':'Testowy','nickname':None,'password':'Admin-test-passphrase-123','username':'organizer','token':TOKEN}),h)
 r=c.getresponse(); body=json.loads(r.read())
 assert r.status==200,(r.status,body.get('code'))
 assert body['role']=='admin'

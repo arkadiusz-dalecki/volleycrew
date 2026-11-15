@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     additional_origins: list[str] = []
     trusted_proxy_cidrs: list[str] = []
     session_secret: SecretStr | None = None
+    google_client_id: str = ""
+    google_client_secret: SecretStr = SecretStr("")
     state_dir: Path = Path(__file__).resolve().parents[4] / ".runtime"
 
     @model_validator(mode="after")
@@ -32,7 +34,18 @@ class Settings(BaseSettings):
             "::1",
         }:
             raise ValueError("Insecure cookies are allowed only on localhost")
+        if bool(self.google_client_id) != bool(self.google_client_secret.get_secret_value()):
+            raise ValueError("Configure both Google client ID and secret, or neither")
+        if self.google_client_id and (
+            not self.google_client_id.endswith(".apps.googleusercontent.com")
+            or any(c.isspace() or ord(c) < 32 for c in self.google_client_id)
+        ):
+            raise ValueError("Invalid Google OAuth client ID")
         return self
+
+    @property
+    def google_enabled(self) -> bool:
+        return bool(self.google_client_id and self.google_client_secret.get_secret_value())
 
     @field_validator("public_url")
     @classmethod

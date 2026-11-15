@@ -106,3 +106,21 @@ Użytkownik zlecił graficzne przejście między terminami: cały kafelek spotka
 ## Uzupełnienie E2/E9 — linki i ochrona dostępu, 2026-11-14
 
 Użytkownik zlecił punkt 5 recenzji: dopracowanie linków, monitoringu i odporności na nadużycia. Zakres: token linku wyłącznie we fragmencie, usunięcie go z bieżącego adresu po odczycie do pamięci formularza; odrzucenie dawnych tokenów w ścieżce, komunikaty Retry-After, bezpieczne i ograniczone objętościowo logi bezpieczeństwa oraz dodatkowe ograniczenie nagłych serii żądań przed bazą. To uzupełnienie E2/E9; polityka PIN-u, katalog profili, ważność/wielokrotność zaproszeń i dotychczasowe trwałe limity pozostają zgodne z wcześniejszymi decyzjami.
+
+## Google jako opcjonalne logowanie — zatwierdzone 2026-11-15
+
+Użytkownik zaakceptował dodanie opcji opisanej po recenzji: istniejący profil łączy się z Google po zalogowaniu i świeżym potwierdzeniu PIN-u; później można logować się Google. PIN pozostaje dostępny. Nowe profile nadal powstają wyłącznie z zaproszenia; bez automatycznego łączenia po e-mailu lub nazwisku. Tożsamością zewnętrzną jest zweryfikowany Google `sub`, przypisany do jednego profilu. Zakres wykonawczy E2/E9: odłączanie po PIN-ie z unieważnieniem sesji, OAuth/OIDC authorization code z PKCE, nonce i jednorazowym stanem związanym z przeglądarką oraz krótkim terminem. Stały callback pod PUBLIC_URL; Ingress otwiera główny adres w nowej karcie, bez przenoszenia sesji między wejściami. Konfiguracja własnego klienta OAuth w Google i prawdziwy odbiór z kontem Google pozostają po stronie operatora. Integracja domyślnie wyłączona przy braku obu danych klienta.
+
+Doprecyzowanie odzyskiwania: wykorzystanie resetu PIN-u wydanego przez organizatora odłącza również Google, aby odzyskanie dostępu usuwało ewentualne obce powiązanie. Samodzielna zmiana PIN-u zachowuje Google.
+
+## Login i hasło zamiast PIN-u — zatwierdzone 2026-11-15
+
+Użytkownik zlecił zastąpienie wyboru profilu/PIN-u tradycyjnym logowaniem i wybrał osobną nazwę użytkownika (nie e-mail). Potwierdził, że zarejestrowany jest tylko on, więc nie wymaga migracji graczy. Nowa decyzja zastępuje części D6 i E2 dotyczące katalogu logowania oraz PIN-u. Google pozostaje dodatkową metodą; potwierdzenia połączenia/odłączenia używają hasła.
+
+Szczegóły wykonawcze: login 3–32 znaki ASCII (litery, cyfry, kropka, myślnik, podkreślenie), normalizowany do małych liter i unikalny; hasło 15–128 znaków, bez wymuszania zestawów znaków i bez obcinania/trimowania. Argon2id oraz dotychczasowe limity i prywatność sesji pozostają. Nowe konta przez zaproszenie. Reset hasła nadal przez jednorazowy link od organizatora, bez dodawania poczty. Dane historyczne pozostają; stare PIN-y nie stają się hasłami. Profil jedynego organizatora może ustawić nowe dane poprzez nowy, operatorowy 30-minutowy link setup; po ustawieniu hasła bootstrap ponownie zamyka się trwale. Bez zwykłego logowania starym PIN-em, migracji graczy ani kasowania bazy.
+
+## Rejestracja z zaproszenia przez Google — zatwierdzone 2026-11-15
+
+Użytkownik zaakceptował: link od organizatora → Dołącz przez Google → imię i nazwisko podpowiedziane z Google z możliwością poprawienia podczas dołączania → zatwierdzenie nowego profilu gościa i sesja. Konto może działać wyłącznie z Google, bez loginu i hasła; zwykła rejestracja loginem/hasłem pozostaje. Zaproszenie jest ponownie sprawdzane po OAuth i przy zatwierdzeniu, bez otwartej rejestracji i bez dopasowywania istniejących profili po e-mailu/nazwisku. Zweryfikowany sub pozostaje jedynym kluczem Google. Brak danych imienia/nazwiska u dostawcy oznacza puste pola do uzupełnienia, bez zgadywania.
+
+Szczegóły wykonawcze: zakres openid/profile zgodny z protokołem Google, a podpowiedzi przechowywane tylko podczas dołączania; podpowiedzi z podpisanego ID tokenu są danymi formularza, nie niezmienną tożsamością. Jednorazowy, krótki grant finalizacji związany z przeglądarką i zaproszeniem; konto powstaje dopiero po potwierdzeniu danych. Powtórzenie rejestracji tym samym Google nie tworzy kolejnego profilu ani nie zmienia cudzych danych. Opcjonalny login/hasło można później ustawić po ponownym potwierdzeniu tego samego konta Google. Odłączenie Google bez innej metody dostępu jest blokowane. Odzyskanie przez organizatora pozostaje możliwe jednorazowym resetem hasła.

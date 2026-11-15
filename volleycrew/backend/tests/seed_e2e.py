@@ -12,7 +12,7 @@ from sqlalchemy.engine import make_url
 from app.core.clock import SystemClock
 from app.core.config import get_settings
 from app.core.database import Database
-from app.core.security import hash_pin, new_token, token_hash
+from app.core.security import hash_password, new_token, token_hash
 from app.domain.schedule import first_date_on_or_after
 from app.models.auth import Invite, Player
 from app.services.enrollment import declare
@@ -36,12 +36,13 @@ async def main():
             await reset_calendar(db)
             at = SystemClock().now()
             player = Player(
+                username="organizer",
                 first_name="Arkadiusz",
                 last_name="Testowy",
                 nickname="E2E",
                 priority_status="founder",
                 role="admin",
-                pin_hash=await hash_pin("123456"),
+                password_hash=await hash_password("Admin-test-passphrase-123"),
                 created_at=at,
             )
             db.add(player)
@@ -60,13 +61,16 @@ async def main():
                 enrollment_meetings[project] = str(full.id)
                 await declare(db, full.id, player, "going", 1, at, uuid4())
                 for number in range(13):
+                    identifier = uuid4()
                     person = Player(
+                        id=identifier,
+                        username="user-" + identifier.hex[:24],
                         first_name=f"Zawodnik {number + 1}",
                         last_name="Testowy",
                         nickname=project,
                         priority_status="guest",
                         role="player",
-                        pin_hash=player.pin_hash,
+                        password_hash=player.password_hash,
                         created_at=at,
                     )
                     db.add(person)
@@ -94,13 +98,16 @@ async def main():
                     ("Marcin", "Kowal"),
                     ("Agnieszka", "Malinowska"),
                 ]:
+                    identifier = uuid4()
                     person = Player(
+                        id=identifier,
+                        username="user-" + identifier.hex[:24],
                         first_name=first,
                         last_name=last,
                         nickname=f"Sala {project}",
                         priority_status="guest",
                         role="player",
-                        pin_hash=player.pin_hash,
+                        password_hash=player.password_hash,
                         created_at=at,
                     )
                     db.add(person)

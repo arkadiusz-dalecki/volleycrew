@@ -260,7 +260,7 @@ def test_preview_detects_new_enrollment_and_other_admin_card(calendar_system):
     other = device()
     from tests.test_auth import login
 
-    assert login(other, actor, "123456").status_code == 200
+    assert login(other, actor, "Admin-test-passphrase-123").status_code == 200
     second_body = {**body, "weekday": 4}
     options = [
         (admin, body, preview(admin, body)),

@@ -30,6 +30,8 @@ class Options(BaseModel):
     TRUSTED_PROXY_CIDRS: list[str] = []
     SESSION_SECRET: SecretStr = SecretStr("")
     BOOTSTRAP_TOKEN: SecretStr = SecretStr("")
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: SecretStr = SecretStr("")
     BACKUP_HOUR: int = Field(default=3, ge=0, le=23)
 
     @field_validator("PUBLIC_URL")
@@ -138,6 +140,8 @@ class Options(BaseModel):
             behind_proxy=True,
             state_dir=state,
             session_secret=self.SESSION_SECRET.get_secret_value() or None,
+            google_client_id=self.GOOGLE_CLIENT_ID,
+            google_client_secret=self.GOOGLE_CLIENT_SECRET,
         )
 
 
@@ -177,6 +181,8 @@ def prepare(
         "VOLLEYCREW_ADDITIONAL_ORIGINS": json.dumps(settings.additional_origins),
         "VOLLEYCREW_TRUSTED_PROXY_CIDRS": json.dumps(settings.trusted_proxy_cidrs),
         "VOLLEYCREW_SESSION_SECRET": options.SESSION_SECRET.get_secret_value(),
+        "VOLLEYCREW_GOOGLE_CLIENT_ID": settings.google_client_id,
+        "VOLLEYCREW_GOOGLE_CLIENT_SECRET": settings.google_client_secret.get_secret_value(),
         "VOLLEYCREW_ENV_FILE": "/dev/null",
     }
     # Empty session secret means the application persists its own key in /data.

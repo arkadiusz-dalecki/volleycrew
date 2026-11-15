@@ -1,23 +1,25 @@
 import { expect, test } from "./fixtures";
 import { adminLogin } from "./auth-helpers";
 
-test("login chooses no account by default and remembers only a successful login", async ({
+test("username is empty initially and only a successful login is remembered", async ({
   page,
 }) => {
   await page.goto("/login");
-  const profiles = page.getByLabel("Twój profil");
-  await expect(profiles).toHaveValue("");
-  await expect(profiles.locator("option:checked")).toHaveText(
-    "Wybierz użytkownika",
-  );
-  await profiles.selectOption(process.env.E2E_ADMIN_ID!);
-  await page.getByLabel("PIN", { exact: true }).fill("000000");
+  const username = page.getByLabel("Login", { exact: true });
+  await expect(username).toHaveValue("");
+  await expect(page.locator("select")).toHaveCount(0);
+  await username.fill("organizer");
+  await page
+    .getByLabel("Hasło", { exact: true })
+    .fill("Wrong-test-passphrase-000");
   await page.getByRole("button", { name: "Wejdź na boisko" }).click();
   await expect(page.getByRole("alert")).toBeVisible();
   expect(
-    await page.evaluate(() => localStorage.getItem("volleycrew:last-profile")),
+    await page.evaluate(() => localStorage.getItem("volleycrew:last-username")),
   ).toBeNull();
-  await page.getByLabel("PIN", { exact: true }).fill("123456");
+  await page
+    .getByLabel("Hasło", { exact: true })
+    .fill("Admin-test-passphrase-123");
   await page.getByRole("button", { name: "Wejdź na boisko" }).click();
   await expect(
     page.getByRole("heading", { name: "Najbliższe spotkanie" }),
@@ -26,14 +28,13 @@ test("login chooses no account by default and remembers only a successful login"
     page.getByText("Dobra ekipa, trochę ruchu i dwie godziny dla siebie."),
   ).toHaveCount(0);
   await page.getByRole("button", { name: "Wyloguj" }).click();
-  await expect(profiles).toHaveValue(process.env.E2E_ADMIN_ID!);
+  await expect(username).toHaveValue("organizer");
   await page.reload();
-  await expect(profiles).toHaveValue(process.env.E2E_ADMIN_ID!);
-  await page.evaluate(() =>
-    localStorage.setItem("volleycrew:last-profile", "deleted-profile"),
+  await expect(username).toHaveValue("organizer");
+  await expect(page.getByLabel("Hasło", { exact: true })).toHaveValue("");
+  expect(await page.evaluate(() => JSON.stringify(localStorage))).not.toContain(
+    "Admin-test-passphrase-123",
   );
-  await page.reload();
-  await expect(profiles).toHaveValue("");
 });
 
 test("admin can preview player screens and return from any route", async ({

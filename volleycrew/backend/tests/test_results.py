@@ -364,7 +364,7 @@ def test_concurrent_results_are_serialized_and_rankings_preserve_blocked_profile
     body["expected_rating_version"] = view["rating_version"]
     other_body["expected_rating_version"] = other_view["rating_version"]
     other_admin = device()
-    assert login(other_admin, actor, pin="123456").status_code == 200
+    assert login(other_admin, actor, password="Admin-test-passphrase-123").status_code == 200
 
     def send(args):
         client, target, payload = args

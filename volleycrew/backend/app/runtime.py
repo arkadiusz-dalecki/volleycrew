@@ -18,7 +18,7 @@ from app.core.database import Database
 from app.core.security import load_auth_key, token_hash
 from app.deployment import Options, prepare, private_write
 from app.models.auth import BootstrapGrant, Player
-from app.services.auth import auth_lock
+from app.services.auth import account_ready, auth_lock
 
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 log = logging.getLogger("volleycrew.startup")
@@ -33,7 +33,8 @@ async def bootstrap(database: Database, value: str) -> None:
         return
     async with database.sessions() as db:
         await auth_lock(db)
-        if await db.scalar(select(Player.id).where(Player.role == "admin").limit(1)):
+        organizer = await db.scalar(select(Player).where(Player.role == "admin").limit(1))
+        if organizer and await account_ready(db, organizer):
             return
         grant = await db.get(BootstrapGrant, 1)
         hashed = token_hash(value)

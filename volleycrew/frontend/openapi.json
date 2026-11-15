@@ -493,27 +493,31 @@
         "title": "CalendarPage",
         "type": "object"
       },
-      "ChangePin": {
+      "ChangePassword": {
         "additionalProperties": false,
         "properties": {
-          "current_pin": {
+          "current_password": {
             "format": "password",
-            "title": "Current Pin",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Current Password",
             "type": "string",
             "writeOnly": true
           },
-          "pin": {
+          "password": {
             "format": "password",
-            "title": "Pin",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Password",
             "type": "string",
             "writeOnly": true
           }
         },
         "required": [
-          "pin",
-          "current_pin"
+          "password",
+          "current_password"
         ],
-        "title": "ChangePin",
+        "title": "ChangePassword",
         "type": "object"
       },
       "CloseOffer": {
@@ -902,6 +906,227 @@
         "title": "GenerateTeams",
         "type": "object"
       },
+      "GoogleActionToken": {
+        "additionalProperties": false,
+        "properties": {
+          "token": {
+            "format": "password",
+            "maxLength": 43,
+            "minLength": 43,
+            "title": "Token",
+            "type": "string",
+            "writeOnly": true
+          }
+        },
+        "required": [
+          "token"
+        ],
+        "title": "GoogleActionToken",
+        "type": "object"
+      },
+      "GoogleActionView": {
+        "properties": {
+          "first_name": {
+            "title": "First Name",
+            "type": "string"
+          },
+          "last_name": {
+            "title": "Last Name",
+            "type": "string"
+          },
+          "purpose": {
+            "enum": [
+              "register",
+              "password"
+            ],
+            "title": "Purpose",
+            "type": "string"
+          }
+        },
+        "required": [
+          "purpose",
+          "first_name",
+          "last_name"
+        ],
+        "title": "GoogleActionView",
+        "type": "object"
+      },
+      "GoogleConfig": {
+        "properties": {
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "public_url": {
+            "title": "Public Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "enabled",
+          "public_url"
+        ],
+        "title": "GoogleConfig",
+        "type": "object"
+      },
+      "GoogleConnection": {
+        "properties": {
+          "connected": {
+            "title": "Connected",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "connected"
+        ],
+        "title": "GoogleConnection",
+        "type": "object"
+      },
+      "GooglePassword": {
+        "additionalProperties": false,
+        "properties": {
+          "password": {
+            "format": "password",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Password",
+            "type": "string",
+            "writeOnly": true
+          },
+          "token": {
+            "format": "password",
+            "maxLength": 43,
+            "minLength": 43,
+            "title": "Token",
+            "type": "string",
+            "writeOnly": true
+          },
+          "username": {
+            "maxLength": 32,
+            "minLength": 3,
+            "title": "Username",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "password",
+          "username"
+        ],
+        "title": "GooglePassword",
+        "type": "object"
+      },
+      "GoogleRedirect": {
+        "properties": {
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "title": "GoogleRedirect",
+        "type": "object"
+      },
+      "GoogleRegistration": {
+        "additionalProperties": false,
+        "properties": {
+          "first_name": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "First Name",
+            "type": "string"
+          },
+          "last_name": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Last Name",
+            "type": "string"
+          },
+          "nickname": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nickname"
+          },
+          "token": {
+            "format": "password",
+            "maxLength": 43,
+            "minLength": 43,
+            "title": "Token",
+            "type": "string",
+            "writeOnly": true
+          }
+        },
+        "required": [
+          "token",
+          "first_name",
+          "last_name"
+        ],
+        "title": "GoogleRegistration",
+        "type": "object"
+      },
+      "GoogleStart": {
+        "additionalProperties": false,
+        "properties": {
+          "invite_token": {
+            "anyOf": [
+              {
+                "format": "password",
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invite Token"
+          },
+          "mode": {
+            "default": "login",
+            "enum": [
+              "login",
+              "link",
+              "register",
+              "password"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "password": {
+            "anyOf": [
+              {
+                "format": "password",
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Password"
+          },
+          "return_to": {
+            "default": "/",
+            "maxLength": 512,
+            "title": "Return To",
+            "type": "string"
+          }
+        },
+        "title": "GoogleStart",
+        "type": "object"
+      },
       "HealthStatus": {
         "properties": {
           "status": {
@@ -1118,59 +1343,26 @@
       "Login": {
         "additionalProperties": false,
         "properties": {
-          "pin": {
+          "password": {
             "format": "password",
-            "title": "Pin",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Password",
             "type": "string",
             "writeOnly": true
           },
-          "profile_id": {
-            "format": "uuid",
-            "title": "Profile Id",
+          "username": {
+            "maxLength": 32,
+            "minLength": 3,
+            "title": "Username",
             "type": "string"
           }
         },
         "required": [
-          "pin",
-          "profile_id"
+          "password",
+          "username"
         ],
         "title": "Login",
-        "type": "object"
-      },
-      "LoginProfile": {
-        "properties": {
-          "first_name": {
-            "title": "First Name",
-            "type": "string"
-          },
-          "masked_last_name": {
-            "title": "Masked Last Name",
-            "type": "string"
-          },
-          "nickname": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Nickname"
-          },
-          "profile_id": {
-            "format": "uuid",
-            "title": "Profile Id",
-            "type": "string"
-          }
-        },
-        "required": [
-          "profile_id",
-          "first_name",
-          "masked_last_name",
-          "nickname"
-        ],
-        "title": "LoginProfile",
         "type": "object"
       },
       "MeetingDetail": {
@@ -1679,6 +1871,24 @@
         "title": "ParticipationResult",
         "type": "object"
       },
+      "PasswordInput": {
+        "additionalProperties": false,
+        "properties": {
+          "password": {
+            "format": "password",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Password",
+            "type": "string",
+            "writeOnly": true
+          }
+        },
+        "required": [
+          "password"
+        ],
+        "title": "PasswordInput",
+        "type": "object"
+      },
       "PlannedMeeting": {
         "properties": {
           "deleted": {
@@ -1822,6 +2032,10 @@
             "title": "First Name",
             "type": "string"
           },
+          "has_password": {
+            "title": "Has Password",
+            "type": "boolean"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -1862,10 +2076,23 @@
             ],
             "title": "Role",
             "type": "string"
+          },
+          "username": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Username"
           }
         },
         "required": [
           "id",
+          "username",
+          "has_password",
           "first_name",
           "last_name",
           "nickname",
@@ -2343,9 +2570,11 @@
             ],
             "title": "Nickname"
           },
-          "pin": {
+          "password": {
             "format": "password",
-            "title": "Pin",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Password",
             "type": "string",
             "writeOnly": true
           },
@@ -2354,10 +2583,17 @@
             "title": "Token",
             "type": "string",
             "writeOnly": true
+          },
+          "username": {
+            "maxLength": 32,
+            "minLength": 3,
+            "title": "Username",
+            "type": "string"
           }
         },
         "required": [
-          "pin",
+          "password",
+          "username",
           "first_name",
           "last_name",
           "token"
@@ -2437,12 +2673,14 @@
         "title": "ReservedPlayer",
         "type": "object"
       },
-      "ResetPin": {
+      "ResetPassword": {
         "additionalProperties": false,
         "properties": {
-          "pin": {
+          "password": {
             "format": "password",
-            "title": "Pin",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Password",
             "type": "string",
             "writeOnly": true
           },
@@ -2451,13 +2689,20 @@
             "title": "Token",
             "type": "string",
             "writeOnly": true
+          },
+          "username": {
+            "maxLength": 32,
+            "minLength": 3,
+            "title": "Username",
+            "type": "string"
           }
         },
         "required": [
-          "pin",
+          "password",
+          "username",
           "token"
         ],
-        "title": "ResetPin",
+        "title": "ResetPassword",
         "type": "object"
       },
       "ResolveOccurrence": {
@@ -6633,9 +6878,9 @@
         ]
       }
     },
-    "/api/v1/admin/players/{player_id}/pin-reset": {
+    "/api/v1/admin/players/{player_id}/password-reset": {
       "post": {
-        "operationId": "createPinReset",
+        "operationId": "createPasswordReset",
         "parameters": [
           {
             "in": "path",
@@ -6740,7 +6985,7 @@
             "description": "Internal Server Error"
           }
         },
-        "summary": "Pin Reset",
+        "summary": "Password Reset",
         "tags": [
           "auth"
         ]
@@ -7633,6 +7878,400 @@
         ]
       }
     },
+    "/api/v1/auth/google/completion": {
+      "post": {
+        "operationId": "getGoogleCompletion",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoogleActionToken"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoogleActionView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Completion",
+        "tags": [
+          "google-auth"
+        ]
+      }
+    },
+    "/api/v1/auth/google/config": {
+      "get": {
+        "operationId": "getGoogleConfig",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoogleConfig"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Config",
+        "tags": [
+          "google-auth"
+        ]
+      }
+    },
+    "/api/v1/auth/google/register": {
+      "post": {
+        "operationId": "registerWithGoogle",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoogleRegistration"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Register Google",
+        "tags": [
+          "google-auth"
+        ]
+      }
+    },
+    "/api/v1/auth/google/start": {
+      "post": {
+        "operationId": "startGoogleAuth",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoogleStart"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoogleRedirect"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Start",
+        "tags": [
+          "google-auth"
+        ]
+      }
+    },
     "/api/v1/auth/login": {
       "post": {
         "operationId": "login",
@@ -7845,111 +8484,6 @@
         ]
       }
     },
-    "/api/v1/auth/profiles": {
-      "get": {
-        "operationId": "getLoginProfiles",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/LoginProfile"
-                  },
-                  "title": "Response Getloginprofiles",
-                  "type": "array"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            },
-            "description": "Not Found"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            },
-            "description": "Conflict"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            },
-            "description": "Unprocessable Content"
-          },
-          "429": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            },
-            "description": "Too Many Requests"
-          },
-          "500": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            },
-            "description": "Internal Server Error"
-          }
-        },
-        "summary": "Profiles",
-        "tags": [
-          "auth"
-        ]
-      }
-    },
     "/api/v1/auth/register": {
       "post": {
         "operationId": "registerPlayer",
@@ -8061,14 +8595,14 @@
         ]
       }
     },
-    "/api/v1/auth/reset-pin": {
+    "/api/v1/auth/reset-password": {
       "post": {
-        "operationId": "resetPin",
+        "operationId": "resetPassword",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ResetPin"
+                "$ref": "#/components/schemas/ResetPassword"
               }
             }
           },
@@ -8166,7 +8700,7 @@
             "description": "Internal Server Error"
           }
         },
-        "summary": "Reset Pin",
+        "summary": "Reset Password",
         "tags": [
           "auth"
         ]
@@ -8667,14 +9201,307 @@
         ]
       }
     },
-    "/api/v1/me/pin": {
+    "/api/v1/me/google": {
+      "get": {
+        "operationId": "getGoogleConnection",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoogleConnection"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Connection",
+        "tags": [
+          "google-auth"
+        ]
+      }
+    },
+    "/api/v1/me/google/disconnect": {
       "post": {
-        "operationId": "changePin",
+        "operationId": "disconnectGoogle",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ChangePin"
+                "$ref": "#/components/schemas/PasswordInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Done"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Disconnect",
+        "tags": [
+          "google-auth"
+        ]
+      }
+    },
+    "/api/v1/me/google/password": {
+      "post": {
+        "operationId": "setGoogleAccountPassword",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GooglePassword"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Set Google Password",
+        "tags": [
+          "google-auth"
+        ]
+      }
+    },
+    "/api/v1/me/password": {
+      "post": {
+        "operationId": "changePassword",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePassword"
               }
             }
           },
@@ -8772,7 +9599,7 @@
             "description": "Internal Server Error"
           }
         },
-        "summary": "Change Pin",
+        "summary": "Change Password",
         "tags": [
           "auth"
         ]

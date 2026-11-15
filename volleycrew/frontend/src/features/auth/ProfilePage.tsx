@@ -8,6 +8,12 @@ import { LockKeyhole, UserRound } from "lucide-react";
 import { api, message, unwrap } from "../../lib/api/client";
 import { useSession } from "./useSession";
 
+import {
+  GoogleConnection,
+  GoogleNotice,
+  GooglePasswordStart,
+} from "./GoogleAuth";
+import { PasswordField } from "./CredentialFields";
 import { priorityLabel } from "./labels";
 
 export function ProfilePage() {
@@ -16,11 +22,11 @@ export function ProfilePage() {
   const [firstName, setFirstName] = useState(me?.first_name ?? "");
   const [lastName, setLastName] = useState(me?.last_name ?? "");
   const [nickname, setNickname] = useState(me?.nickname ?? "");
-  const [currentPin, setCurrentPin] = useState("");
-  const [pin, setPin] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [password, setPassword] = useState("");
   const [repeat, setRepeat] = useState("");
   const [notice, setNotice] = useState("");
-  const [pinNotice, setPinNotice] = useState("");
+  const [passwordNotice, setPasswordNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const client = useQueryClient();
   if (!me) return null;
@@ -48,24 +54,26 @@ export function ProfilePage() {
   }
   async function change(event: FormEvent) {
     event.preventDefault();
-    setPinNotice("");
-    if (pin !== repeat) {
-      setPinNotice("Podane PIN-y muszą być takie same.");
+    setPasswordNotice("");
+    if (password !== repeat) {
+      setPasswordNotice("Podane hasła muszą być takie same.");
       return;
     }
     setBusy(true);
     try {
       unwrap(
-        await api.POST("/api/v1/me/pin", {
-          body: { current_pin: currentPin, pin },
+        await api.POST("/api/v1/me/password", {
+          body: { current_password: currentPassword, password },
         }),
       );
-      setCurrentPin("");
-      setPin("");
+      setCurrentPassword("");
+      setPassword("");
       setRepeat("");
-      setPinNotice("PIN zmieniony. Pozostałe urządzenia zostały wylogowane.");
+      setPasswordNotice(
+        "Hasło zmienione. Pozostałe urządzenia zostały wylogowane.",
+      );
     } catch (e) {
-      setPinNotice(message(e));
+      setPasswordNotice(message(e));
     } finally {
       setBusy(false);
     }
@@ -76,6 +84,7 @@ export function ProfilePage() {
         <h1>Mój profil</h1>
         <p>Twoje dane i ustawienia dostępu do ekipy.</p>
       </div>
+      <GoogleNotice />
       {adminView && (
         <Link className="button profile-admin-link" to="/admin/settings">
           Ustawienia ekipy
@@ -89,6 +98,15 @@ export function ProfilePage() {
             </h2>
             <UserRound size={20} />
           </div>
+          <p className="form-note">
+            {me.username ? (
+              <>
+                Login: <strong>{me.username}</strong>
+              </>
+            ) : (
+              "Logujesz się przez Google"
+            )}
+          </p>
           <p className="private-status">
             Twój status: {priorityLabel(me.priority_status)}
             <small>Widoczny tylko dla Ciebie i organizatora.</small>
@@ -136,61 +154,46 @@ export function ProfilePage() {
         </section>
         <section className="card">
           <div className="section-title">
-            <h2>Zmiana PIN-u</h2>
+            <h2>
+              {me.has_password ? "Zmiana hasła" : "Login i hasło (opcjonalnie)"}
+            </h2>
             <LockKeyhole size={20} />
           </div>
-          <form onSubmit={(e) => void change(e)}>
-            <label className="form-field">
-              Obecny PIN
-              <input
-                type="password"
-                inputMode="numeric"
-                autoComplete="current-password"
-                value={currentPin}
-                onChange={(e) => setCurrentPin(e.target.value)}
-                pattern="[0-9]{6}"
-                maxLength={6}
-                minLength={6}
-                required
+          {!me.has_password ? (
+            <GooglePasswordStart />
+          ) : (
+            <form onSubmit={(e) => void change(e)}>
+              <PasswordField
+                label="Obecne hasło"
+                value={currentPassword}
+                onChange={setCurrentPassword}
+                disabled={busy}
               />
-            </label>
-            <label className="form-field">
-              Nowy PIN
-              <input
-                type="password"
-                inputMode="numeric"
-                autoComplete="new-password"
-                value={pin}
-                onChange={(e) => setPin(e.target.value)}
-                pattern="[0-9]{6}"
-                maxLength={6}
-                minLength={6}
-                required
+              <PasswordField
+                label="Nowe hasło"
+                value={password}
+                onChange={setPassword}
+                fresh
+                disabled={busy}
               />
-            </label>
-            <label className="form-field">
-              Powtórz nowy PIN
-              <input
-                type="password"
-                inputMode="numeric"
-                autoComplete="new-password"
+              <PasswordField
+                label="Powtórz nowe hasło"
                 value={repeat}
-                onChange={(e) => setRepeat(e.target.value)}
-                pattern="[0-9]{6}"
-                maxLength={6}
-                minLength={6}
-                required
+                onChange={setRepeat}
+                fresh
+                disabled={busy}
               />
-            </label>
-            <button className="button primary" disabled={busy}>
-              Zmień PIN
-            </button>
-            <p className="form-notice" role="status">
-              {pinNotice}
-            </p>
-          </form>
+              <button className="button primary" disabled={busy}>
+                Zmień hasło
+              </button>
+              <p className="form-notice" role="status">
+                {passwordNotice}
+              </p>
+            </form>
+          )}
         </section>
       </div>
+      <GoogleConnection />
       <HistoryPanel />
     </>
   );

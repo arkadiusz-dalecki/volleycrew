@@ -198,3 +198,15 @@ Zlecone i zaimplementowane: ruch całego kafelka za palcem, powrót po krótkim/
 ## Uzupełnienie E2/E9 — linki, monitoring i odporność na nadużycia
 
 Zlecone 2026-11-14 po recenzji logowania. Zakres: usuwanie sekretu z adresu po otwarciu linku, odrzucenie tokenów w ścieżce, obsługa Retry-After, ograniczone i pozbawione sekretów logi zdarzeń oraz ograniczanie gwałtownych serii żądań uwierzytelniania przed dostępem do DB. Odbiór: testy PostgreSQL trwałych limitów/resetów, kontrolowany zegar dodatkowego limitera, sprawdzenie logów na brak sekretów oraz E2E rejestracji/resetu z czystym adresem i ponownego otwarcia linku. Bez wdrożenia i bez zmiany pozostałych decyzji o logowaniu.
+
+## Uzupełnienie E2/E9 — opcjonalne Google, 2026-11-15
+
+Zlecone: połączenie Google z istniejącym profilem po potwierdzeniu PIN-u, logowanie po `sub`, odłączenie po PIN-ie, konfiguracja HA oraz UI i instrukcja operatora. Odbiór: migracja, sesje i unikalne powiązania na PostgreSQL; podpis/issuer/audience/exp/nonce, PKCE, związanie stanu z przeglądarką i sesją łączącą, jednorazowość i wygaśnięcie, blokada konta, błędy dostawcy i brak automatycznej rejestracji. E2E z lokalnym dostawcą testowym i osobny jawny odbiór z rzeczywistym klientem Google. PIN i polityka zaproszeń pozostają dostępne; Ingress odsyła do PUBLIC_URL.
+
+## Uzupełnienie E2/E9 — login i hasło, 2026-11-15
+
+Zlecone: osobna nazwa użytkownika i hasło zamiast katalogu profili/PIN-u; rejestracja, bootstrap, zmiana/reset hasła i potwierdzenia Google. Użytkownik nie wymaga migracji graczy (jedyny zarejestrowany to organizator). Odbiór: brak publicznego katalogu/endpointu PIN; unikalność loginu bez względu na wielkość liter; poprawne hashowanie i błędy, trwałe limity i wygaśnięcie sesji; zachowanie danych profilu organizatora i jednorazowa konfiguracja; testy PostgreSQL, przeglądarek i obu pakietów.
+
+## Uzupełnienie E2/E9 — Dołącz przez Google, 2026-11-15
+
+Zlecone: rejestracja z aktywnego zaproszenia przez Google, podpowiedź edytowalnego imienia/nazwiska, potwierdzenie i konto bez hasła. Odbiór: powiązanie grantu z przeglądarką/zaproszeniem, unieważnienie zaproszenia w trakcie procesu, wygaśnięcie/replay/konkurencja, brak duplikacji i eskalacji uprawnień, opcjonalne ustawienie loginu/hasła po nowym dowodzie Google, ochrona przed odłączeniem ostatniej metody; PostgreSQL, UI mobile/WebKit i obrazy HA.
