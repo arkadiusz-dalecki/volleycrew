@@ -11,6 +11,8 @@
 backend/tests
 frontend/e2e
 frontend/playwright.config.ts
+frontend/google-tests
+frontend/playwright.google.config.ts
 frontend/openapi.json
 
 frontend/container-tests
