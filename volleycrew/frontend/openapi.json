@@ -493,27 +493,31 @@
         "title": "CalendarPage",
         "type": "object"
       },
-      "ChangePin": {
+      "ChangePassword": {
         "additionalProperties": false,
         "properties": {
-          "current_pin": {
+          "current_password": {
             "format": "password",
-            "title": "Current Pin",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Current Password",
             "type": "string",
             "writeOnly": true
           },
-          "pin": {
+          "password": {
             "format": "password",
-            "title": "Pin",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Password",
             "type": "string",
             "writeOnly": true
           }
         },
         "required": [
-          "pin",
-          "current_pin"
+          "password",
+          "current_password"
         ],
-        "title": "ChangePin",
+        "title": "ChangePassword",
         "type": "object"
       },
       "CloseOffer": {
@@ -958,10 +962,12 @@
             "title": "Mode",
             "type": "string"
           },
-          "pin": {
+          "password": {
             "anyOf": [
               {
                 "format": "password",
+                "maxLength": 128,
+                "minLength": 1,
                 "type": "string",
                 "writeOnly": true
               },
@@ -969,7 +975,7 @@
                 "type": "null"
               }
             ],
-            "title": "Pin"
+            "title": "Password"
           },
           "return_to": {
             "default": "/",
@@ -1197,59 +1203,26 @@
       "Login": {
         "additionalProperties": false,
         "properties": {
-          "pin": {
+          "password": {
             "format": "password",
-            "title": "Pin",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Password",
             "type": "string",
             "writeOnly": true
           },
-          "profile_id": {
-            "format": "uuid",
-            "title": "Profile Id",
+          "username": {
+            "maxLength": 32,
+            "minLength": 3,
+            "title": "Username",
             "type": "string"
           }
         },
         "required": [
-          "pin",
-          "profile_id"
+          "password",
+          "username"
         ],
         "title": "Login",
-        "type": "object"
-      },
-      "LoginProfile": {
-        "properties": {
-          "first_name": {
-            "title": "First Name",
-            "type": "string"
-          },
-          "masked_last_name": {
-            "title": "Masked Last Name",
-            "type": "string"
-          },
-          "nickname": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Nickname"
-          },
-          "profile_id": {
-            "format": "uuid",
-            "title": "Profile Id",
-            "type": "string"
-          }
-        },
-        "required": [
-          "profile_id",
-          "first_name",
-          "masked_last_name",
-          "nickname"
-        ],
-        "title": "LoginProfile",
         "type": "object"
       },
       "MeetingDetail": {
@@ -1758,20 +1731,22 @@
         "title": "ParticipationResult",
         "type": "object"
       },
-      "PinInput": {
+      "PasswordInput": {
         "additionalProperties": false,
         "properties": {
-          "pin": {
+          "password": {
             "format": "password",
-            "title": "Pin",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Password",
             "type": "string",
             "writeOnly": true
           }
         },
         "required": [
-          "pin"
+          "password"
         ],
-        "title": "PinInput",
+        "title": "PasswordInput",
         "type": "object"
       },
       "PlannedMeeting": {
@@ -1957,10 +1932,22 @@
             ],
             "title": "Role",
             "type": "string"
+          },
+          "username": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Username"
           }
         },
         "required": [
           "id",
+          "username",
           "first_name",
           "last_name",
           "nickname",
@@ -2438,9 +2425,11 @@
             ],
             "title": "Nickname"
           },
-          "pin": {
+          "password": {
             "format": "password",
-            "title": "Pin",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Password",
             "type": "string",
             "writeOnly": true
           },
@@ -2449,10 +2438,17 @@
             "title": "Token",
             "type": "string",
             "writeOnly": true
+          },
+          "username": {
+            "maxLength": 32,
+            "minLength": 3,
+            "title": "Username",
+            "type": "string"
           }
         },
         "required": [
-          "pin",
+          "password",
+          "username",
           "first_name",
           "last_name",
           "token"
@@ -2532,12 +2528,14 @@
         "title": "ReservedPlayer",
         "type": "object"
       },
-      "ResetPin": {
+      "ResetPassword": {
         "additionalProperties": false,
         "properties": {
-          "pin": {
+          "password": {
             "format": "password",
-            "title": "Pin",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Password",
             "type": "string",
             "writeOnly": true
           },
@@ -2546,13 +2544,20 @@
             "title": "Token",
             "type": "string",
             "writeOnly": true
+          },
+          "username": {
+            "maxLength": 32,
+            "minLength": 3,
+            "title": "Username",
+            "type": "string"
           }
         },
         "required": [
-          "pin",
+          "password",
+          "username",
           "token"
         ],
-        "title": "ResetPin",
+        "title": "ResetPassword",
         "type": "object"
       },
       "ResolveOccurrence": {
@@ -6728,9 +6733,9 @@
         ]
       }
     },
-    "/api/v1/admin/players/{player_id}/pin-reset": {
+    "/api/v1/admin/players/{player_id}/password-reset": {
       "post": {
-        "operationId": "createPinReset",
+        "operationId": "createPasswordReset",
         "parameters": [
           {
             "in": "path",
@@ -6835,7 +6840,7 @@
             "description": "Internal Server Error"
           }
         },
-        "summary": "Pin Reset",
+        "summary": "Password Reset",
         "tags": [
           "auth"
         ]
@@ -8132,111 +8137,6 @@
         ]
       }
     },
-    "/api/v1/auth/profiles": {
-      "get": {
-        "operationId": "getLoginProfiles",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/LoginProfile"
-                  },
-                  "title": "Response Getloginprofiles",
-                  "type": "array"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            },
-            "description": "Not Found"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            },
-            "description": "Conflict"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            },
-            "description": "Unprocessable Content"
-          },
-          "429": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            },
-            "description": "Too Many Requests"
-          },
-          "500": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            },
-            "description": "Internal Server Error"
-          }
-        },
-        "summary": "Profiles",
-        "tags": [
-          "auth"
-        ]
-      }
-    },
     "/api/v1/auth/register": {
       "post": {
         "operationId": "registerPlayer",
@@ -8348,14 +8248,14 @@
         ]
       }
     },
-    "/api/v1/auth/reset-pin": {
+    "/api/v1/auth/reset-password": {
       "post": {
-        "operationId": "resetPin",
+        "operationId": "resetPassword",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ResetPin"
+                "$ref": "#/components/schemas/ResetPassword"
               }
             }
           },
@@ -8453,7 +8353,7 @@
             "description": "Internal Server Error"
           }
         },
-        "summary": "Reset Pin",
+        "summary": "Reset Password",
         "tags": [
           "auth"
         ]
@@ -9052,7 +8952,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PinInput"
+                "$ref": "#/components/schemas/PasswordInput"
               }
             }
           },
@@ -9146,14 +9046,14 @@
         ]
       }
     },
-    "/api/v1/me/pin": {
+    "/api/v1/me/password": {
       "post": {
-        "operationId": "changePin",
+        "operationId": "changePassword",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ChangePin"
+                "$ref": "#/components/schemas/ChangePassword"
               }
             }
           },
@@ -9251,7 +9151,7 @@
             "description": "Internal Server Error"
           }
         },
-        "summary": "Change Pin",
+        "summary": "Change Password",
         "tags": [
           "auth"
         ]

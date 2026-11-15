@@ -11,8 +11,15 @@ test("distant signup, reserve, organizer proposal and explicit acceptance on ano
   await page.getByLabel("Imię", { exact: true }).fill("Anna");
   await page.getByLabel("Nazwisko", { exact: true }).fill("Nowak");
   await page.getByLabel("Przydomek (opcjonalnie)").fill(nickname);
-  await page.getByLabel("Twój PIN", { exact: true }).fill("654321");
-  await page.getByLabel("Powtórz PIN", { exact: true }).fill("654321");
+  await page
+    .getByLabel("Login", { exact: true })
+    .fill(`member-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`);
+  await page
+    .getByLabel("Twoje hasło", { exact: true })
+    .fill("Player-test-passphrase-456");
+  await page
+    .getByLabel("Powtórz hasło", { exact: true })
+    .fill("Player-test-passphrase-456");
   await page.getByRole("button", { name: "Dołączam do gry" }).click();
   await expect(
     page.getByRole("heading", { name: "Najbliższe spotkanie" }),

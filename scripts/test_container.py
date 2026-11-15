@@ -366,7 +366,8 @@ http {
                     "first_name": "Arkadiusz",
                     "last_name": "Testowy",
                     "nickname": "Container",
-                    "pin": "123456",
+                    "password": "Admin-test-passphrase-123",
+                    "username": "organizer",
                 },
                 headers=client.csrf(),
             )
@@ -375,7 +376,7 @@ http {
                 status, _, _ = client.call(
                     "/api/v1/auth/login",
                     "POST",
-                    {"profile_id": admin["id"], "pin": "123456"},
+                    {"password": "Admin-test-passphrase-123", "username": "organizer"},
                     prefix=base,
                     headers=client.csrf(base),
                 )
@@ -425,7 +426,13 @@ http {
                 client.call(
                     "/api/v1/auth/bootstrap",
                     "POST",
-                    {"token": TOKEN, "first_name": "Again", "last_name": "Admin", "pin": "123456"},
+                    {
+                        "token": TOKEN,
+                        "first_name": "Again",
+                        "last_name": "Admin",
+                        "password": "Admin-test-passphrase-123",
+                        "username": "organizer",
+                    },
                     headers=client.csrf(),
                 )[0]
                 == 400
@@ -470,7 +477,13 @@ http {
                 actor = Client()
                 person = mutate(
                     "/auth/register",
-                    {"token": invite, "first_name": first, "last_name": "Nowak", "pin": "654321"},
+                    {
+                        "token": invite,
+                        "first_name": first,
+                        "last_name": "Nowak",
+                        "password": "Player-test-passphrase-456",
+                        "username": "member-" + str(len(players)),
+                    },
                     actor=actor,
                 )
                 players.append(person["id"])

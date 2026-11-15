@@ -96,7 +96,8 @@ def bootstrap(client):
             "token": "bootstrap-test-token",
             "first_name": "Arkadiusz",
             "last_name": "Dalecki",
-            "pin": "123456",
+            "username": "organizer",
+            "password": "Admin-test-passphrase-123",
         },
     )
     assert response.status_code == 200, response.text
@@ -118,14 +119,23 @@ def register(client, token, surname="Nowak", **extras):
             "first_name": "Michał",
             "last_name": surname,
             "nickname": "Misiek",
-            "pin": "654321",
+            "username": "member-" + uuid4().hex[:16],
+            "password": "Player-test-passphrase-456",
             **extras,
         },
     )
 
 
-def login(client, player, pin="654321", **headers):
-    return mutate(client, "/auth/login", {"profile_id": player["id"], "pin": pin}, **headers)
+def login(client, player, password="Player-test-passphrase-456", **headers):
+    username = player.get("username")
+    if username is None:
+
+        async def lookup():
+            async with client.app.state.database.sessions() as db:
+                return (await db.get(Player, player["id"])).username
+
+        username = client.portal.call(lookup)
+    return mutate(client, "/auth/login", {"username": username, "password": password}, **headers)
 
 
 def group(system):
@@ -163,30 +173,15 @@ def test_bootstrap_invites_privacy_and_authorization(system):
                 "token": "bootstrap-test-token",
                 "first_name": "Intruz",
                 "last_name": "Test",
-                "pin": "123456",
+                "username": "organizer",
+                "password": "Admin-test-passphrase-123",
             },
         ).status_code
         == 400
     )
-    for surname, expected in [
-        ("Ż", "Ż*****Ż"),
-        ("Łą", "Ł*****ą"),
-        ("Bardzodługienazwisko", "B*****o"),
-    ]:
-        user = device()
-        response = register(user, token, surname)
-        assert response.status_code == 200
-        item = next(
-            p
-            for p in anonymous.get(PREFIX + "/auth/profiles").json()
-            if p["profile_id"] == response.json()["id"]
-        )
-        assert item["masked_last_name"] == expected
-        assert set(item) == {"profile_id", "first_name", "masked_last_name", "nickname"}
     catalogue = anonymous.get(PREFIX + "/auth/profiles")
+    assert catalogue.status_code == 404
     assert "Nowak" not in catalogue.text and "Dalecki" not in catalogue.text
-    assert "priority_status" not in catalogue.text and "pin_hash" not in catalogue.text
-    assert catalogue.headers["cache-control"] == "no-store"
     assert mutate(admin, f"/admin/invites/{invite['id']}/revoke").status_code == 200
     assert register(device(), token).status_code == 400
     assert member.get(PREFIX + "/me").status_code == 200
@@ -197,7 +192,7 @@ def test_csrf_cookie_flags_and_logout(system):
     _, _, admin, _, member, player, _, _ = group(system)
     cookie = member.cookies.get("vc_session")
     csrf = member.get(PREFIX + "/auth/csrf").json()["token"]
-    body = {"profile_id": player["id"], "pin": "654321"}
+    body = {"username": player["username"], "password": "Player-test-passphrase-456"}
     for headers in [
         {},
         {"Origin": ORIGIN},
@@ -232,7 +227,9 @@ def test_rate_limit_survives_app_restart_and_ignores_forged_forwarding(system):
     device, clock, _, _, _, player, _, _ = group(system)
     for i in range(5):
         assert (
-            login(device(), player, "000000", **{"X-Forwarded-For": f"192.0.2.{i}"}).status_code
+            login(
+                device(), player, "Wrong-test-passphrase-000", **{"X-Forwarded-For": f"192.0.2.{i}"}
+            ).status_code
             == 401
         )
     response = login(device(), player)
@@ -240,29 +237,93 @@ def test_rate_limit_survives_app_restart_and_ignores_forged_forwarding(system):
     clock.at += timedelta(minutes=15)
     assert login(device(), player).status_code == 200
     invalid = login(device(), player, "１２３４５６")
-    assert invalid.status_code == 422 and "１２３４５６" not in invalid.text
+    assert invalid.status_code == 401 and "１２３４５６" not in invalid.text
 
 
-def test_pin_change_reset_and_block_revoke_other_devices(system):
+def test_password_change_reset_and_block_revoke_other_devices(system):
     device, clock, admin, actor, member, player, _, _ = group(system)
     another = device()
     assert login(another, player).status_code == 200
-    assert mutate(member, "/me/pin", {"current_pin": "000000", "pin": "222222"}).status_code == 401
-    assert mutate(member, "/me/pin", {"current_pin": "654321", "pin": "222222"}).status_code == 200
+    assert (
+        mutate(
+            member,
+            "/me/password",
+            {
+                "current_password": "Wrong-test-passphrase-000",
+                "password": "Other-test-passphrase-222",
+            },
+        ).status_code
+        == 401
+    )
+    assert (
+        mutate(
+            member,
+            "/me/password",
+            {
+                "current_password": "Player-test-passphrase-456",
+                "password": "Other-test-passphrase-222",
+            },
+        ).status_code
+        == 200
+    )
     assert another.get(PREFIX + "/me").status_code == 401
     assert member.get(PREFIX + "/me").status_code == 200
     assert login(device(), player).status_code == 401
-    assert login(another, player, "222222").status_code == 200
-    reset = mutate(admin, f"/admin/players/{player['id']}/pin-reset").json()["url"].split("#")[1]
+    assert login(another, player, "Other-test-passphrase-222").status_code == 200
+    reset = (
+        mutate(admin, f"/admin/players/{player['id']}/password-reset").json()["url"].split("#")[1]
+    )
     clock.at += timedelta(minutes=30)
-    assert mutate(device(), "/auth/reset-pin", {"token": reset, "pin": "333333"}).status_code == 400
-    old = mutate(admin, f"/admin/players/{player['id']}/pin-reset").json()["url"].split("#")[1]
-    fresh = mutate(admin, f"/admin/players/{player['id']}/pin-reset").json()["url"].split("#")[1]
-    assert mutate(device(), "/auth/reset-pin", {"token": old, "pin": "333333"}).status_code == 400
-    assert mutate(member, "/auth/reset-pin", {"token": fresh, "pin": "333333"}).status_code == 200
-    assert mutate(device(), "/auth/reset-pin", {"token": fresh, "pin": "333333"}).status_code == 400
+    assert (
+        mutate(
+            device(),
+            "/auth/reset-password",
+            {
+                "token": reset,
+                "username": player["username"],
+                "password": "Other-test-passphrase-333",
+            },
+        ).status_code
+        == 400
+    )
+    old = mutate(admin, f"/admin/players/{player['id']}/password-reset").json()["url"].split("#")[1]
+    fresh = (
+        mutate(admin, f"/admin/players/{player['id']}/password-reset").json()["url"].split("#")[1]
+    )
+    assert (
+        mutate(
+            device(),
+            "/auth/reset-password",
+            {"token": old, "username": player["username"], "password": "Other-test-passphrase-333"},
+        ).status_code
+        == 400
+    )
+    assert (
+        mutate(
+            member,
+            "/auth/reset-password",
+            {
+                "token": fresh,
+                "username": player["username"],
+                "password": "Other-test-passphrase-333",
+            },
+        ).status_code
+        == 200
+    )
+    assert (
+        mutate(
+            device(),
+            "/auth/reset-password",
+            {
+                "token": fresh,
+                "username": player["username"],
+                "password": "Other-test-passphrase-333",
+            },
+        ).status_code
+        == 400
+    )
     assert another.get(PREFIX + "/me").status_code == 401
-    assert login(another, player, "333333").status_code == 200
+    assert login(another, player, "Other-test-passphrase-333").status_code == 200
     preserved_cookie = another.cookies.get("vc_session")
     assert (
         mutate(admin, f"/admin/players/{actor['id']}", {"is_active": False}, "PATCH").status_code
@@ -274,15 +335,15 @@ def test_pin_change_reset_and_block_revoke_other_devices(system):
     )
     assert member.get(PREFIX + "/me").status_code == 401
     assert another.get(PREFIX + "/me").status_code == 401
-    assert login(device(), player, "333333").status_code == 401
-    assert player["id"] not in str(device().get(PREFIX + "/auth/profiles").json())
+    assert login(device(), player, "Other-test-passphrase-333").status_code == 401
+    assert device().get(PREFIX + "/auth/profiles").status_code == 404
     assert (
         mutate(admin, f"/admin/players/{player['id']}", {"is_active": True}, "PATCH").status_code
         == 200
     )
     another.cookies.set("vc_session", preserved_cookie, domain="volleycrew.test", path="/")
     assert another.get(PREFIX + "/me").status_code == 401
-    assert login(device(), player, "333333").status_code == 200
+    assert login(device(), player, "Other-test-passphrase-333").status_code == 200
 
 
 def test_idle_and_absolute_session_expiry(system):
@@ -315,13 +376,13 @@ def test_profile_and_stored_secrets(system):
     async def inspect():
         async with member.app.state.database.sessions() as db:
             found = await db.get(Player, player["id"])
-            assert found.pin_hash.startswith("$argon2id$")
-            for table in ["auth_sessions", "invites", "pin_reset_grants", "bootstrap_grants"]:
+            assert found.password_hash.startswith("$argon2id$")
+            for table in ["auth_sessions", "invites", "password_reset_grants", "bootstrap_grants"]:
                 rows = (await db.execute(text(f"SELECT token_hash FROM {table}"))).scalars().all()
                 assert all(len(value) == 64 and value != token for value in rows)
             events = (await db.scalars(select(AuditEvent))).all()
             assert events and all(
-                "pin" not in str(event.details) and token not in str(event.details)
+                "password" not in str(event.details) and token not in str(event.details)
                 for event in events
             )
 
@@ -331,11 +392,21 @@ def test_profile_and_stored_secrets(system):
 
 def test_reset_grant_is_atomic_under_concurrent_requests(system):
     device, _, admin, _, _, player, _, _ = group(system)
-    token = mutate(admin, f"/admin/players/{player['id']}/pin-reset").json()["url"].split("#")[1]
+    token = (
+        mutate(admin, f"/admin/players/{player['id']}/password-reset").json()["url"].split("#")[1]
+    )
     clients = [device(), device()]
 
     def reset(client):
-        return mutate(client, "/auth/reset-pin", {"token": token, "pin": "444444"}).status_code
+        return mutate(
+            client,
+            "/auth/reset-password",
+            {
+                "token": token,
+                "username": player["username"],
+                "password": "Other-test-passphrase-444",
+            },
+        ).status_code
 
     with ThreadPoolExecutor(max_workers=2) as executor:
         assert sorted(executor.map(reset, clients)) == [200, 400]
@@ -343,7 +414,11 @@ def test_reset_grant_is_atomic_under_concurrent_requests(system):
 
 def test_unknown_profile_has_uniform_error(system):
     device, _ = system
-    response = mutate(device(), "/auth/login", {"profile_id": str(uuid4()), "pin": "111111"})
+    response = mutate(
+        device(),
+        "/auth/login",
+        {"username": "unknown-user", "password": "Other-test-passphrase-111"},
+    )
     assert response.status_code == 401 and response.json()["code"] == "invalid_credentials"
 
 
@@ -357,7 +432,8 @@ def test_bootstrap_is_atomic_and_expires(system):
             "token": "bootstrap-test-token",
             "first_name": "Arkadiusz",
             "last_name": "Dalecki",
-            "pin": "123456",
+            "username": "organizer",
+            "password": "Admin-test-passphrase-123",
         },
     )
     assert response.status_code == 400
@@ -374,7 +450,8 @@ def test_bootstrap_is_atomic_and_expires(system):
                             "token": "bootstrap-test-token",
                             "first_name": "Arkadiusz",
                             "last_name": "Dalecki",
-                            "pin": "123456",
+                            "username": "organizer",
+                            "password": "Admin-test-passphrase-123",
                         },
                     ).status_code
                 ),
@@ -396,7 +473,12 @@ def test_operator_rotates_initial_link_and_cannot_replace_admin(system):
     token = result.stdout.strip().split("#")[1]
     assert len(token) == 43
     client = device()
-    body = {"first_name": "Arkadiusz", "last_name": "Dalecki", "pin": "123456"}
+    body = {
+        "first_name": "Arkadiusz",
+        "last_name": "Dalecki",
+        "username": "organizer",
+        "password": "Admin-test-passphrase-123",
+    }
     assert (
         mutate(client, "/auth/bootstrap", {**body, "token": "bootstrap-test-token"}).status_code
         == 400
@@ -417,17 +499,24 @@ def test_security_logs_report_auth_outcomes_without_request_secrets(system, capl
     device, _, _, _, _, player, _, _ = group(system)
     client = device()
     with caplog.at_level("INFO", logger="volleycrew.security"):
-        assert login(client, player, "999999").status_code == 401
+        assert login(client, player, "Other-test-passphrase-999").status_code == 401
         assert login(client, player).status_code == 200
         assert (
             mutate(
-                client, "/auth/reset-pin", {"token": "sensitive-reset-token", "pin": "888888"}
+                client,
+                "/auth/reset-password",
+                {
+                    "token": "sensitive-reset-token",
+                    "username": player["username"],
+                    "password": "Other-test-passphrase-888",
+                },
             ).status_code
             == 400
         )
         assert (
             client.post(
-                PREFIX + "/auth/login", json={"profile_id": player["id"], "pin": "654321"}
+                PREFIX + "/auth/login",
+                json={"username": player["username"], "password": "Player-test-passphrase-456"},
             ).status_code
             == 403
         )
@@ -439,9 +528,9 @@ def test_security_logs_report_auth_outcomes_without_request_secrets(system, capl
         "auth_csrf_rejected",
     }
     for secret in (
-        "999999",
-        "888888",
-        "654321",
+        "Other-test-passphrase-999",
+        "Other-test-passphrase-888",
+        "Player-test-passphrase-456",
         "sensitive-reset-token",
         player["id"],
         "testclient",

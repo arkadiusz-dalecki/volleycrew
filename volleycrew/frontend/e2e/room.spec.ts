@@ -210,7 +210,10 @@ test("attendance, court swap, signature PDF and private correction", async ({
           Origin: "http://127.0.0.1:5175",
           "X-CSRF-Token": csrf.token,
         },
-        data: { profile_id: seed.players[0], pin: "123456" },
+        data: {
+          username: "user-" + seed.players[0].replaceAll("-", "").slice(0, 24),
+          password: "Admin-test-passphrase-123",
+        },
       })
     ).ok(),
   ).toBe(true);

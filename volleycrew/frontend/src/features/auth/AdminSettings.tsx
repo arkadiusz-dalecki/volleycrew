@@ -56,7 +56,7 @@ export function AdminSettings() {
   async function reset(id: string) {
     await action(async () => {
       const data = unwrap(
-        await api.POST("/api/v1/admin/players/{player_id}/pin-reset", {
+        await api.POST("/api/v1/admin/players/{player_id}/password-reset", {
           params: { path: { player_id: id } },
         }),
       );
@@ -247,7 +247,7 @@ export function AdminSettings() {
                         disabled={busy}
                         onClick={() => void reset(player.id)}
                       >
-                        Reset PIN-u
+                        Reset hasła
                       </button>
                     )}
                     {player.role !== "admin" && (
@@ -290,7 +290,7 @@ export function AdminSettings() {
           <p className="form-note">
             {confirmation.active
               ? "Zawodnik zostanie wylogowany i utraci dostęp. Jego przyszłe miejsca, rezerwacje i oferty zostaną zwolnione. Historia i wyniki pozostają zachowane."
-              : "Zawodnik będzie mógł ponownie zalogować się swoim PIN-em."}
+              : "Zawodnik będzie mógł ponownie zalogować się swoim hasłem."}
           </p>
           <div className="row-actions">
             <button

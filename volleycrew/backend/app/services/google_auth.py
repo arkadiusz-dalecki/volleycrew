@@ -36,7 +36,7 @@ async def start_flow(
     request: Request,
     response: Response,
     mode: str,
-    pin: str | None,
+    password: str | None,
     return_to: str,
 ) -> str:
     enabled(request)
@@ -44,9 +44,9 @@ async def start_flow(
     session_id = None
     if mode == "link":
         player, session = await auth.current_session(db, request)
-        if pin is None:
-            raise DomainError(422, "pin_required", "Potwierdź swój obecny PIN.")
-        await auth.credential(db, request, player, player.id, pin)
+        if password is None:
+            raise DomainError(422, "password_required", "Potwierdź swoje obecne hasło.")
+        await auth.credential(db, request, player, player.id, password)
         if await db.get(GoogleIdentity, player.id):
             raise DomainError(409, "google_connected", "Profil ma już połączone konto Google.")
         session_id = session.id
@@ -155,6 +155,7 @@ async def finish_flow(request: Request, db: AsyncSession):
                     Session.expires_at > at,
                     Session.absolute_expires_at > at,
                     Player.is_active.is_(True),
+                    Player.password_hash.is_not(None),
                     Session.token_hash
                     == token_hash(request.cookies.get(cookie_name(request, SESSION_COOKIE), "")),
                 )
@@ -176,6 +177,7 @@ async def finish_flow(request: Request, db: AsyncSession):
             .where(
                 GoogleIdentity.subject == subject,
                 Player.is_active.is_(True),
+                Player.password_hash.is_not(None),
             )
         )
         if not player:
@@ -191,9 +193,9 @@ async def finish_flow(request: Request, db: AsyncSession):
 
 
 async def disconnect_identity(
-    db: AsyncSession, player: Player, pin: str, request: Request, response: Response
+    db: AsyncSession, player: Player, password: str, request: Request, response: Response
 ) -> None:
-    await auth.credential(db, request, player, player.id, pin)
+    await auth.credential(db, request, player, player.id, password)
     identity = await db.get(GoogleIdentity, player.id)
     if identity:
         await db.delete(identity)

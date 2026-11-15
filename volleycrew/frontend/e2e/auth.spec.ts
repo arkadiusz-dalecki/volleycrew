@@ -1,18 +1,24 @@
 import { expect, test } from "./fixtures";
 import { adminLogin } from "./auth-helpers";
 
-test("invite, remembered session, masked login, profile, reset and blocking", async ({
+test("invite, remembered session, private username login, profile, reset and blocking", async ({
   page,
   browser,
 }, info) => {
   const nickname = `Misiek-${info.project.name}`;
+  const username = `misiek-${info.project.name}`;
   await page.goto(`/join#${process.env.E2E_INVITE}`);
   await expect(page).toHaveURL(/\/join$/);
   await page.getByLabel("Imię", { exact: true }).fill("Michał");
   await page.getByLabel("Nazwisko", { exact: true }).fill("Nowak");
   await page.getByLabel("Przydomek (opcjonalnie)").fill(nickname);
-  await page.getByLabel("Twój PIN", { exact: true }).fill("654321");
-  await page.getByLabel("Powtórz PIN", { exact: true }).fill("654321");
+  await page.getByLabel("Login", { exact: true }).fill(username);
+  await page
+    .getByLabel("Twoje hasło", { exact: true })
+    .fill("Player-test-passphrase-456");
+  await page
+    .getByLabel("Powtórz hasło", { exact: true })
+    .fill("Player-test-passphrase-456");
   await page.getByRole("button", { name: "Dołączam do gry" }).click();
   await expect(
     page.getByRole("heading", { name: "Najbliższe spotkanie" }),
@@ -35,19 +41,17 @@ test("invite, remembered session, masked login, profile, reset and blocking", as
   await expect(
     page.getByRole("heading", { name: "Dobrze Cię widzieć" }),
   ).toBeVisible();
-  await expect(
-    page.getByLabel("Twój profil").locator("option:checked"),
-  ).toHaveText(`Michał N*****k — ${nickname}-nowy`);
+  await expect(page.getByLabel("Login", { exact: true })).toHaveValue(username);
   expect(await page.locator("body").innerText()).not.toContain("Nowak");
   await page.screenshot({
     path: info.outputPath("login.png"),
     fullPage: true,
     scale: "css",
   });
+  await page.getByLabel("Login", { exact: true }).fill(username);
   await page
-    .getByLabel("Twój profil")
-    .selectOption({ label: `Michał N*****k — ${nickname}-nowy` });
-  await page.getByLabel("PIN", { exact: true }).fill("654321");
+    .getByLabel("Hasło", { exact: true })
+    .fill("Player-test-passphrase-456");
   await page.getByRole("button", { name: "Wejdź na boisko" }).click();
   await expect(
     page.getByRole("heading", { name: "Mój profil", exact: true }),
@@ -65,13 +69,18 @@ test("invite, remembered session, masked login, profile, reset and blocking", as
   const row = adminPage
     .getByRole("listitem")
     .filter({ hasText: `${nickname}-nowy` });
-  await row.getByRole("button", { name: "Reset PIN-u" }).click();
+  await row.getByRole("button", { name: "Reset hasła" }).click();
   const url = await adminPage.getByLabel("Link do przekazania").inputValue();
   await page.goto(url);
-  await expect(page).toHaveURL(/\/reset-pin$/);
-  await page.getByLabel("Nowy PIN", { exact: true }).fill("333333");
-  await page.getByLabel("Powtórz nowy PIN", { exact: true }).fill("333333");
-  await page.getByRole("button", { name: "Ustaw nowy PIN" }).click();
+  await expect(page).toHaveURL(/\/reset-password$/);
+  await page.getByLabel("Login", { exact: true }).fill(username);
+  await page
+    .getByLabel("Nowe hasło", { exact: true })
+    .fill("Other-test-passphrase-333");
+  await page
+    .getByLabel("Powtórz nowe hasło", { exact: true })
+    .fill("Other-test-passphrase-333");
+  await page.getByRole("button", { name: "Ustaw nowe hasło" }).click();
   await expect(
     page.getByRole("heading", { name: "Najbliższe spotkanie" }),
   ).toBeVisible();
@@ -128,8 +137,15 @@ test("invite, remembered session, masked login, profile, reset and blocking", as
   await page.goto(inviteUrl);
   await page.getByLabel("Imię", { exact: true }).fill("Test");
   await page.getByLabel("Nazwisko", { exact: true }).fill("Odrzucony");
-  await page.getByLabel("Twój PIN", { exact: true }).fill("654321");
-  await page.getByLabel("Powtórz PIN", { exact: true }).fill("654321");
+  await page
+    .getByLabel("Login", { exact: true })
+    .fill(`member-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`);
+  await page
+    .getByLabel("Twoje hasło", { exact: true })
+    .fill("Player-test-passphrase-456");
+  await page
+    .getByLabel("Powtórz hasło", { exact: true })
+    .fill("Player-test-passphrase-456");
   await page.getByRole("button", { name: "Dołączam do gry" }).click();
   await expect(page.getByRole("alert")).toHaveText(
     "Link jest nieprawidłowy, wygasł lub został wykorzystany.",

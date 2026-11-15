@@ -6,7 +6,7 @@ export async function adminLogin(context: BrowserContext) {
       Origin: "http://127.0.0.1:5175",
       "X-CSRF-Token": (await csrf.json()).token,
     },
-    data: { profile_id: process.env.E2E_ADMIN_ID, pin: "123456" },
+    data: { username: "organizer", password: "Admin-test-passphrase-123" },
   });
   expect(response.ok()).toBe(true);
 }

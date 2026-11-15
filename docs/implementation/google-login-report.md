@@ -2,6 +2,8 @@
 
 Data: 2026-11-15. Gałąź `feat/google-login`, baza `1962d88` (main po #10). Zakres: dodatkowe Google dla istniejących profili, bez otwierania rejestracji. Wyniki lokalne poniżej; bieżący status obrazów i GitHub Actions w PR. Bez wdrożenia HA ani użycia rzeczywistych kont Google.
 
+Aktualizacja: bieżący PR zastępuje PIN loginem i hasłem; dawne dowody poniżej opisują pierwszą wersję integracji. Aktualne potwierdzenia Google wymagają hasła. Końcowa weryfikacja i procedura organizatora: [raport loginu i hasła](password-login-report.md).
+
 ## Zachowanie i kryteria
 
 | Kryterium | Realizacja i dowód |

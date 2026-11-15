@@ -17,7 +17,10 @@ test("court fits team sizes and centers unequal formations around the net", asyn
   const csrf = await (await context.request.get("/api/v1/auth/csrf")).json();
   const login = await context.request.post("/api/v1/auth/login", {
     headers: { Origin: "http://127.0.0.1:5175", "X-CSRF-Token": csrf.token },
-    data: { profile_id: players[0].id, pin: "123456" },
+    data: {
+      username: "user-" + players[0].id.replaceAll("-", "").slice(0, 24),
+      password: "Admin-test-passphrase-123",
+    },
   });
   expect(login.ok()).toBe(true);
   // This geometry fixture represents published, official teams.

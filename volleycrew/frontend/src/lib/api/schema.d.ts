@@ -468,7 +468,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/players/{player_id}/pin-reset": {
+    "/api/v1/admin/players/{player_id}/password-reset": {
         parameters: {
             query?: never;
             header?: never;
@@ -477,8 +477,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Pin Reset */
-        post: operations["createPinReset"];
+        /** Password Reset */
+        post: operations["createPasswordReset"];
         delete?: never;
         options?: never;
         head?: never;
@@ -706,23 +706,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/auth/profiles": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Profiles */
-        get: operations["getLoginProfiles"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/auth/register": {
         parameters: {
             query?: never;
@@ -740,7 +723,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/auth/reset-pin": {
+    "/api/v1/auth/reset-password": {
         parameters: {
             query?: never;
             header?: never;
@@ -749,8 +732,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Reset Pin */
-        post: operations["resetPin"];
+        /** Reset Password */
+        post: operations["resetPassword"];
         delete?: never;
         options?: never;
         head?: never;
@@ -877,7 +860,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/me/pin": {
+    "/api/v1/me/password": {
         parameters: {
             query?: never;
             header?: never;
@@ -886,8 +869,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Change Pin */
-        post: operations["changePin"];
+        /** Change Password */
+        post: operations["changePassword"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1342,18 +1325,18 @@ export interface components {
             /** Total */
             total: number;
         };
-        /** ChangePin */
-        ChangePin: {
+        /** ChangePassword */
+        ChangePassword: {
             /**
-             * Current Pin
+             * Current Password
              * Format: password
              */
-            current_pin: string;
+            current_password: string;
             /**
-             * Pin
+             * Password
              * Format: password
              */
-            pin: string;
+            password: string;
         };
         /** CloseOffer */
         CloseOffer: {
@@ -1535,8 +1518,8 @@ export interface components {
              * @enum {string}
              */
             mode: "login" | "link";
-            /** Pin */
-            pin?: string | null;
+            /** Password */
+            password?: string | null;
             /**
              * Return To
              * @default /
@@ -1635,29 +1618,12 @@ export interface components {
         /** Login */
         Login: {
             /**
-             * Pin
+             * Password
              * Format: password
              */
-            pin: string;
-            /**
-             * Profile Id
-             * Format: uuid
-             */
-            profile_id: string;
-        };
-        /** LoginProfile */
-        LoginProfile: {
-            /** First Name */
-            first_name: string;
-            /** Masked Last Name */
-            masked_last_name: string;
-            /** Nickname */
-            nickname: string | null;
-            /**
-             * Profile Id
-             * Format: uuid
-             */
-            profile_id: string;
+            password: string;
+            /** Username */
+            username: string;
         };
         /** MeetingDetail */
         MeetingDetail: {
@@ -1900,13 +1866,13 @@ export interface components {
             meeting: components["schemas"]["MeetingDetail"];
             participation: components["schemas"]["MyParticipation"];
         };
-        /** PinInput */
-        PinInput: {
+        /** PasswordInput */
+        PasswordInput: {
             /**
-             * Pin
+             * Password
              * Format: password
              */
-            pin: string;
+            password: string;
         };
         /** PlannedMeeting */
         PlannedMeeting: {
@@ -1992,6 +1958,8 @@ export interface components {
              * @enum {string}
              */
             role: "admin" | "player";
+            /** Username */
+            username: string | null;
         };
         /** PreliminaryTeamsInput */
         PreliminaryTeamsInput: {
@@ -2175,15 +2143,17 @@ export interface components {
             /** Nickname */
             nickname?: string | null;
             /**
-             * Pin
+             * Password
              * Format: password
              */
-            pin: string;
+            password: string;
             /**
              * Token
              * Format: password
              */
             token: string;
+            /** Username */
+            username: string;
         };
         /** ReleaseReservation */
         ReleaseReservation: {
@@ -2218,18 +2188,20 @@ export interface components {
             kind: string;
             player: components["schemas"]["PublicPlayer"];
         };
-        /** ResetPin */
-        ResetPin: {
+        /** ResetPassword */
+        ResetPassword: {
             /**
-             * Pin
+             * Password
              * Format: password
              */
-            pin: string;
+            password: string;
             /**
              * Token
              * Format: password
              */
             token: string;
+            /** Username */
+            username: string;
         };
         /** ResolveOccurrence */
         ResolveOccurrence: {
@@ -5157,7 +5129,7 @@ export interface operations {
             };
         };
     };
-    createPinReset: {
+    createPasswordReset: {
         parameters: {
             query?: never;
             header?: never;
@@ -6347,98 +6319,6 @@ export interface operations {
             };
         };
     };
-    getLoginProfiles: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LoginProfile"][];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
     registerPlayer: {
         parameters: {
             query?: never;
@@ -6535,7 +6415,7 @@ export interface operations {
             };
         };
     };
-    resetPin: {
+    resetPassword: {
         parameters: {
             query?: never;
             header?: never;
@@ -6544,7 +6424,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ResetPin"];
+                "application/json": components["schemas"]["ResetPassword"];
             };
         };
         responses: {
@@ -7116,7 +6996,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PinInput"];
+                "application/json": components["schemas"]["PasswordInput"];
             };
         };
         responses: {
@@ -7194,7 +7074,7 @@ export interface operations {
             };
         };
     };
-    changePin: {
+    changePassword: {
         parameters: {
             query?: never;
             header?: never;
@@ -7203,7 +7083,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ChangePin"];
+                "application/json": components["schemas"]["ChangePassword"];
             };
         };
         responses: {

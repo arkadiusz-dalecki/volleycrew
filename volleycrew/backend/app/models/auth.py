@@ -13,6 +13,10 @@ class Player(Base):
     __table_args__ = (
         CheckConstraint("priority_status IN ('founder','player','guest')"),
         CheckConstraint("role IN ('admin','player')"),
+        CheckConstraint(
+            "(username IS NULL) = (password_hash IS NULL)", name="player_credentials_pair"
+        ),
+        CheckConstraint("username ~ '^[a-z0-9][a-z0-9._-]{2,31}$'", name="player_username_format"),
     )
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     first_name: Mapped[str] = mapped_column(String(80))
@@ -23,7 +27,8 @@ class Player(Base):
     )
     role: Mapped[str] = mapped_column(String(12), default="player", server_default="player")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
-    pin_hash: Mapped[str] = mapped_column(String(255))
+    username: Mapped[str | None] = mapped_column(String(32), unique=True)
+    password_hash: Mapped[str | None] = mapped_column(String(255))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
@@ -48,8 +53,8 @@ class Invite(Base):
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
-class PinResetGrant(Base):
-    __tablename__ = "pin_reset_grants"
+class PasswordResetGrant(Base):
+    __tablename__ = "password_reset_grants"
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     player_id: Mapped[UUID] = mapped_column(ForeignKey("players.id"), index=True)
     created_by: Mapped[UUID | None] = mapped_column(ForeignKey("players.id"))

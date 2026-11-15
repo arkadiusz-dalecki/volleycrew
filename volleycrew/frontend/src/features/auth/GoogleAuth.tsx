@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import { useLocation } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, message, unwrap } from "../../lib/api/client";
+import { PasswordField } from "./CredentialFields";
 import { basePath } from "../../lib/base";
 
 function useGoogleConfig() {
@@ -18,17 +19,17 @@ const notices: Record<string, string> = {
     "Za dużo prób logowania Google. Odczekaj chwilę i rozpocznij logowanie ponownie.",
   linked: "Konto Google zostało połączone z Twoim profilem.",
   cancelled:
-    "Logowanie Google zostało anulowane. Możesz spróbować ponownie lub użyć PIN-u.",
+    "Logowanie Google zostało anulowane. Możesz spróbować ponownie lub użyć hasła.",
   invalid:
     "Nie udało się potwierdzić logowania Google. Rozpocznij je ponownie.",
   unavailable:
-    "Google jest teraz niedostępne. Spróbuj ponownie lub zaloguj się PIN-em.",
+    "Google jest teraz niedostępne. Spróbuj ponownie lub zaloguj się hasłem.",
   unlinked:
-    "To konto Google nie jest połączone z profilem. Zaloguj się PIN-em i połącz je w swoim profilu.",
+    "To konto Google nie jest połączone z profilem. Zaloguj się hasłem i połącz je w swoim profilu.",
   conflict:
-    "To konto Google lub profil ma już inne powiązanie. Zaloguj się PIN-em, aby je sprawdzić.",
+    "To konto Google lub profil ma już inne powiązanie. Zaloguj się hasłem, aby je sprawdzić.",
   session:
-    "Sesja użyta do łączenia wygasła lub została zmieniona. Zaloguj się PIN-em i spróbuj ponownie.",
+    "Sesja użyta do łączenia wygasła lub została zmieniona. Zaloguj się hasłem i spróbuj ponownie.",
 };
 
 export function GoogleNotice() {
@@ -132,7 +133,7 @@ export function GoogleConnection() {
   });
   const external = usePublicGoogle(config.data?.public_url);
   const client = useQueryClient();
-  const [pin, setPin] = useState("");
+  const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   if (!config.data?.enabled && !connection.data?.connected) return null;
@@ -143,19 +144,21 @@ export function GoogleConnection() {
     try {
       if (connection.data?.connected) {
         unwrap(
-          await api.POST("/api/v1/me/google/disconnect", { body: { pin } }),
+          await api.POST("/api/v1/me/google/disconnect", {
+            body: { password },
+          }),
         );
-        setPin("");
+        setPassword("");
         setNotice("Konto Google zostało odłączone. Pozostałe sesje wygasły.");
         await client.invalidateQueries({ queryKey: ["google-connection"] });
         await client.invalidateQueries({ queryKey: ["me"] });
       } else {
         const result = unwrap(
           await api.POST("/api/v1/auth/google/start", {
-            body: { mode: "link", pin, return_to: "/profile" },
+            body: { mode: "link", password, return_to: "/profile" },
           }),
         );
-        setPin("");
+        setPassword("");
         window.location.assign(result.url);
       }
     } catch (e) {
@@ -180,7 +183,7 @@ export function GoogleConnection() {
         <>
           <p className="form-note">
             Połączeniem konta Google zarządzasz pod głównym adresem Volleycrew.
-            Zaloguj się tam PIN-em.
+            Zaloguj się tam hasłem.
           </p>
           <a
             className="button"
@@ -195,25 +198,16 @@ export function GoogleConnection() {
         <>
           <p>
             {connection.data?.connected
-              ? "Konto Google jest połączone. Nadal możesz logować się PIN-em."
+              ? "Konto Google jest połączone. Nadal możesz logować się hasłem."
               : "Połącz Google ze swoim istniejącym profilem. Przy kolejnych wejściach wystarczy przycisk Google."}
           </p>
           <form onSubmit={(event) => void submit(event)}>
-            <label className="form-field">
-              PIN potwierdzający zmianę
-              <input
-                type="password"
-                inputMode="numeric"
-                autoComplete="current-password"
-                value={pin}
-                onChange={(event) => setPin(event.target.value)}
-                pattern="[0-9]{6}"
-                minLength={6}
-                maxLength={6}
-                required
-                disabled={busy}
-              />
-            </label>
+            <PasswordField
+              label="Hasło potwierdzające zmianę"
+              value={password}
+              onChange={setPassword}
+              disabled={busy}
+            />
             <button className="button" disabled={busy}>
               {connection.data?.connected
                 ? "Odłącz konto Google"

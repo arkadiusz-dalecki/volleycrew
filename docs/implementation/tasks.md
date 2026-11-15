@@ -202,3 +202,7 @@ Zlecone 2026-11-14 po recenzji logowania. Zakres: usuwanie sekretu z adresu po o
 ## Uzupełnienie E2/E9 — opcjonalne Google, 2026-11-15
 
 Zlecone: połączenie Google z istniejącym profilem po potwierdzeniu PIN-u, logowanie po `sub`, odłączenie po PIN-ie, konfiguracja HA oraz UI i instrukcja operatora. Odbiór: migracja, sesje i unikalne powiązania na PostgreSQL; podpis/issuer/audience/exp/nonce, PKCE, związanie stanu z przeglądarką i sesją łączącą, jednorazowość i wygaśnięcie, blokada konta, błędy dostawcy i brak automatycznej rejestracji. E2E z lokalnym dostawcą testowym i osobny jawny odbiór z rzeczywistym klientem Google. PIN i polityka zaproszeń pozostają dostępne; Ingress odsyła do PUBLIC_URL.
+
+## Uzupełnienie E2/E9 — login i hasło, 2026-11-15
+
+Zlecone: osobna nazwa użytkownika i hasło zamiast katalogu profili/PIN-u; rejestracja, bootstrap, zmiana/reset hasła i potwierdzenia Google. Użytkownik nie wymaga migracji graczy (jedyny zarejestrowany to organizator). Odbiór: brak publicznego katalogu/endpointu PIN; unikalność loginu bez względu na wielkość liter; poprawne hashowanie i błędy, trwałe limity i wygaśnięcie sesji; zachowanie danych profilu organizatora i jednorazowa konfiguracja; testy PostgreSQL, przeglądarek i obu pakietów.

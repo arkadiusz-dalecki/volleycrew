@@ -272,7 +272,7 @@ def test_rosters_and_group_directory_never_expose_priority_or_credentials(calend
         assert response.status_code == 200
         assert not any(
             key in response.text
-            for key in ["priority_status", "pin_hash", '"role"', "accepted_late_offer"]
+            for key in ["priority_status", "password_hash", '"role"', "accepted_late_offer"]
         )
     directory = member.get(PREFIX + "/players?limit=1").json()
     assert directory["total"] == 2 and directory["next_offset"] == 1

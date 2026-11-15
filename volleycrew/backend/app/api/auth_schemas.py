@@ -21,14 +21,31 @@ def clean_text(value: str) -> str:
     return value
 
 
-class PinInput(Input):
-    pin: SecretStr
+class PasswordInput(Input):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=False)
+    password: SecretStr = Field(min_length=1, max_length=128)
 
-    @field_validator("pin")
+
+class NewPassword(PasswordInput):
+    @field_validator("password")
     @classmethod
-    def validate_pin(cls, value: SecretStr) -> SecretStr:
-        if not re.fullmatch(r"[0-9]{6}", value.get_secret_value()):
-            raise ValueError("PIN must contain six ASCII digits")
+    def validate_password(cls, value: SecretStr) -> SecretStr:
+        if len(value.get_secret_value()) < 15:
+            raise ValueError("Hasło musi mieć od 15 do 128 znaków.")
+        return value
+
+
+class UsernameInput(Input):
+    username: str = Field(min_length=3, max_length=32)
+
+    @field_validator("username", mode="before")
+    @classmethod
+    def normalize_username(cls, value: str) -> str:
+        if not isinstance(value, str):
+            raise ValueError("Podaj login.")
+        value = value.strip().lower()
+        if not re.fullmatch(r"[a-z0-9][a-z0-9._-]{2,31}", value):
+            raise ValueError("Login: 3–32 litery ASCII, cyfry, kropki, myślniki lub podkreślenia.")
         return value
 
 
@@ -48,43 +65,32 @@ class ProfileInput(Input):
         return (clean_text(value) or None) if value is not None else None
 
 
-class Registration(ProfileInput, PinInput):
+class Registration(ProfileInput, UsernameInput, NewPassword):
     token: SecretStr
 
 
-class Login(PinInput):
-    profile_id: UUID
+class Login(UsernameInput, PasswordInput):
+    pass
 
 
-class ChangePin(PinInput):
-    current_pin: SecretStr
-
-    @field_validator("current_pin")
-    @classmethod
-    def validate_current_pin(cls, value: SecretStr) -> SecretStr:
-        return cls.validate_pin(value)
+class ChangePassword(NewPassword):
+    current_password: SecretStr = Field(min_length=1, max_length=128)
 
 
-class ResetPin(PinInput):
+class ResetPassword(UsernameInput, NewPassword):
     token: SecretStr
 
 
 class PlayerView(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: UUID
+    username: str | None
     first_name: str
     last_name: str
     nickname: str | None
     priority_status: Priority
     role: Literal["admin", "player"]
     is_active: bool
-
-
-class LoginProfile(BaseModel):
-    profile_id: UUID
-    first_name: str
-    masked_last_name: str
-    nickname: str | None
 
 
 class AdminPlayerPatch(Input):
@@ -113,6 +119,7 @@ class Done(BaseModel):
 
 
 class GoogleStart(Input):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=False)
     return_to: str = Field(default="/", max_length=512)
 
     @field_validator("return_to")
@@ -133,12 +140,7 @@ class GoogleStart(Input):
         return value
 
     mode: Literal["login", "link"] = "login"
-    pin: SecretStr | None = None
-
-    @field_validator("pin")
-    @classmethod
-    def validate_optional_pin(cls, value: SecretStr | None) -> SecretStr | None:
-        return PinInput.validate_pin(value) if value is not None else None
+    password: SecretStr | None = Field(default=None, min_length=1, max_length=128)
 
 
 class GoogleConfig(BaseModel):

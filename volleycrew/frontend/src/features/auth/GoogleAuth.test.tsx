@@ -53,6 +53,6 @@ it("Ingress manages linking at the canonical profile instead of transferring its
     }),
   ).toHaveAttribute("href", "https://volleycrew.test/profile");
   expect(
-    screen.queryByLabelText("PIN potwierdzający zmianę"),
+    screen.queryByLabelText("Hasło potwierdzające zmianę"),
   ).not.toBeInTheDocument();
 });

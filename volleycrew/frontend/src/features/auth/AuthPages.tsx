@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { KeyRound, LoaderCircle, ShieldCheck, Volleyball } from "lucide-react";
 import { api, message, unwrap } from "../../lib/api/client";
 import { PreviewProfiles } from "./PreviewProfiles";
 import { useSession } from "./useSession";
 import { useAdminView } from "./ViewMode";
-import { rememberedProfile, rememberProfile } from "./rememberedProfile";
+import { rememberedUsername, rememberUsername } from "./rememberedUsername";
 import { useAuthLinkToken } from "./useAuthLinkToken";
 import { GoogleLogin, GoogleNotice } from "./GoogleAuth";
+import { UsernameField, PasswordField } from "./CredentialFields";
 import { InstallApp } from "../install/InstallApp";
 
 export function Protected({
@@ -101,22 +102,12 @@ function Pending({ busy, children }: { busy: boolean; children: ReactNode }) {
 
 export function LoginPage({ preview = false }: { preview?: boolean }) {
   const session = useSession();
-  const profiles = useQuery({
-    queryKey: ["login-profiles"],
-    queryFn: async () => unwrap(await api.GET("/api/v1/auth/profiles")),
-    staleTime: 0,
-  });
-  const [profile, setProfile] = useState(rememberedProfile);
-  const selectedProfile = profiles.data?.some(
-    (item) => item.profile_id === profile,
-  )
-    ? profile
-    : "";
-  const [pin, setPin] = useState("");
+  const [username, setUsername] = useState(rememberedUsername);
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const client = useQueryClient();
-  const navigate = useNavigate();
+  const client = useQueryClient(),
+    navigate = useNavigate();
   const location = useLocation();
   const requested = location.state?.returnTo;
   const destination =
@@ -127,24 +118,21 @@ export function LoginPage({ preview = false }: { preview?: boolean }) {
       ? requested
       : "/";
   if (session.data && !preview) return <Navigate to={destination} replace />;
-
   async function submit(event: FormEvent) {
     event.preventDefault();
     setError("");
     setBusy(true);
     try {
       const user = unwrap(
-        await api.POST("/api/v1/auth/login", {
-          body: { profile_id: selectedProfile, pin },
-        }),
+        await api.POST("/api/v1/auth/login", { body: { username, password } }),
       );
       await client.cancelQueries();
       client.removeQueries({
         predicate: (query) => query.queryKey[0] !== "me",
       });
-      rememberProfile(user.id);
+      rememberUsername(user.username ?? "");
       client.setQueryData(["me"], user);
-      setPin("");
+      setPassword("");
       navigate(destination, { replace: true });
     } catch (e) {
       setError(message(e));
@@ -152,81 +140,38 @@ export function LoginPage({ preview = false }: { preview?: boolean }) {
       setBusy(false);
     }
   }
-
   return (
-    <AuthCard
-      title="Dobrze Cię widzieć"
-      subtitle="Wybierz swój profil i podaj sześciocyfrowy PIN."
-    >
+    <AuthCard title="Dobrze Cię widzieć" subtitle="Podaj swój login i hasło.">
       <GoogleNotice />
       {!preview && <GoogleLogin destination={destination} />}
       {!preview && <PreviewProfiles />}
-      {profiles.isPending ? (
-        <p role="status">Wczytujemy profile…</p>
-      ) : profiles.isError ? (
-        <div role="alert">
-          <p>Nie udało się pobrać listy.</p>
-          <button className="button" onClick={() => void profiles.refetch()}>
-            Ponów
-          </button>
-        </div>
-      ) : !profiles.data?.length ? (
-        <p className="form-note">
-          Nie ma jeszcze dostępnych profili. Poproś organizatora o link z
-          zaproszeniem.
-        </p>
-      ) : (
-        <form onSubmit={(e) => void submit(e)}>
-          <label className="form-field">
-            Twój profil
-            <select
-              required
-              disabled={busy}
-              value={selectedProfile}
-              onChange={(event) => setProfile(event.target.value)}
-            >
-              <option value="" disabled>
-                Wybierz użytkownika
-              </option>
-              {profiles.data.map((item) => (
-                <option key={item.profile_id} value={item.profile_id}>
-                  {item.first_name} {item.masked_last_name}
-                  {item.nickname ? ` — ${item.nickname}` : ""}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="form-field">
-            PIN
-            <input
-              type="password"
-              inputMode="numeric"
-              autoComplete="current-password"
-              value={pin}
-              onChange={(e) => setPin(e.target.value)}
-              pattern="[0-9]{6}"
-              minLength={6}
-              maxLength={6}
-              required
-              disabled={busy}
-            />
-          </label>
-          {error && (
-            <p className="form-error" role="alert">
-              {error}
-            </p>
-          )}
-          <Pending busy={busy}>
-            Wejdź na boisko <KeyRound size={17} />
-          </Pending>
-          <p className="form-note">
-            Nie pamiętasz PIN-u? Organizator może przekazać Ci jednorazowy link
-            do ustawienia nowego.
+      <form onSubmit={(e) => void submit(e)}>
+        <UsernameField
+          value={username}
+          onChange={setUsername}
+          disabled={busy}
+        />
+        <PasswordField
+          label="Hasło"
+          value={password}
+          onChange={setPassword}
+          disabled={busy}
+        />
+        {error && (
+          <p className="form-error" role="alert">
+            {error}
           </p>
-        </form>
-      )}
+        )}
+        <Pending busy={busy}>
+          Wejdź na boisko <KeyRound size={17} />
+        </Pending>
+        <p className="form-note">
+          Nie pamiętasz loginu lub hasła? Organizator może przekazać Ci
+          jednorazowy link do ustawienia nowych danych dostępu.
+        </p>
+      </form>
       <div className="auth-footnote">
-        <ShieldCheck size={15} /> Profil zostanie zapamiętany na tym urządzeniu.
+        <ShieldCheck size={15} /> Sesja zostanie zapamiętana na tym urządzeniu.
       </div>
     </AuthCard>
   );
@@ -237,17 +182,18 @@ export function RegisterPage({ bootstrap = false }: { bootstrap?: boolean }) {
   const [firstName, setFirstName] = useState(bootstrap ? "Arkadiusz" : "");
   const [lastName, setLastName] = useState(bootstrap ? "Dalecki" : "");
   const [nickname, setNickname] = useState("");
-  const [pin, setPin] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [repeat, setRepeat] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false),
+    [error, setError] = useState("");
   const client = useQueryClient(),
     navigate = useNavigate();
   async function submit(event: FormEvent) {
     event.preventDefault();
     setError("");
-    if (pin !== repeat) {
-      setError("Podane PIN-y muszą być takie same.");
+    if (password !== repeat) {
+      setError("Podane hasła muszą być takie same.");
       return;
     }
     setBusy(true);
@@ -257,7 +203,8 @@ export function RegisterPage({ bootstrap = false }: { bootstrap?: boolean }) {
         first_name: firstName,
         last_name: lastName,
         nickname: nickname || null,
-        pin,
+        username,
+        password,
       };
       const user = unwrap(
         bootstrap
@@ -268,9 +215,9 @@ export function RegisterPage({ bootstrap = false }: { bootstrap?: boolean }) {
       client.removeQueries({
         predicate: (query) => query.queryKey[0] !== "me",
       });
-      rememberProfile(user.id);
+      rememberUsername(user.username ?? "");
       client.setQueryData(["me"], user);
-      setPin("");
+      setPassword("");
       setRepeat("");
       navigate("/", { replace: true });
     } catch (e) {
@@ -281,11 +228,11 @@ export function RegisterPage({ bootstrap = false }: { bootstrap?: boolean }) {
   }
   return (
     <AuthCard
-      title={bootstrap ? "Twoja ekipa zaczyna tutaj" : "Dołącz do ekipy"}
+      title={bootstrap ? "Pierwszy organizator" : "Dołącz do ekipy"}
       subtitle={
         bootstrap
-          ? "Utwórz profil organizatora i ustaw własny PIN."
-          : "Załóż swój profil z zaproszenia. Resztę załatwimy na boisku."
+          ? "Ustaw login i hasło organizatora. Istniejący profil zachowa swoje dane."
+          : "Zaproszenie otwiera drzwi do naszej ekipy."
       }
     >
       {!token ? (
@@ -330,41 +277,28 @@ export function RegisterPage({ bootstrap = false }: { bootstrap?: boolean }) {
             />
             <small>Pomoże odróżnić osoby o tym samym imieniu i nazwisku.</small>
           </label>
-          <div className="form-row">
-            <label className="form-field">
-              Twój PIN
-              <input
-                type="password"
-                inputMode="numeric"
-                autoComplete="new-password"
-                value={pin}
-                onChange={(e) => setPin(e.target.value)}
-                pattern="[0-9]{6}"
-                minLength={6}
-                maxLength={6}
-                required
-                disabled={busy}
-              />
-            </label>
-            <label className="form-field">
-              Powtórz PIN
-              <input
-                type="password"
-                inputMode="numeric"
-                autoComplete="new-password"
-                value={repeat}
-                onChange={(e) => setRepeat(e.target.value)}
-                pattern="[0-9]{6}"
-                minLength={6}
-                maxLength={6}
-                required
-                disabled={busy}
-              />
-            </label>
-          </div>
+          <UsernameField
+            value={username}
+            onChange={setUsername}
+            disabled={busy}
+          />
+          <PasswordField
+            label="Twoje hasło"
+            value={password}
+            onChange={setPassword}
+            fresh
+            disabled={busy}
+          />
+          <PasswordField
+            label="Powtórz hasło"
+            value={repeat}
+            onChange={setRepeat}
+            fresh
+            disabled={busy}
+          />
           <p className="form-note">
-            Imię i nazwisko będą używane na liście podpisów dla szkoły.
-            Przydomek nie trafi na wydruk.
+            Imię i nazwisko będą używane na liście podpisów dla szkoły. Login i
+            przydomek nie trafią na wydruk.
           </p>
           {error && (
             <p className="form-error" role="alert">
@@ -372,7 +306,7 @@ export function RegisterPage({ bootstrap = false }: { bootstrap?: boolean }) {
             </p>
           )}
           <Pending busy={busy}>
-            {bootstrap ? "Utwórz profil organizatora" : "Dołączam do gry"}
+            {bootstrap ? "Ustaw dostęp organizatora" : "Dołączam do gry"}
           </Pending>
         </form>
       )}
@@ -383,33 +317,36 @@ export function RegisterPage({ bootstrap = false }: { bootstrap?: boolean }) {
   );
 }
 
-export function ResetPinPage() {
+export function ResetPasswordPage() {
   const token = useAuthLinkToken();
-  const [pin, setPin] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [repeat, setRepeat] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false),
+    [error, setError] = useState("");
   const client = useQueryClient(),
     navigate = useNavigate();
   async function submit(event: FormEvent) {
     event.preventDefault();
     setError("");
-    if (pin !== repeat) {
-      setError("Podane PIN-y muszą być takie same.");
+    if (password !== repeat) {
+      setError("Podane hasła muszą być takie same.");
       return;
     }
     setBusy(true);
     try {
       const user = unwrap(
-        await api.POST("/api/v1/auth/reset-pin", { body: { token, pin } }),
+        await api.POST("/api/v1/auth/reset-password", {
+          body: { token, username, password },
+        }),
       );
       await client.cancelQueries();
       client.removeQueries({
         predicate: (query) => query.queryKey[0] !== "me",
       });
-      rememberProfile(user.id);
+      rememberUsername(user.username ?? "");
       client.setQueryData(["me"], user);
-      setPin("");
+      setPassword("");
       setRepeat("");
       navigate("/", { replace: true });
     } catch (e) {
@@ -420,52 +357,41 @@ export function ResetPinPage() {
   }
   return (
     <AuthCard
-      title="Nowy PIN, ta sama ekipa"
-      subtitle="Link jest jednorazowy i działa przez 30 minut."
+      title="Nowe hasło, ta sama ekipa"
+      subtitle="Link jest jednorazowy i działa przez 30 minut. Możesz zachować dotychczasowy login lub wybrać nowy."
     >
       {!token ? (
         <p className="form-error" role="alert">
-          Otwórz ponownie pełny link do resetu PIN-u. Ze względów bezpieczeństwa
+          Otwórz ponownie pełny link do resetu hasła. Ze względów bezpieczeństwa
           odświeżenie strony wymaga ponownego otwarcia linku.
         </p>
       ) : (
         <form onSubmit={(e) => void submit(e)}>
-          <label className="form-field">
-            Nowy PIN
-            <input
-              type="password"
-              inputMode="numeric"
-              autoComplete="new-password"
-              value={pin}
-              onChange={(e) => setPin(e.target.value)}
-              pattern="[0-9]{6}"
-              minLength={6}
-              maxLength={6}
-              required
-              disabled={busy}
-            />
-          </label>
-          <label className="form-field">
-            Powtórz nowy PIN
-            <input
-              type="password"
-              inputMode="numeric"
-              autoComplete="new-password"
-              value={repeat}
-              onChange={(e) => setRepeat(e.target.value)}
-              pattern="[0-9]{6}"
-              minLength={6}
-              maxLength={6}
-              required
-              disabled={busy}
-            />
-          </label>
+          <UsernameField
+            value={username}
+            onChange={setUsername}
+            disabled={busy}
+          />
+          <PasswordField
+            label="Nowe hasło"
+            value={password}
+            onChange={setPassword}
+            fresh
+            disabled={busy}
+          />
+          <PasswordField
+            label="Powtórz nowe hasło"
+            value={repeat}
+            onChange={setRepeat}
+            fresh
+            disabled={busy}
+          />
           {error && (
             <p className="form-error" role="alert">
               {error}
             </p>
           )}
-          <Pending busy={busy}>Ustaw nowy PIN</Pending>
+          <Pending busy={busy}>Ustaw nowe hasło</Pending>
         </form>
       )}
     </AuthCard>

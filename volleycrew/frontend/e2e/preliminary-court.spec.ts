@@ -22,8 +22,8 @@ async function write(
 }
 async function playerLogin(context: BrowserContext, id: string) {
   const response = await write(context, "/auth/login", {
-    profile_id: id,
-    pin: "123456",
+    username: "user-" + id.replaceAll("-", "").slice(0, 24),
+    password: "Admin-test-passphrase-123",
   });
   expect(response.ok()).toBe(true);
 }

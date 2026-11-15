@@ -34,7 +34,7 @@ async function google(
   );
 }
 
-test("connect Google with PIN, log in through Google and disconnect", async ({
+test("connect Google with a password, log in through Google and disconnect", async ({
   page,
   context,
 }, info) => {
@@ -44,15 +44,24 @@ test("connect Google with PIN, log in through Google and disconnect", async ({
   await page
     .getByLabel("Nazwisko", { exact: true })
     .fill(`Test-${info.project.name}`);
-  await page.getByLabel("Twój PIN", { exact: true }).fill("654321");
-  await page.getByLabel("Powtórz PIN", { exact: true }).fill("654321");
+  await page
+    .getByLabel("Login", { exact: true })
+    .fill(`member-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`);
+  await page
+    .getByLabel("Twoje hasło", { exact: true })
+    .fill("Player-test-passphrase-456");
+  await page
+    .getByLabel("Powtórz hasło", { exact: true })
+    .fill("Player-test-passphrase-456");
   await page.getByRole("button", { name: "Dołączam do gry" }).click();
   await expect(
     page.getByRole("heading", { name: "Najbliższe spotkanie" }),
   ).toBeVisible();
   const player = await (await context.request.get("/api/v1/me")).json();
   await page.goto("/profile");
-  await page.getByLabel("PIN potwierdzający zmianę").fill("654321");
+  await page
+    .getByLabel("Hasło potwierdzające zmianę")
+    .fill("Player-test-passphrase-456");
   await page.getByRole("button", { name: "Połącz konto Google" }).click();
   await expect(
     page.getByRole("button", { name: "Odłącz konto Google" }),
@@ -83,7 +92,9 @@ test("connect Google with PIN, log in through Google and disconnect", async ({
   const signedIn = await (await context.request.get("/api/v1/me")).json();
   expect(signedIn.id).toBe(player.id);
   expect(signedIn.role).toBe("player");
-  await page.getByLabel("PIN potwierdzający zmianę").fill("654321");
+  await page
+    .getByLabel("Hasło potwierdzające zmianę")
+    .fill("Player-test-passphrase-456");
   await page.getByRole("button", { name: "Odłącz konto Google" }).click();
   await expect(
     page.getByRole("button", { name: "Połącz konto Google" }),
@@ -93,7 +104,7 @@ test("connect Google with PIN, log in through Google and disconnect", async ({
   ).toBeVisible();
 });
 
-test("Google cancellation and unlinked accounts keep PIN login available", async ({
+test("Google cancellation and unlinked accounts keep password login available", async ({
   page,
 }) => {
   await google(page, "unlinked-browser-account");
@@ -103,7 +114,7 @@ test("Google cancellation and unlinked accounts keep PIN login available", async
   await expect(
     page.getByText(/To konto Google nie jest połączone/),
   ).toBeVisible();
-  await expect(page.getByLabel("PIN", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Hasło", { exact: true })).toBeVisible();
   await expect(page).toHaveURL(/\/login$/);
   await page.unroute("https://accounts.google.com/o/oauth2/v2/auth?**");
   await google(page, "unlinked-browser-account", true);

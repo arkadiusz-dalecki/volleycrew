@@ -7,7 +7,7 @@ from app.api.auth_schemas import (
     GoogleConnection,
     GoogleRedirect,
     GoogleStart,
-    PinInput,
+    PasswordInput,
 )
 from app.api.errors import ApiError
 from app.models.auth import GoogleIdentity
@@ -38,7 +38,7 @@ async def start(body: GoogleStart, request: Request, response: Response, db: DB)
         request,
         response,
         body.mode,
-        body.pin.get_secret_value() if body.pin is not None else None,
+        body.password.get_secret_value() if body.password is not None else None,
         body.return_to,
     )
     return GoogleRedirect(url=url)
@@ -51,7 +51,9 @@ async def callback(request: Request, db: DB):
 
 @router.post("/me/google/disconnect", response_model=Done, operation_id="disconnectGoogle")
 async def disconnect(
-    body: PinInput, player: User, request: Request, response: Response, db: DB
+    body: PasswordInput, player: User, request: Request, response: Response, db: DB
 ) -> Done:
-    await service.disconnect_identity(db, player, body.pin.get_secret_value(), request, response)
+    await service.disconnect_identity(
+        db, player, body.password.get_secret_value(), request, response
+    )
     return Done()

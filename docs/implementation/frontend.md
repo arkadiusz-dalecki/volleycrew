@@ -14,11 +14,11 @@ Odtworzyć UI jako komponenty z rzeczywistymi danymi. Główna struktura: `AppSh
 | `/meetings/:id` | Ten sam ekran dla wybranego spotkania, powrót do kalendarza |
 | `/calendar` | Miesiąc i lista terminów, nawigacja dalej bez limitu tygodni |
 | `/ranking` | Ranking i wyniki z linkiem do meczu |
-| `/profile` | Dane, status, zmiana PIN-u i prywatna historia |
-| `/join#token` | Walidacja zaproszenia, imię/nazwisko, sześciocyfrowy PIN i jego powtórzenie |
-| `/login` | Lista profili: imię, maskowane nazwisko (np. Michał N*****k), ewentualny przydomek; wybór istniejącego profilu i sześciocyfrowy PIN |
-| `/reset-pin#token` | Ustawienie nowego PIN-u przez jednorazowy grant |
-| `/admin/settings` | Statusy i blokady, link zaproszenia, reset PIN-u |
+| `/profile` | Dane, status, zmiana hasła i prywatna historia |
+| `/join#token` | Walidacja zaproszenia, imię/nazwisko, login, hasło i jego powtórzenie |
+| `/login` | Wpisywany login oraz hasło, opcjonalnie przycisk Google |
+| `/reset-password#token` | Ustawienie loginu i nowego hasła przez jednorazowy grant |
+| `/admin/settings` | Statusy i blokady, link zaproszenia, reset hasła |
 
 Ustawienia administracyjne są dodatkową trasą, nie piątą główną zakładką. Panel obsługi konkretnego meczu pozostaje w jego szczegółach. Uprawnienia są danymi z API; frontend nie nadaje ich przez przełącznik. Przed blokadą profilu administrator widzi podsumowanie: wylogowanie zawodnika, zablokowanie dostępu i zwolnienie przyszłych miejsc/rezerwacji/ofert przy zachowaniu historii i wyników. Po zatwierdzeniu UI pobiera aktualne listy.
 
@@ -149,7 +149,7 @@ Boisko dopasowuje układ do liczby graczy na danej połowie zamiast wyświetlać
 
 ## Uzupełnienie E2/E9 — poprawki po próbie na iPhonie (2026-11-08)
 
-Logowanie używa natywnej listy rozwijanej „Twój profil”, z maskowanymi nazwiskami i przydomkami. Na nowym urządzeniu wybrana jest pusta opcja „Wybierz użytkownika”. Po poprawnym logowaniu, rejestracji lub resecie PIN-u zapamiętujemy wyłącznie ID ostatniego profilu w localStorage; przy istniejącej sesji także odtwarzamy ten wybór. Nie zapisujemy PIN-u. Gdy profil znika z publicznej listy, lista wraca do pustej opcji. Zablokowany localStorage nie uniemożliwia logowania.
+Aktualizacja 2026-11-15 zastępuje listę profili wpisywanym loginem i hasłem. Po sukcesie pamiętamy wyłącznie login w localStorage; hasło pozostaje tylko w formularzu i żądaniu. Zablokowany localStorage nie uniemożliwia logowania.
 
 Administrator ma nad treścią przełącznik „Administrator / Użytkownik”, również na telefonie. W widoku użytkownika ma własny profil i deklaracje oraz zwykłe widoki kalendarza, zatwierdzonych drużyn i wyniku; nie ma narzędzi ani tras administracyjnych. Przełączenie z trasy `/admin/…` prowadzi do spotkania. Wybór widoku jest zachowany w sessionStorage osobno dla konta; uprawnienia serwera pozostają niezmienione. To podgląd interfejsu na własnym koncie, nie logowanie jako inny gracz.
 
@@ -200,6 +200,10 @@ Rejestracja, bootstrap i reset odczytują sekret wyłącznie z fragmentu `#…`.
 
 ## Opcjonalne Google — 2026-11-15
 
-Po skonfigurowaniu Google ekran wejścia ma lokalnie renderowany przycisk „Zaloguj przez Google” z oficjalną ikoną i lokalnym Google Sans. Brak zewnętrznego skryptu, fontów/CDN w runtime; jedynie świadome przejście do dostawcy. PIN nadal działa. Zalogowany profil ma sekcję Google: połączenie albo odłączenie po sześciocyfrowym PIN-ie. Konto/rola nie są wybierane z danych Google; powiązanie dotyczy bieżącego istniejącego profilu. Komunikaty obejmują anulowanie, nieważny flow, błąd dostawcy, niepołączone konto, konflikt powiązań i utratę sesji. Status powrotu jest stałym kodem we fragmencie, usuwanym z adresu po odczycie; żaden token Google nie trafia do JS/storage. Po logowaniu wracamy na żądaną wewnętrzną trasę. Sukces łączenia jest widoczny na górze profilu; odłączenie pozostawia bieżącą świeżą sesję i informuje o unieważnieniu pozostałych.
+Po skonfigurowaniu Google ekran wejścia ma lokalnie renderowany przycisk „Zaloguj przez Google” z oficjalną ikoną i lokalnym Google Sans. Brak zewnętrznego skryptu, fontów/CDN w runtime; jedynie świadome przejście do dostawcy. Login i hasło nadal działają. Zalogowany profil ma sekcję Google: połączenie albo odłączenie po potwierdzeniu hasła. Konto/rola nie są wybierane z danych Google; powiązanie dotyczy bieżącego istniejącego profilu. Komunikaty obejmują anulowanie, nieważny flow, błąd dostawcy, niepołączone konto, konflikt powiązań i utratę sesji. Status powrotu jest stałym kodem we fragmencie, usuwanym z adresu po odczycie; żaden token Google nie trafia do JS/storage. Po logowaniu wracamy na żądaną wewnętrzną trasę. Sukces łączenia jest widoczny na górze profilu; odłączenie pozostawia bieżącą świeżą sesję i informuje o unieważnieniu pozostałych.
 
-W Ingress lub przy innym origin niż PUBLIC_URL przycisk otwiera główną domenę w nowej karcie z noopener/noreferrer. Dla połączenia wskazuje `/profile` i wymaga zalogowania tam PIN-em, a dla wejścia `/login`. UI wyjaśnia oddzielność sesji. Odbiór realnego Google i fizycznego Safari/Chrome pozostaje osobną próbą operatora.
+W Ingress lub przy innym origin niż PUBLIC_URL przycisk otwiera główną domenę w nowej karcie z noopener/noreferrer. Dla połączenia wskazuje `/profile` i wymaga zalogowania tam loginem i hasłem, a dla wejścia `/login`. UI wyjaśnia oddzielność sesji. Odbiór realnego Google i fizycznego Safari/Chrome pozostaje osobną próbą operatora.
+
+## Login i hasło — aktualizacja 2026-11-15
+
+Zastępuje wcześniejsze reguły katalogu logowania/PIN-u: dwa wpisywane pola Login/Hasło, bez listy profili ani pobierania publicznego katalogu. Login ma autocomplete=username, wyłączoną korektę i kapitalizację; hasła current-password/new-password, bez klawiatury numerycznej i limitu 6 cyfr. Nowe hasło i powtórzenie: 15–128 znaków, frazy ze spacjami/Unicode, zgodność przed wysłaniem. Formularz zachowuje dane przy błędzie. Po sukcesie sekrety są czyszczone; pamiętamy najwyżej nazwę użytkownika, nigdy hasło. Profil pokazuje własny login i zmianę hasła z potwierdzeniem obecnym. Google łączy/odłącza po haśle, komunikaty odsyłają do loginu i hasła. Reset pozwala odzyskać login i hasło; bootstrap istniejącego organizatora ustawia nowe dane bez zmiany jego profilu. Fragmenty linków nadal usuwane z adresu.

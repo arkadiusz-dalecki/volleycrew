@@ -20,7 +20,7 @@ import { api, message, unwrap } from "../lib/api/client";
 import {
   LoginPage,
   RegisterPage,
-  ResetPinPage,
+  ResetPasswordPage,
   Protected,
 } from "../features/auth/AuthPages";
 import { ProfilePage } from "../features/auth/ProfilePage";
@@ -316,10 +316,10 @@ export function App() {
             path="/setup"
             element={<RegisterPage bootstrap key="setup" />}
           />
-          <Route path="/reset-pin" element={<ResetPinPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route
-            path="/reset-pin/:token"
-            element={<Navigate to="/reset-pin" replace />}
+            path="/reset-password/:token"
+            element={<Navigate to="/reset-password" replace />}
           />
           <Route
             path="*"

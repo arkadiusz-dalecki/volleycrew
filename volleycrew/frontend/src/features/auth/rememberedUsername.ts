@@ -1,6 +1,6 @@
-const key = "volleycrew:last-profile";
+const key = "volleycrew:last-username";
 
-export function rememberedProfile() {
+export function rememberedUsername() {
   try {
     return localStorage.getItem(key) ?? "";
   } catch {
@@ -8,9 +8,9 @@ export function rememberedProfile() {
   }
 }
 
-export function rememberProfile(id: string) {
+export function rememberUsername(username: string) {
   try {
-    localStorage.setItem(key, id);
+    localStorage.setItem(key, username);
   } catch {
     // Login also works when the browser blocks local storage.
   }

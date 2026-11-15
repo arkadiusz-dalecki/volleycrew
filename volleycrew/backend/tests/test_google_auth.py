@@ -82,10 +82,12 @@ def google(system, signing):
     def new_device():
         return enable(device())
 
-    def begin(client, mode="login", pin=None, subject="google-subject-1", return_to="/", **claims):
+    def begin(
+        client, mode="login", password=None, subject="google-subject-1", return_to="/", **claims
+    ):
         body = {"mode": mode, "return_to": return_to}
-        if pin is not None:
-            body["pin"] = pin
+        if password is not None:
+            body["password"] = password
         response = mutate(client, "/auth/google/start", body)
         assert response.status_code == 200, response.text
         query = parse_qs(urlsplit(response.json()["url"]).query)
@@ -122,15 +124,25 @@ def test_link_login_disconnect_and_no_automatic_registration(google):
     initial = begin(anonymous)
     assert finish(anonymous, initial).headers["location"].endswith("#google=unlinked")
     assert anonymous.get(PREFIX + "/me").status_code == 401
-    flow = begin(member, "link", "654321")
+    flow = begin(member, "link", "Player-test-passphrase-456")
     assert finish(member, flow).headers["location"] == ORIGIN + "/profile#google=linked"
     assert member.get(PREFIX + "/me/google").json() == {"connected": True}
     other = device()
     assert finish(other, begin(other)).headers["location"] == ORIGIN + "/"
     assert other.get(PREFIX + "/me").json()["id"] == player["id"]
     assert other.get(PREFIX + "/admin/players").status_code == 403
-    assert mutate(member, "/me/google/disconnect", {"pin": "000000"}).status_code == 401
-    assert mutate(member, "/me/google/disconnect", {"pin": "654321"}).status_code == 200
+    assert (
+        mutate(
+            member, "/me/google/disconnect", {"password": "Wrong-test-passphrase-000"}
+        ).status_code
+        == 401
+    )
+    assert (
+        mutate(
+            member, "/me/google/disconnect", {"password": "Player-test-passphrase-456"}
+        ).status_code
+        == 200
+    )
     assert other.get(PREFIX + "/me").status_code == 401
     assert member.get(PREFIX + "/me").status_code == 200
     assert member.get(PREFIX + "/me/google").json() == {"connected": False}
@@ -140,21 +152,29 @@ def test_link_login_disconnect_and_no_automatic_registration(google):
     assert len(admin.get(PREFIX + "/admin/players").json()) == 2
 
 
-def test_link_requires_pin_session_and_post_csrf(google):
+def test_link_requires_password_session_and_post_csrf(google):
     device, _, _, _, member, _, _, _, _ = google
     assert (
-        mutate(device(), "/auth/google/start", {"mode": "link", "pin": "654321"}).status_code == 401
+        mutate(
+            device(),
+            "/auth/google/start",
+            {"mode": "link", "password": "Player-test-passphrase-456"},
+        ).status_code
+        == 401
     )
     assert mutate(member, "/auth/google/start", {"mode": "link"}).status_code == 422
     assert (
-        mutate(member, "/auth/google/start", {"mode": "link", "pin": "000000"}).status_code == 401
+        mutate(
+            member, "/auth/google/start", {"mode": "link", "password": "Wrong-test-passphrase-000"}
+        ).status_code
+        == 401
     )
     assert member.post(PREFIX + "/auth/google/start", json={"mode": "login"}).status_code == 403
 
 
 def test_state_browser_binding_expiry_and_replay(google):
     device, clock, _, _, member, _, begin, finish, exchanges = google
-    flow = begin(member, "link", "654321")
+    flow = begin(member, "link", "Player-test-passphrase-456")
     assert finish(device(), flow).headers["location"].endswith("#google=invalid")
     assert not exchanges
     assert (
@@ -171,27 +191,40 @@ def test_state_browser_binding_expiry_and_replay(google):
     assert len(exchanges) == 1
 
 
-def test_link_cannot_survive_logout_or_pin_reset(google):
+def test_link_cannot_survive_logout_or_password_reset(google):
     device, _, admin, _, member, player, begin, finish, _ = google
-    flow = begin(member, "link", "654321")
+    flow = begin(member, "link", "Player-test-passphrase-456")
     assert mutate(member, "/auth/logout").status_code == 200
     assert finish(member, flow).headers["location"].endswith("#google=session")
     assert login(member, player).status_code == 200
-    flow = begin(member, "link", "654321")
-    grant = mutate(admin, f"/admin/players/{player['id']}/pin-reset").json()["url"].split("#")[1]
-    assert mutate(device(), "/auth/reset-pin", {"token": grant, "pin": "333333"}).status_code == 200
+    flow = begin(member, "link", "Player-test-passphrase-456")
+    grant = (
+        mutate(admin, f"/admin/players/{player['id']}/password-reset").json()["url"].split("#")[1]
+    )
+    assert (
+        mutate(
+            device(),
+            "/auth/reset-password",
+            {
+                "token": grant,
+                "username": player["username"],
+                "password": "Other-test-passphrase-333",
+            },
+        ).status_code
+        == 200
+    )
     assert finish(member, flow).headers["location"].endswith("#google=session")
 
 
 def test_subject_uniqueness_and_blocked_player(google):
     device, _, admin, _, member, player, begin, finish, _ = google
     assert (
-        finish(member, begin(member, "link", "654321"))
+        finish(member, begin(member, "link", "Player-test-passphrase-456"))
         .headers["location"]
         .endswith("#google=linked")
     )
     assert (
-        finish(admin, begin(admin, "link", "123456"))
+        finish(admin, begin(admin, "link", "Admin-test-passphrase-123"))
         .headers["location"]
         .endswith("#google=conflict")
     )
@@ -206,8 +239,8 @@ def test_subject_uniqueness_and_blocked_player(google):
 
 def test_cancel_provider_failure_and_new_flow_invalidates_previous(google):
     device, _, _, _, member, _, begin, finish, exchanges = google
-    old = begin(member, "link", "654321")
-    new = begin(member, "link", "654321")
+    old = begin(member, "link", "Player-test-passphrase-456")
+    new = begin(member, "link", "Player-test-passphrase-456")
     assert finish(member, old).headers["location"].endswith("#google=invalid")
     assert (
         finish(member, {"state": new["state"], "error": "access_denied"})
@@ -238,14 +271,14 @@ def test_cancel_provider_failure_and_new_flow_invalidates_previous(google):
 )
 def test_invalid_signed_claims_cannot_link(google, claim, value):
     _, _, _, _, member, _, begin, finish, _ = google
-    flow = begin(member, "link", "654321", **{claim: value})
+    flow = begin(member, "link", "Player-test-passphrase-456", **{claim: value})
     assert finish(member, flow).headers["location"].endswith("#google=invalid")
     assert member.get(PREFIX + "/me/google").json() == {"connected": False}
 
 
 def test_concurrent_callback_is_used_once(google):
     _, _, _, _, member, _, begin, finish, exchanges = google
-    flow = begin(member, "link", "654321")
+    flow = begin(member, "link", "Player-test-passphrase-456")
     with ThreadPoolExecutor(max_workers=2) as pool:
         results = list(pool.map(lambda _: finish(member, flow).headers["location"], range(2)))
     assert sum(url.endswith("#google=linked") for url in results) == 1
@@ -254,7 +287,7 @@ def test_concurrent_callback_is_used_once(google):
 
 def test_flow_does_not_store_codes_secrets_or_raw_state(google):
     _, _, _, _, member, _, begin, _, _ = google
-    params = begin(member, "link", "654321")
+    params = begin(member, "link", "Player-test-passphrase-456")
 
     async def inspect():
         async with member.app.state.database.sessions() as db:
@@ -297,17 +330,28 @@ async def test_verifier_rejects_bad_signature_and_algorithms(signing):
         await provider.verify(encoded, token_hash("nonce"))
 
 
-def test_organizer_pin_recovery_removes_existing_google_link(google):
+def test_organizer_password_recovery_removes_existing_google_link(google):
     device, _, admin, _, member, player, begin, finish, _ = google
     assert (
-        finish(member, begin(member, "link", "654321"))
+        finish(member, begin(member, "link", "Player-test-passphrase-456"))
         .headers["location"]
         .endswith("#google=linked")
     )
-    reset = mutate(admin, f"/admin/players/{player['id']}/pin-reset").json()["url"].split("#")[1]
+    reset = (
+        mutate(admin, f"/admin/players/{player['id']}/password-reset").json()["url"].split("#")[1]
+    )
     recovered = device()
     assert (
-        mutate(recovered, "/auth/reset-pin", {"token": reset, "pin": "333333"}).status_code == 200
+        mutate(
+            recovered,
+            "/auth/reset-password",
+            {
+                "token": reset,
+                "username": player["username"],
+                "password": "Other-test-passphrase-333",
+            },
+        ).status_code
+        == 200
     )
     assert recovered.get(PREFIX + "/me/google").json() == {"connected": False}
     anonymous = device()
@@ -317,7 +361,7 @@ def test_organizer_pin_recovery_removes_existing_google_link(google):
 def test_return_destination_is_internal_and_link_cookie_flags(google):
     device, _, _, _, member, _, begin, finish, _ = google
     assert (
-        finish(member, begin(member, "link", "654321"))
+        finish(member, begin(member, "link", "Player-test-passphrase-456"))
         .headers["location"]
         .endswith("#google=linked")
     )
@@ -343,14 +387,14 @@ def test_return_destination_is_internal_and_link_cookie_flags(google):
 
 def test_pending_flow_survives_api_restart_with_same_persistent_key(google):
     device, _, _, _, member, _, begin, finish, _ = google
-    parameters = begin(member, "link", "654321")
+    parameters = begin(member, "link", "Player-test-passphrase-456")
     restarted = device()
     for cookie in member.cookies.jar:
         restarted.cookies.set(cookie.name, cookie.value, domain=cookie.domain, path=cookie.path)
     assert finish(restarted, parameters).headers["location"].endswith("#google=linked")
 
 
-def test_disabled_google_preserves_pin_login_and_exposes_no_secrets(system):
+def test_disabled_google_preserves_password_login_and_exposes_no_secrets(system):
     device, _ = system
     client = device()
     assert client.get(PREFIX + "/auth/google/config").json() == {
@@ -401,7 +445,7 @@ def test_ingress_cannot_start_or_finish_a_public_google_flow(google):
 def test_google_flow_outcome_logs_never_include_provider_secrets(google, caplog):
     _, _, _, _, member, _, begin, finish, _ = google
     with caplog.at_level("INFO", logger="volleycrew.security"):
-        flow = begin(member, "link", "654321")
+        flow = begin(member, "link", "Player-test-passphrase-456")
         assert finish(member, flow).headers["location"].endswith("#google=linked")
     for secret in [flow["state"], flow["code"], SECRET, "google-subject-1", "discarded"]:
         assert secret not in caplog.text
@@ -436,15 +480,15 @@ async def test_jwks_respects_short_cache_lifetime_and_rotates_keys(signing):
     assert len(calls) == 2
 
 
-def test_google_migration_round_trip_keeps_existing_profiles(google):
+def test_migration_round_trip_preserves_profiles_and_requires_password_setup(google):
     from alembic import command
 
     from app.core.database import migration_config
 
     device, _, _, _, member, player, begin, finish, _ = google
-    finish(member, begin(member, "link", "654321"))
+    finish(member, begin(member, "link", "Player-test-passphrase-456"))
     command.downgrade(migration_config(), "0010_preliminary_teams")
     command.upgrade(migration_config(), "head")
-    assert member.get(PREFIX + "/me").json()["id"] == player["id"]
-    assert member.get(PREFIX + "/me/google").json() == {"connected": False}
-    assert login(device(), player).status_code == 200
+    assert member.get(PREFIX + "/me").status_code == 401
+    assert member.get(PREFIX + "/me/google").status_code == 401
+    assert login(device(), player).status_code == 401

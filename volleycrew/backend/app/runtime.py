@@ -33,7 +33,11 @@ async def bootstrap(database: Database, value: str) -> None:
         return
     async with database.sessions() as db:
         await auth_lock(db)
-        if await db.scalar(select(Player.id).where(Player.role == "admin").limit(1)):
+        if await db.scalar(
+            select(Player.id)
+            .where(Player.role == "admin", Player.password_hash.is_not(None))
+            .limit(1)
+        ):
             return
         grant = await db.get(BootstrapGrant, 1)
         hashed = token_hash(value)

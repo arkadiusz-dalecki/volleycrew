@@ -231,7 +231,7 @@ def test_two_series_changes_cannot_overwrite_each_other(calendar_system):
 
     device, _, admin, actor, _, _, _, _ = setup_group(calendar_system, 0)
     other = device()
-    assert login(other, actor, "123456").status_code == 200
+    assert login(other, actor, "Admin-test-passphrase-123").status_code == 200
     shown = series_preview(admin)
     with ThreadPoolExecutor(max_workers=2) as pool:
         results = list(pool.map(lambda client: series_apply(client, shown=shown), [admin, other]))

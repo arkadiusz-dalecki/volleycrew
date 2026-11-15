@@ -1,4 +1,4 @@
-"""Bounded admission and secret-free telemetry; durable PIN limits remain in PostgreSQL."""
+"""Bounded admission and secret-free telemetry; durable password limits remain in PostgreSQL."""
 
 import hashlib
 import hmac
@@ -24,7 +24,7 @@ OPERATIONS = {
     "/api/v1/auth/google/callback": "google_callback",
     "/api/v1/auth/register": "registration",
     "/api/v1/auth/bootstrap": "bootstrap",
-    "/api/v1/auth/reset-pin": "reset",
+    "/api/v1/auth/reset-password": "reset",
 }
 
 

@@ -21,7 +21,10 @@ export function PreviewProfiles() {
       client.clear();
       const user = unwrap(
         await api.POST("/api/v1/auth/login", {
-          body: { profile_id: id, pin: "123456" },
+          body: {
+            username: id.endsWith("0001") ? "admin-demo" : "user-demo",
+            password: "Preview-test-password-123",
+          },
         }),
       );
       client.setQueryData(["me"], user);

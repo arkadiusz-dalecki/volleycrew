@@ -51,14 +51,14 @@ def load_auth_key(settings: Settings) -> bytes:
     return value
 
 
-async def hash_pin(pin: str) -> str:
-    return await run_in_threadpool(HASHER.hash, pin)
+async def hash_password(password: str) -> str:
+    return await run_in_threadpool(HASHER.hash, password)
 
 
-async def verify_pin(encoded: str, pin: str) -> bool:
+async def verify_password(encoded: str, password: str) -> bool:
     def verify() -> bool:
         try:
-            return HASHER.verify(encoded, pin)
+            return HASHER.verify(encoded, password)
         except (VerificationError, InvalidHashError):
             return False
 
