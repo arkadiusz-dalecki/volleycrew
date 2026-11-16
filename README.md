@@ -1,18 +1,20 @@
-> Od 0.2.0 pakiet Home Assistant zawiera własny PostgreSQL 17. Dla zwykłej instalacji pozostaw DATABASE_MODE=auto i pusty POSTGRES_HOST; serwer, baza i dane dostępowe powstaną automatycznie. Development nadal korzysta z osobnej bazy testowej.
+> From 0.2.0, the Home Assistant package includes bundled PostgreSQL 17. For a regular installation, leave DATABASE_MODE=auto and empty POSTGRES_HOST; server, database and access data will be created automatically. Development and tests continue to use separate databases.
 
 # Volleycrew
 
-Aplikacja do organizacji spotkań siatkarskich. Docelowo instalowana jako aplikacja Home Assistant, z budowaniem lokalnie w HA, tak jak maybe-finance.
+An application for organizing volleyball meetings, designed for installation as a Home Assistant app built locally in HA, like maybe-finance.
 
-## Aktualny stan
+Project documentation is in English. The application interface is in Polish; quoted button and field labels retain their actual Polish wording.
 
-E1 dostarcza uruchamialny szkielet: React/TypeScript/Vite w zaakceptowanym układzie A, API FastAPI, PostgreSQL, migracje, kontrakt OpenAPI i testy. E2 dodaje rejestrację z zaproszenia, loginy i hasła, trwałe sesje, reset i blokowanie dostępu. E3 dodaje kalendarz z harmonogramem, najbliższy termin i trwałe szczegóły spotkania. E4 dodaje zapisy, prywatne priorytety, rezerwę i propozycje miejsc. E5 dodaje harmonogram od wybranej daty, pojedyncze przesunięcia, odwołania i nowe potwierdzenia udziału. E6 dodaje obecność, prywatną historię i korekty oraz drużyny na boisku wariantu A. E7 dodaje administracyjny podgląd i pobranie listy podpisów PDF. E8 dodaje wyniki, ranking ELO, historię punktów i pełne korekty z przeliczeniem późniejszych spotkań. E9 dopracowuje dostępność i obsługę telefonu, dialogi, utratę sieci/sesji oraz dodaje manifest. Lokalna kontrola Chromium/WebKit jest wykonana; fizyczne telefony i akceptacja porównania UI pozostają do odbioru.
+## Current status
 
-[Plan implementacji](docs/implementation/README.md) · [Raport i ograniczenia E1](docs/implementation/e1-report.md) · [Decyzje produktu](docs/implementation/decisions.md) · [Raport E2](docs/implementation/e2-report.md) · [Raport E3](docs/implementation/e3-report.md) · [Raport E4](docs/implementation/e4-report.md) · [Raport E5](docs/implementation/e5-report.md) · [Raport E6](docs/implementation/e6-report.md) · [Raport E7](docs/implementation/e7-report.md) · [Raport E8](docs/implementation/e8-report.md) · [Raport E9 i porównanie UI](docs/implementation/e9-report.md) · [Pakiet HA — E10](docs/implementation/e10-report.md)
+E1 provides a runnable foundation: React/TypeScript/Vite in the accepted layout A, FastAPI API, PostgreSQL, migrations, OpenAPI contract and tests. E2 adds invitation registration, logins and passwords, persistent sessions, reset and access blocking. E3 adds a calendar with a schedule, the next meeting and persistent meeting details. E4 adds enrollments, private priorities, a waitlist and seat offers. E5 adds a schedule from the selected date, individual postponements, cancellations and new confirmations of participation. E6 adds attendance, private history and corrections, and teams on the variant A court. E7 adds administrative preview and PDF signature list download. E8 adds results, ELO ranking, point history and full corrections with recalculation of subsequent matches. E9 refines accessibility and phone support, dialogs, network/session loss and adds a manifest. Local Chromium/WebKit checks have passed; acceptance testing on physical phones and approval of the UI comparison remain open.
 
-## Uruchomienie developerskie
+[Implementation Plan](docs/implementation/README.md) · [E1 Report and Constraints](docs/implementation/e1-report.md) · [Product Decisions](docs/implementation/decisions.md) · [E2 Report](docs/implementation/e2-report.md) · [E3 Report](docs/implementation/e3-report.md) · [E4 Report](docs/implementation/e4-report.md) · [Report E5](docs/implementation/e5-report.md) · [Report E6](docs/implementation/e6-report.md) · [Report E7](docs/implementation/e7-report.md) · [Report E8](docs/implementation/e8-report.md) · [Report E9 and UI Comparison](docs/implementation/e9-report.md) · [HA Package - E10](docs/implementation/e10-report.md)
 
-Wymagania: Node 24 LTS (dopuszczone również 26), npm, Python 3.9+ do uruchomienia skryptu oraz Docker Compose do lokalnej PostgreSQL 17. Backend działa na Pythonie 3.13, pobieranym przez uv. Jeśli uv nie jest dostępne, setup instaluje je do ignorowanego `.tools/`. Pierwsza instalacja wymaga internetu.
+## Development setup
+
+Requirements: Node 24 LTS (26 also allowed), npm, Python 3.9+ to run the script and Docker Compose for local PostgreSQL 17. The backend runs on Python 3.13, downloaded via uv. If uv is not available, setup installs it to the ignored `.tools/`. First installation requires internet.
 
 ```sh
 npm run setup
@@ -20,64 +22,64 @@ npm run db:up
 npm run dev
 ```
 
-Setup instaluje zależności z lockfile i tworzy `.env` z `.env.example`, jeżeli plik jeszcze nie istnieje. Dev stosuje migracje przed startem API, potem uruchamia oba serwery. Ctrl+C zatrzymuje frontend i API; bazę zatrzymuje osobne `npm run db:stop` (bez kasowania wolumenu).
+Setup installs dependencies from lockfile and creates `.env` from `.env.example` if the file does not already exist. Dev applies migrations before starting the API, then starts both servers. Ctrl+C stops the frontend and API; stop the database separately with `npm run db:stop` (without deleting the volume).
 
-- Aplikacja: http://localhost:5173
+- Application: http://localhost:5173
 - API / OpenAPI: http://127.0.0.1:8201/docs
 - Liveness: http://127.0.0.1:8201/api/v1/health/live
 - Readiness: http://127.0.0.1:8201/api/v1/health/ready
 
-Readiness wymaga dostępnej bazy i aktualnego schematu Alembic. Odpowiedź 503 jest poprawna, gdy baza lub migracja nie są gotowe; liveness nadal może odpowiadać 200.
+Readiness requires an available database and a current Alembic schema. The 503 response is correct when the database or migration is not ready; liveness may still return 200.
 
-Lokalna baza ma port 55432 i nazwę `volleycrew_dev`. Dane w `.env.example` i Compose są wyłącznie developerskie. Istniejący własny PostgreSQL można podłączyć przez `VOLLEYCREW_DATABASE_URL` w `.env`; użyj oddzielnej bazy, niezwiązanej z produkcją ani maybe-finance. Format: `postgresql+asyncpg://user:password@host:port/database`. Lokalny development sprawdzono również na odizolowanej PostgreSQL 14.24; pełną regresję na PostgreSQL 17 i produkcyjne obrazy obu architektur zweryfikowano w E10.
+The local database has port 55432 and name `volleycrew_dev`. Data in `.env.example` and Compose is for development purposes only. An existing PostgreSQL server can be connected via `VOLLEYCREW_DATABASE_URL` in `.env`; use a separate database, not related to production or maybe-finance. Format: `postgresql+asyncpg://user:password@host:port/database`. Local development was also checked on isolated PostgreSQL 14.24; full regression on PostgreSQL 17 and production images of both architectures verified in E10.
 
-## Pierwszy organizator i dostęp
+## First organizer and access
 
-Po uruchomieniu lokalnych serwerów wygeneruj link inicjalizacji:
+After starting the local servers, generate an initialization link:
 
 ```sh
 npm run auth:bootstrap
 ```
 
-Otwórz wypisany adres `/setup#…` w przeglądarce i sam ustaw login i hasło (8–128 znaków). Link działa raz przez 30 minut. Gdy wygaśnie, `npm run auth:bootstrap -- --rotate` unieważni stary i wygeneruje nowy. Po utworzeniu administratora komenda odmawia ponownej inicjalizacji. Nie ma domyślnego hasła ani konta produkcyjnego zasianego testowymi danymi.
+Open the listed address `/setup#…` in your browser and set the login and password yourself (8-128 characters). The link works once for 30 minutes. When it expires, `npm run auth:bootstrap -- --rotate` will invalidate the old one and generate a new one. After creating an administrator, the command refuses to reinitialize. There is no default password or production account seeded with test data.
 
-W „Mój profil” → „Ustawienia ekipy” organizator tworzy link zaproszenia, unieważnia go, wydaje jednorazowe linki resetu hasła, zmienia prywatny status priorytetu i blokuje dostęp. Nowy profil zawsze jest gościem; inne urządzenie wymaga wpisania loginu i hasła. Link pokazujemy w całości tylko po utworzeniu — skopiuj go przed opuszczeniem widoku. Przy zmianie/resetowaniu hasła pozostałe urządzenia tracą sesje.
+In „Mój profil” → „Ustawienia ekipy”, the organizer creates an invitation link, revokes it, issues one-time password reset links, changes private priority status, and blocks access. A new profile is always a guest; another device requires entering a login and password. We only show the link in its entirety once it has been created - please copy it before leaving the view. When changing/resetting the password, other devices lose their sessions.
 
-Ustawienia lokalne: `VOLLEYCREW_PUBLIC_URL=http://localhost:5173`, `VOLLEYCREW_COOKIE_SECURE=false`. Poza localhost wymagane HTTPS i domyślne Secure=true. Sekret podpisujący CSRF jest generowany w `.runtime/auth.key` z prawami 0600; zachowaj go między restartami albo podaj `VOLLEYCREW_SESSION_SECRET` (min. 32 znaki) przez środowisko. Nie dodawaj go do repozytorium. Ruch proxy jest domyślnie niezaufany; `VOLLEYCREW_TRUSTED_PROXY_CIDRS` i `VOLLEYCREW_ADDITIONAL_ORIGINS` to jawne listy JSON, do konfiguracji i sprawdzenia w E10. Uvicorn działa z `--no-proxy-headers`, weryfikację wykonuje aplikacja.
+Local settings: `VOLLEYCREW_PUBLIC_URL=http://localhost:5173`, `VOLLEYCREW_COOKIE_SECURE=false`. Apart from localhost, HTTPS is required and default Secure=true. The CSRF signing secret is generated in `.runtime/auth.key` with rights 0600; save it between reboots or specify `VOLLEYCREW_SESSION_SECRET` (min. 32 characters) via the environment. Don't add it to the repository. Proxy traffic is untrusted by default; `VOLLEYCREW_TRUSTED_PROXY_CIDRS` and `VOLLEYCREW_ADDITIONAL_ORIGINS` are explicit JSON lists for configuration and checking in E10. Uvicorn works with `--no-proxy-headers`, verification is performed by the application.
 
-## Kalendarz i terminy
+## Calendar and meeting occurrences
 
-Po zalogowaniu najbliższy termin jest pobierany z harmonogramu. W kalendarzu wybierz miesiąc strzałkami lub polem „Miesiąc”, następnie otwórz spotkanie. Adres szczegółów działa po odświeżeniu. Samo otwarcie nie zapisuje na grę; udział deklarujesz osobnym przyciskiem „Będę”/„Nie będę”. Organizator zmienia harmonogram w ustawieniach albo pojedynczy termin w szczegółach spotkania. Domyślna reguła to wtorek 18:00–20:00, I LO w Gdańsku, Europe/Warsaw. Miniona historia zawiera tylko utrwalone spotkania.
+After logging in, the next meeting is fetched from the schedule. In the calendar, select the month with the arrows or the „Miesiąc” field, then open the meeting. The details URL works after a refresh. Opening it does not enroll you; declare your participation using the separate „Będę”/„Nie będę”. The organizer changes the schedule in the settings or a single date in the meeting details. The default rule is Tuesday 18:00–20:00, I LO in Gdańsk, Europe/Warsaw. History contains only persisted meetings.
 
-Zmiana stałej reguły ma podgląd i osobne zatwierdzenie. Przesuwa istniejące terminy w tym samym tygodniu, zachowuje indywidualne wyjątki i odwołania, obejmuje także przyszłe niewytworzone spotkania. Po zmianie terminu potwierdź udział od nowa — dotychczasowe miejsce czeka bez automatycznego timeoutu. Organizator może je ręcznie zwolnić. Stare oferty z rezerwy nie obowiązują; nową propozycję trzeba jawnie przyjąć.
+Changing a recurring rule requires a preview and separate confirmation. It moves existing occurrences within the same week, preserves individual exceptions and cancellations, and includes future meetings that have not yet been materialized. After a date change, confirm participation again: your existing seat remains reserved without an automatic timeout. The organizer can release it manually. Old waitlist offers become invalid; a new offer requires explicit acceptance.
 
-Przy pełnej liście trafiasz na rezerwę. Zwolnione miejsce jest rezerwowane dla pierwszej osoby z kolejki, a organizator aktywuje propozycję i ręcznie powiadamia na Messengerze. Dopiero „Przyjmuję miejsce” potwierdza udział. Organizator może przekazać miejsce dalej z potwierdzeniem; nie ma automatycznego timeoutu. Rezygnacja pokazuje informację o granicy 24 godzin i ewentualnym wyjątku późnej oferty. Blokada profilu zwalnia przyszłe miejsca oraz rezerwacje, pozostawiając historię.
+When the list is full, you are placed on the waitlist. The vacant place is reserved for the first person in the queue, and the organizer activates the offer and manually notifies you on Messenger. Only „Przyjmuję miejsce” confirms participation. The organizer may pass on the place with confirmation; there is no automatic timeout. The cancellation shows information about the 24-hour limit and possible late offer exception. Locking your profile frees up future spots and reservations, preserving your history.
 
-## Obsługa spotkania na sali (E6)
+## Managing a meeting at the venue (E6)
 
-W szczegółach spotkania organizator oznacza obecność i zapisuje szkic, następnie osobno zatwierdza sprawdzoną listę. Zatwierdzenie jest dostępne od rozpoczęcia gry. Nieobecni otrzymują prywatny wpis historii, a ich miejsca przechodzą do obsługi rezerwy. Fizycznie obecnego adresata rezerwacji można potwierdzić na sali. Dopisanie innego istniejącego profilu wymaga wolnego, niezarezerwowanego miejsca; powrót wcześniej oznaczonego nieobecnego wymaga korekty z powodem.
+In the meeting details, the organizer marks attendance and records the draft, then separately approves the verified list. The approval is available from the start of the game. Absentees receive a private history entry, and their places are transferred to waitlist management. The physically present recipient of the reservation can be confirmed at the venue. Adding another existing profile requires free, unreserved space; returning a previously marked absentee requires corrections with the reason.
 
-Po obecności wybierz losowanie lub wyrównanie drużyn. Na boisku dotknij zawodnika, potem osoby z drugiej drużyny, aby je zamienić — także przy 7:7. Siódma osoba jest w rotacji pod boiskiem. Zapisz ręczne poprawki i zatwierdź składy; dopiero wtedy zobaczy je ekipa. Otwarcie do poprawy wymaga powodu. Podział działa dla 2–14 obecnych, najwyżej po 7 na stronę i z różnicą liczebności najwyżej 1. Podział korzysta z aktualnych punktów ELO; lista PDF jest dostępna po zatwierdzeniu obecności, a zapis wyniku w kolejnym kroku panelu.
+After confirming attendance, choose random or balanced teams. On the court, tap a player and then a player from the other team to swap them - including when both teams have seven players. The seventh player appears in the rotation area below the court. Save manual corrections and confirm lineups; only then will the team see them. Opening for correction requires a reason. The split supports 2–14 attendees, at most 7 per side and a difference of at most 1 player. It uses current ELO ratings. The PDF list is available after attendance confirmation, and the next panel step records the result.
 
-Własna prywatna historia jest w profilu, a organizator otwiera cudzą historię z ustawień ekipy lub listy obecności. Korekty zachowują źródłowy wpis, autora, datę i powód. Konflikt wersji nie nadpisuje zmian z innej karty. Przy utracie odpowiedzi użyj „Ponów tę operację” — powtórzenie nie tworzy kolejnego zatwierdzenia ani losowania.
+Your own private history is in your profile, and the organizer opens another player's history from the team settings or attendance list. Corrections retain the source entry, author, date, and reason. Version conflict does not overwrite changes from another tab. On loss of response, use „Ponów tę operację” - repeating does not create another commit or draw.
 
-## Lista podpisów PDF (E7)
+## PDF Signature List (E7)
 
-Po zatwierdzeniu obecności wybierz „Lista podpisów” w panelu organizatora. Zobaczysz podgląd PDF dla szkoły i przycisk „Pobierz aktualny PDF”. Pobranie zawsze odczytuje aktualną obecność, także po korekcie w innej karcie. Na liście są wyłącznie faktycznie obecne osoby; nie ma rezerwy, przydomków, statusów ani historii. Drukuj na papierze A4 w skali 100%. Zwykła lista 14 osób mieści się na stronie; skrajnie długie nazwiska przechodzą na kolejną stronę bez ucinania.
+After confirming your attendance, select „Lista podpisów” in the organizer panel. You will see a PDF preview for the school and a „Pobierz aktualny PDF” button. The download always reads the current attendance, even after correction in another tab. Only people actually present are included in the list; there are no waitlists, nicknames, statuses or histories. Print on A4 paper at 100% scale. The usual list of 14 people fits on a page; extremely long names move to the next page without being cut off.
 
-PDF powstaje lokalnie przez ReportLab z dołączonymi fontami Noto Sans i licencją w `backend/app/assets/fonts/`. PDF.js renderuje podgląd na telefonie bez zewnętrznego serwisu/CDN. Poppler służy wyłącznie do wizualnej kontroli podczas developmentu i nie jest zależnością runtime aplikacji. Nie jest potrzebna nowa migracja bazy.
+PDF is created locally by ReportLab with included Noto Sans fonts and license in `backend/app/assets/fonts/`. PDF.js renders the preview on the phone without an external service/CDN. Poppler is only used for visual control during development and is not a runtime dependency of the application. No new database migration is needed.
 
-## Wynik i ranking ELO (E8)
+## ELO Score and Ranking (E8)
 
-Po zatwierdzeniu drużyn przejdź do „03 Wynik”, wpisz sety A/B, pokaż podgląd punktów i osobno zatwierdź zapis. Wynik 0:0 zamyka spotkanie bez rozegranych setów i bez punktów za ten mecz. Każda osoba drużyny, również rotująca, otrzymuje tę samą deltę. K=32, skala oczekiwań 400; znaczenie ma proporcja setów i siła drużyn, więc w szczególnym przypadku wygrana poniżej oczekiwań może obniżyć punkty.
+After confirming the teams, go to „03 Wynik”, enter the A/B sets, show the points preview and confirm the save separately. The result 0-0 ends the match with no sets played and no points for this match. Each team member, including the player in rotation, receives the same delta. K=32, expectation scale 400; the proportion of sets and the strength of the teams are important, so in a special case, a win below expectations may reduce the points.
 
-„Ranking” pokazuje wszystkich zawodników, punkty i historię spotkań. Kliknięcie nazwiska otwiera historię przed → zmiana → po. Wartości są pokazywane do jednego miejsca po przecinku, ale obliczenia i baza nie są tak zaokrąglane.
+„Ranking” shows all players, points and match history. Clicking on a name opens the history before → change → after. Values are shown to one decimal place, but calculations and database are not rounded this way.
 
-„Skoryguj wynik lub składy” wymaga powodu i nowego podglądu. Można poprawić również historyczną faktyczną obecność: każda dodana/usunięta osoba wymaga osobnej, prywatnej korekty z powodem. Dawne wyniki/składy pozostają zachowane, a ranking jest przeliczany według rozpoczęcia meczu i stałego ID, również dla późniejszych spotkań. Powody i historia obecności nie są publiczne dla grupy. Nie trzeba zapisywać kolejnych wyników w kolejności dat.
+„Skoryguj wynik lub składy” requires a reason and a new preview. Historical actual attendance can also be corrected: each person added/removed requires a separate private attendance correction with a reason. Old results/lineups are retained and the ranking is recalculated by match start and fixed ID, also for later matches. Reasons and attendance history are not public to the group. There is no need to save consecutive results in date order.
 
-Migracja `0007_results` dodaje wersje wyników i materializację rankingu; snapshoty ELO używają Numeric. Wykonaj `npm run db:migrate` przed uruchomieniem nowego API. Downgrade po zapisaniu wyników jest blokowany, aby nie usuwać historii; backup/restore i aktualizację opisuje instrukcja HA oraz raport E10.
+Migration `0007_results` adds results versions and ranking materialization; ELO snapshots use Numeric. Execute `npm run db:migrate` before running the new API. Downgrade after saving the results is blocked so as not to delete the history; backup/restore and update are described in the HA manual and the E10 report.
 
-## Sprawdzenia
+## Checks
 
 ```sh
 npm run lint
@@ -88,85 +90,84 @@ npm run test:frontend
 npm run build
 ```
 
-Testy backendu bez `VOLLEYCREW_TEST_DATABASE_URL` pomijają integrację PostgreSQL. Żeby wykonać ją lokalnie z Compose, jednorazowo utwórz testową bazę:
+Without `VOLLEYCREW_TEST_DATABASE_URL`, backend tests skip PostgreSQL integration checks. To run them locally with Compose, create a test database once:
 
 ```sh
 docker compose -f compose.dev.yaml exec db createdb -U volleycrew volleycrew_test
 VOLLEYCREW_TEST_DATABASE_URL=postgresql+asyncpg://volleycrew:volleycrew_dev@127.0.0.1:55432/volleycrew_test npm run test:backend
 ```
 
-Testy integracyjne wymagają nazwy bazy zakończonej `_test`, wykonują migrację, usuwają testowe dane tożsamości i sprawdzają aktualność schematu. Korzystaj wyłącznie z dedykowanej testowej bazy. Nigdy nie podawaj produkcyjnego connection stringa.
+Integration tests require a database name ending in `_test`, perform migration, remove test identity data, and check that the schema is current. Use only the dedicated test database. Never provide a production connection string.
 
-Testy przeglądarkowe z działającą lokalną bazą (domyślnie na porcie 55432):
+Browser tests with a working local database (on port 55432 by default):
 
 ```sh
 npm --prefix volleycrew/frontend exec -- playwright install chromium webkit
 VOLLEYCREW_E2E_DATABASE_URL=postgresql+asyncpg://volleycrew:volleycrew_dev@127.0.0.1:55432/volleycrew_test npm run test:e2e
 ```
 
-Playwright uruchamia osobne API na 8202 i Vite na 5175, bez ponownego używania serwerów developerskich. Wymaga jawnego `VOLLEYCREW_E2E_DATABASE_URL` zakończonego `_test`. Seeder kasuje dane tożsamości i kalendarza WYŁĄCZNIE tej bazy i tworzy fikcyjnego administratora, zaproszenie, domyślną regułę, odwołany termin i pełne listy testowe do sprawdzenia rezerwy oraz osobne trwające spotkania do obecności i pełnych drużyn. Nie uruchamiaj testów backendu i E2E równocześnie na tej samej bazie. Testy przechodzą rejestrację, pamiętanie sesji, maskowane logowanie, edycję profilu, reset, blokadę, nawigację i kalendarz desktop/mobile oraz przebieg rezerwy, podgląd harmonogramu, ponowne potwierdzenia, zachowanie wyjątków i konflikt starej karty organizatora, zatwierdzenie obecności, podział 7:7 z zamianą w rotacji, ponowienie po utracie odpowiedzi, publikację boiska oraz prywatną historię i korektę, a także podgląd PDF, pobranie listy dla 14 osób, ponowne pobranie dla 13 po korekcie i odtworzenie po błędzie sieci, a także zapis/retry wyniku, ranking, historię punktów, pełną korektę historyczną i zamknięcie 0:0. E9 dodaje kontrolę axe-core, celów dotykowych i szerokości, utraty sieci/sesji, zachowania niezapisanych pól oraz mobilnej geometrii klawiatury. Projekty `desktop` i `mobile` używają Chromium, `webkit` silnika WebKit; nie zastępuje to testów fizycznego Androida/iOS. Scenariusze rejestracji mają izolowane liczniki ograniczeń w testowej bazie, bez zmiany limitów aplikacji. Wyniki i screenshoty: `volleycrew/frontend/test-results/` (ignorowane w git). `PLAYWRIGHT_BROWSERS_PATH` może wskazywać własną lokalizację przeglądarek; używaj tego samego ustawienia przy instalacji i testach.
+Playwright starts a separate API on port 8202 and Vite on port 5175, without reusing development servers. Requires explicit `VOLLEYCREW_E2E_DATABASE_URL` ending with `_test`. Seeder deletes the identity and calendar data of ONLY this database and creates a dummy admin, invitation, default rule, canceled date and full test lists for waitlist checking, and separate ongoing meetings for attendance and full teams. Do not run backend and E2E tests simultaneously on the same database. The tests cover registration, session remembering, masked login, profile editing, reset, lock, desktop/mobile navigation and calendar and waitlist flow, schedule preview, reconfirmations, exception behavior and conflicts from a stale organizer tab, attendance confirmation, 7:7 split with rotation replacement, retry after loss of response, court publication and private history and correction, as well as PDF preview, downloading the list for 14 people, redownloading for 13 after correction and recovery after a network error, as well as saving/retrying the result, ranking, point history, full historical correction and closing 0:0. E9 adds controls for axe-core, touch targets and width, network/session loss, unsaved field retention, and mobile keyboard geometry. Projects `desktop` and `mobile` use Chromium, `webkit` the WebKit engine; this does not replace physical Android/iOS testing. Registration scenarios have isolated limit counters in the test database, without changing application limits. Results and screenshots: `volleycrew/frontend/test-results/` (ignored in git). `PLAYWRIGHT_BROWSERS_PATH` can point to browsers' own location; use the same setting for installation and testing.
 
-## Kontrakt API i formatowanie
+## API contract and formatting
 
-Po zmianie endpointów lub DTO:
+After changing endpoints or DTO:
 
 ```sh
 npm run api:generate
 npm run api:check
 ```
 
-Eksporter importuje aplikację bez uruchamiania bazy. Źródłem kontraktu jest FastAPI; commit obejmuje `frontend/openapi.json` i wygenerowane `src/lib/api/schema.d.ts`. Frontend używa klienta openapi-fetch i tych typów. Wygenerowanych plików nie edytuj ręcznie.
+The exporter imports the application without starting the database. The source of the contract is FastAPI; commit includes `frontend/openapi.json` and generated `src/lib/api/schema.d.ts`. The frontend uses the openapi-fetch client and these types. Do not edit the generated files manually.
 
-`npm run format` formatuje kod Python i frontend. Node używany jest do budowania, docelowy runtime będzie serwował statyczny `frontend/dist` przez Nginx. `npm --prefix volleycrew/frontend run preview` pokazuje sam build statyczny; produkcyjne proxy API i pakiet HA dostarcza E10.
+`npm run format` formats Python and frontend code. Node is used for building, the target runtime will serve static `frontend/dist` via Nginx. `npm --prefix volleycrew/frontend run preview` shows only static build; production API proxy and HA package provided by E10.
 
-## CI i Home Assistant
+## CI and Home Assistant
 
-`.github/workflows/checks.yml` definiuje instalację z lockfile, lint, typy, kontrakt API, testy backendu z PostgreSQL 17, testy frontendu, build i E2E Chromium/WebKit. Nie publikuje obrazu ani nie wdraża aplikacji. Workflow trzeba rzeczywiście uruchomić po wypchnięciu kodu; lokalne testy nie oznaczają zielonego CI.
+`.github/workflows/checks.yml` defines installation with lockfile, lint, types, contract API, backend tests with PostgreSQL 17, frontend tests, build and E2E Chromium/WebKit. It does not publish the image or deploy the application. The workflow needs to actually run after the code is pushed; local testing does not mean green CI.
 
-E10 dostarcza instalowalny manifest HA, Dockerfile/s6/Nginx, Ingress, migracje przy starcie kontenera i lokalne sprawdzenie obu architektur. Końcowy odbiór wymaga samodzielnej instalacji na HA, sprawdzenia fizycznych telefonów i kopii poza hostem. Nie przechowuj sekretów w repozytorium; produkcja wymaga osobnej PostgreSQL i właściwej konfiguracji HTTPS/proxy.
+E10 provides an installable HA manifest, Dockerfile/s6/Nginx, Ingress, container startup migrations, and local checking of both architectures. The final acceptance testing requires independent installation on HA, checking physical phones and copies outside the host. Don't store secrets in a repository; production requires separate PostgreSQL and proper HTTPS/proxy configuration.
 
-## Prototyp wizualny
+## Visual prototype
 
-Prototyp pozostaje osobną referencją z fikcyjnymi danymi. Nie realizuje pełnych reguł produkcyjnych; źródłem ustaleń są dokumenty planu. Wariant A został zaakceptowany, B/C zachowano do porównań.
+The prototype remains a separate reference with fictitious data. Does not follow full production rules; the source of the findings are the plan documents. Option A was accepted, B/C was retained for comparison.
 
 ```sh
 npm run prototype
 ```
 
 - http://localhost:4173/prototype/?variant=A
-- http://localhost:4173/prototype/phone.html — interaktywny podgląd w ramce telefonu
+- http://localhost:4173/prototype/phone.html - interactive preview in the phone frame
 
-W prototypie zmiany znikają po odświeżeniu. Nie używaj prawdziwego hasła. Przełącznik zawodnik/organizator to demonstracja, nie mechanizm uprawnień.
+In the prototype, changes disappear after refreshing. Don't use a real password. The player/organizer switch is a demonstration, not an authorization mechanism.
 
+## Installing Home Assistant (E10)
 
-## Instalacja Home Assistant (E10)
+The package is in `volleycrew/`, the repository manifest is in `repository.yaml`. Home Assistant builds the application locally with Dockerfile, just like maybe-finance; A prebuilt Volleycrew image in GHCR is not required. [Installation, options, administrator token and backup/restore instructions](volleycrew/DOCS.md). The user publishes/adds the repository and installs the application himself; Code that exists only locally is not available in the HA store.
 
-Pakiet jest w `volleycrew/`, manifest repozytorium w `repository.yaml`. Home Assistant buduje aplikację lokalnie z Dockerfile, tak jak maybe-finance; nie potrzebuje gotowego obrazu Volleycrew w GHCR. [Instrukcja instalacji, opcji, tokenu administratora i backup/restore](volleycrew/DOCS.md). Użytkownik sam publikuje/dodaje repozytorium i instaluje aplikację; kod znajdujący się tylko lokalnie nie jest dostępny w sklepie HA.
-
-Lokalny build produkcyjny na ARM64:
+Local production build on ARM64:
 
 ```sh
 docker build --platform linux/arm64 --build-arg BUILD_ARCH=aarch64 -t volleycrew:e10-arm64 volleycrew
 ```
 
-Dla `amd64` wybierz `--platform linux/amd64 --build-arg BUILD_ARCH=amd64`. Baza Debian w Dockerfile jest przypięta do digestu indeksu multiarch; Docker wybiera właściwą architekturę. Od 0.1.1 nie ma `build.yaml`, a `BUILD_FROM` przekazany przez Supervisor nie zmienia bazy. CI buduje z parametrem awaryjnym Alpine z logu HA, żeby sprawdzić odporność na tę podmianę.
+For `amd64`, select `--platform linux/amd64 --build-arg BUILD_ARCH=amd64`. The Debian base image in Dockerfile is pinned to the multiarch index digest; Docker chooses the right architecture. Since 0.1.1 there is no `build.yaml`, and `BUILD_FROM` passed by Supervisor does not change the base image. CI builds with the Alpine fallback parameter from the HA log to check resistance to this replacement.
 
-Test produkcyjnego obrazu (wymaga Dockera, `openssl`, Node i przeglądarek Playwright; tworzy/usuwa wyłącznie własne testowe kontenery, sieć i wolumeny):
+Production image test (requires Docker, `openssl`, Node and Playwright browsers; creates/deletes only its own test containers, network and volumes):
 
 ```sh
 python3 scripts/test_container.py --image volleycrew:e10-arm64 --platform linux/arm64
 ```
 
-Test rezerwuje lokalne porty 18200, 18099, 18443 i 18543 oraz osobną sieć testową. Sprawdza start od pustego PostgreSQL 17, błędną konfigurację/DB/migrację, HTTPS, dwa prefiksy Ingress, cookies/CSRF, restart, kopię przed zmianą wersji, pełny cykl spotkania, PDF w Chromium/WebKit i restore na drugim serwerze. `--backend-tests` dodaje całą regresję backendu na odrębnej bazie PostgreSQL 17 w tym środowisku; wymaga także lokalnego `npm run setup`. Nie uruchamiaj dwóch tych testów jednocześnie. Nie jest to test fizycznego HA/Pi ani kopii poza hostem.
+The test reserves local ports 18200, 18099, 18443 and 18543 and a separate test network. Checks for starting from empty PostgreSQL 17, misconfiguration/DB/migration, HTTPS, two Ingress prefixes, cookies/CSRF, restart, pre-update backup, full meet cycle, PDF in Chromium/WebKit and restore on the second server. `--backend-tests` adds the entire backend regression on a separate PostgreSQL 17 database in this environment; also requires local `npm run setup`. Do not run two of these tests at the same time. This is not a test of the physical HA/Pi or off-host copy.
 
-Produkcyjne zależności Python są dodatkowo eksportowane do hashowanego `backend/requirements.lock`, używanego przez Dockerfile:
+Production Python dependencies are additionally exported to hashed `backend/requirements.lock`, used by Dockerfile:
 
 ```sh
 uv export --project volleycrew/backend --frozen --no-dev --format requirements-txt --no-header --no-annotate --output-file volleycrew/backend/requirements.lock
 ```
 
-CI weryfikuje zgodność tego pliku z `uv.lock`, buduje i testuje oba CPU bez publikacji obrazu. Samo dodanie workflow nie oznacza wykonanego zdalnego CI.
+CI verifies compliance of this file with `uv.lock`, builds and tests both CPUs without publishing the image. Simply adding a workflow does not mean remote CI has been completed.
 
-### Lokalny podgląd obu ról
+### Local preview of both roles
 
-`npm run dev:preview` tworzy w lokalnej bazie `*_dev` 14 kont: **Admin Demo**, **User Demo** i 12 zawodników demo, z hasłem `Preview-test-password-123` (loginy `admin-demo` i `user-demo` dla przełącznika), i uruchamia aplikację z przyciskami „Wejdź jako Admin” / „Wejdź jako User”. Przyciski działają na ekranie logowania i nad treścią aplikacji, używając zwykłego logowania API. Seeder uzupełnia brakujące loginy/hasła znanych kont demo po migracji z PIN-ów, zachowując ich ID, dane i istniejące hasła; nie zmienia pozostałych profili. Seeder odmawia pracy z bazą poza loopback lub bez końcówki `_dev`; nie usuwa istniejących profili. Zwykły `npm run dev` oraz produkcyjny build nie pokazują przełącznika.
+`npm run dev:preview` creates 14 accounts in the local database `*_dev`: **Admin Demo**, **User Demo** and 12 demo players, with the password `Preview-test-password-123` (logins `admin-demo` and `user-demo` for the switch), and runs the application with the buttons „Wejdź jako Admin” / „Wejdź jako User”. The buttons work on the login screen and above the app content using the regular login API. Seeder fills in missing logins/passwords of known demo accounts after PIN migration, preserving their IDs, data and existing passwords; does not change other profiles. Seeder refuses to work with the database outside of loopback or without the `_dev` suffix; does not delete existing profiles. The regular `npm run dev` and the production build do not show the switch.

@@ -17,7 +17,7 @@
 - Replace profile selection and PINs with a private username and password. Keep existing profiles, participation history and ELO; old PINs and sessions no longer work.
 - Add optional Google login and invite-only Google registration, with editable first/last name suggestions and no password required. Protect the last login method and allow adding a local password after confirming the same Google account again.
 - Keep invitation/reset secrets out of request URLs, show retry delays, and add bounded security logs and protection against bursts of authentication requests.
-- Apply migrations 0011–0013 on upgrade from 0.3.4. Back up the app/database first. Set a new random BOOTSTRAP_TOKEN in HA, restart, and open PUBLIC_URL/setup#TOKEN to choose the existing organizer's username/password; then clear the token. See [the migration guide](DOCS.md#przejście-z-pin-u-na-login-i-hasło).
+- Apply migrations 0011–0013 on upgrade from 0.3.4. Back up the app/database first. Set a new random BOOTSTRAP_TOKEN in HA, restart, and open PUBLIC_URL/setup#TOKEN to choose the existing organizer's username/password; then clear the token. See [the migration guide](DOCS.md#switching-from-pin-to-login-and-password).
 - Google remains disabled until both client credentials and the canonical callback are configured. Rollback requires a matching database backup and app version; older versions do not support Google-only accounts.
 
 ## 0.3.4
@@ -65,14 +65,14 @@
 
 ## 0.2.0
 
-Własny PostgreSQL 17: bez osobnego serwera i ręcznego hasła bazy. Pusty host wybiera własną bazę, istniejący zachowuje zewnętrzną. Trwałe dane, prywatny listener, automatyczny backup i restore HA przed migracjami; blokada niejawnej zmiany trybu. Testy kontenerowe obejmują restart, awarię, aktualizację i odtworzenie. Walidacja pokazuje nazwy nieprawidłowych pól bez ich wartości.
+Bundled PostgreSQL 17: no separate server or manual database password required. An empty host selects the bundled database; an existing host preserves the external database. Persistent data, a private listener, automatic backups and HA restore before migrations; implicit mode changes are blocked. Container tests cover restart, failure, upgrade and recovery. Validation reports invalid field names without their values.
 
 ## 0.1.1
 
-Naprawa instalacji w Home Assistant: baza Debian jest przypięta bezpośrednio w Dockerfile. Usunięto przestarzały `build.yaml`, którego walidator odrzucał referencje obrazów z digestem. Parametr `BUILD_FROM` przekazywany przez Supervisor nie może już podmienić bazy na Alpine. CI odtwarza ten parametr dla obu architektur.
+Fix Home Assistant installation: the Debian base is pinned directly in the Dockerfile. Remove the deprecated `build.yaml`, whose validator rejected image references containing digests. The Supervisor's `BUILD_FROM` argument can no longer replace the base with Alpine. CI reproduces this argument for both architectures.
 
 ## 0.1.0
 
-Pierwszy pakiet do samodzielnej instalacji w Home Assistant: lokalny build, statyczny frontend wariantu A, API, migracje, oddzielne wejście Ingress i bezpośrednie, bootstrap administratora z tokenu, backup PostgreSQL i konfiguracji oraz bezpieczne odtwarzanie do pustej bazy.
+First package for self-installation in Home Assistant: local build, static variant A frontend, API, migrations, separate Ingress and direct entry points, token-based administrator bootstrap, PostgreSQL and configuration backups, and safe recovery into an empty database.
 
-Nie jest to deklaracja odbioru na docelowym Raspberry Pi ani fizycznych telefonach. Stan weryfikacji jest w `docs/implementation/e10-report.md` w repozytorium.
+This does not confirm acceptance testing on the target Raspberry Pi or physical phones. Verification status is recorded in `docs/implementation/e10-report.md` in the repository.

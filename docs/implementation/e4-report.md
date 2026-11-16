@@ -1,68 +1,68 @@
-# E4 — deklaracje, priorytety i rezerwa
+# E4 - declarations, priorities and waitlist
 
-Data: 2026-11-06. Stan: zaimplementowany i sprawdzony lokalnie. Bez commita, publikacji i wdrożenia HA. Obowiązują zatwierdzone D2/D3/D6 i granica czasu konkretnego spotkania. Brak nowych niezatwierdzonych reguł produktu.
+Date: 2026-11-06. Status: Implemented and verified locally. Without commit, publication and HA deployment. Approved D2/D3/D6 and specific meeting time limits apply. No new unapproved product rules.
 
-## Odbiór E4
+## Acceptance testing E4
 
-| Kryterium | Realizacja / dowód |
-| --- | --- |
-| Deklaracje i limit 14 | PUT „będę/nie będę”, DELETE wycofania, osobna rezerwa i rezerwacje. Każda zmiana alokacji blokuje Meeting przez SELECT FOR UPDATE. Testy dwóch HTTP i dwóch niezależnych transakcji DB dowodzą 14 miejsc przy równoczesnych zapisach |
-| Trzy prywatne statusy | Założyciel > zawodnik > gość, wewnątrz statusu czas i numer kolejki. Testy wszystkich relacji poziomów i niezależności od roli administratora. DTO grupy nie zawiera priorytetu |
-| Wypieranie i granica 24 h | Nowe zgłoszenie lub zmiana statusu może przeliczyć miejsca wyłącznie przed granicą. Od granicy istniejące miejsca są chronione, nadal można zapisać się na wolne. Dokładnie na granicy rezygnacja jest zwykła. Czas jest odczytywany po uzyskaniu blokady, nie przed oczekiwaniem |
-| Powtórzenia | Idempotency-Key, osobne trwałe receipts i fingerprint treści. Powtórzenie nie zmienia czasu, numeru kolejki ani historii i nie wznawia zgłoszenia po późniejszym wycofaniu. Ponowny świadomy zapis po wycofaniu dostaje nowy czas i numer |
-| Rezerwacja wolnego miejsca | Pierwsza osoba z kolejki otrzymuje rezerwację natychmiast po zwolnieniu miejsca, przed propozycją. Nowe zgłoszenie nie przejmuje rezerwacji. Kilka miejsc daje osobne rezerwacje różnym osobom |
-| Jawna propozycja i przyjęcie | Administrator aktywuje propozycję i kontaktuje się ręcznie na Messengerze. Dopiero adresat akceptujący aktualną propozycję trafia do uczestników. Brak automatycznego timeoutu; nie można przyjąć cudzej, zamkniętej, starej lub dotyczącej innego terminu propozycji |
-| Odmowa / przekazanie dalej | Odmowa lub ręczne zamknięcie za brak odpowiedzi wycofuje zgłoszenie bez oznaczenia późnej rezygnacji/nieobecności. Miejsce czeka na kolejną osobę. Powtórzone przyjęcie/zamknięcie nie dubluje skutków |
-| Wyjątek późnej oferty | Przyjęcie w ostatnich 24 h zapisuje flagę i zdarzenie z czasem/ID oferty. Późniejsza zgłoszona rezygnacja ma wyjątek; zwykły późny zapis go nie dostaje. E6 nie może stosować tego wyjątku do no-show |
-| Zmiana statusu i blokada | Administrator zmienia prywatny status w ustawieniach. Przeliczenie zachowuje pierwotną kolejność i rezerwacje. Blokada w tej samej transakcji unieważnia sesje/granty, zwalnia wszystkie przyszłe miejsca/rezerwacje/oferty i obsługuje kolejkę; przeszłe zapisy pozostają. Wyścig blokada/przyjęcie nie przywraca miejsca |
-| UI telefonu | Karta udziału nad uczestnikami, miejsce na rezerwie, osobne liczniki potwierdzonych/wolnych/zarezerwowanych, potwierdzenie rezygnacji, panel ofert organizatora i prywatny selektor statusu. Brak sukcesu przed odpowiedzią API; po błędzie/konflikcie odświeżenie i komunikat |
+| Criterion                          | Implementation / proof                                                                                                                                                                                                                                                                                                                                                     |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Declarations and limit 14          | PUT „będę/nie będę”, DELETE withdrawals, separate waitlist and reservations. Any change in allocation blocks the Meeting by SELECT FOR UPDATE. Tests of two HTTP and two independent DB transactions prove 14 places with concurrent enrollments                                                                                                                           |
+| Three private statuses             | Founder > player > guest, time and queue number inside the status. Tests all level relationships and independence from admin role. Group DTO does not contain priority                                                                                                                                                                                                     |
+| Displacement and the 24 hour limit | A new application or change of status can only recalculate seats before the border. Existing places are protected from the border, you can still register for vacant ones. Right at the border, giving up is normal. The time is read after the lock is obtained, not before waiting                                                                                       |
+| Repetitions                        | Idempotency-Key, separate persistent receipts and content fingerprints. Replaying does not change the time, queue number or history and does not reopen the submission after later withdrawal. Explicit re-enrollment after withdrawal gets a new time and number                                                                                                          |
+| Reservation of a free place        | The first person in line receives a reservation immediately after a seat becomes available, before the proposal. The new application does not take over the reservation. Several places give separate reservations to different people                                                                                                                                     |
+| Explicit offer and acceptance      | The administrator activates the proposal and contacts you manually on Messenger. Only the addressee who accepts the current proposal reaches the participants. No automatic timeout; you cannot accept someone else's proposal, which is closed, old or has a different date                                                                                               |
+| Decline / pass to the next player  | A refusal or manual closure for non-response withdraws the application without marking late cancellation/absence. The place is waiting for the next person. Repeated admission/closure does not duplicate the effects                                                                                                                                                      |
+| Late Offer Exception               | Acceptance in the last 24 hours saves the flag and event with time/offer ID. A later reported opt-out has an exception; regular late enrollment does not qualify. E6 cannot apply this exception to no-show                                                                                                                                                                |
+| Status change and blocking         | The administrator changes the private status in the settings. The conversion preserves the original order and reservations. A lock in the same transaction invalidates sessions/grants, releases all future slots/reservations/offers and handles the queue; past enrollments remain. A race between blocking the account and accepting an offer does not restore the seat |
+| Phone UI                           | Participation card above participants, place for waitlist, separate confirmed/free/reserved counters, cancellation confirmation, organizer's offer panel and private status selector. No success before API response; after error/conflict, refresh and message                                                                                                            |
 
-Migracja `0004_enrollment` dodaje `reservation_kind` (offer/reconfirmation), SeatOffer, EnrollmentEvent i EnrollmentMutation. Stan `reserved` w ofercie oznacza chronione miejsce przed aktywacją propozycji; `pending` oznacza propozycję czekającą na odpowiedź. Końcowe stany to accepted/declined/closed/revoked. Brak automatycznego „expired po N minutach”, zgodnie z D2.
+`0004_enrollment` migration adds `reservation_kind` (offer/reconfirmation), SeatOffer, EnrollmentEvent and EnrollmentMutation. Status `reserved` in the offer indicates a protected space before the offer is activated; `pending` indicates a proposal waiting for a response. The final states are accepted/declined/closed/revoked. No automatic “expired after N minutes”, as per D2.
 
-## Ważne szczegóły
+## Important details
 
-Rezygnacja i odpowiedź na ofertę uzupełniają wakaty, zachowując pozostałe miejsca. Samo przyjęcie propozycji nie uruchamia ponownego wypierania osoby, która właśnie zaakceptowała rezerwację. Pełne przeliczenie przed granicą następuje po nowym zgłoszeniu i zmianie statusu; aktywne rezerwacje pozostają chronione. Testy wykryły i zabezpieczyły ten przypadek.
+Resignation and response to the offer fill the vacancies, retaining the remaining seats. The mere acceptance of the offer does not trigger the re-displacement of the person who has just accepted the reservation. A full recount before the border occurs after a new application and change of status; active reservations remain protected. Tests detected and secured this case.
 
-Rezygnacja po granicy wymaga `acknowledge_late=true`, jeśli serwer wyliczy rzeczywiście późną rezygnację. Gdy granica minęła pomiędzy podglądem i zatwierdzeniem, API odrzuca niepotwierdzoną późną rezygnację, a UI odświeża informację przed kolejnym potwierdzeniem. Klasyfikacja normal/late/late_offer_exception/none jest zapisana w prywatnym EnrollmentEvent. Nie utworzono jeszcze pełnej AttendanceEvent ani widoku historii — to E6, które ma wykorzystać te źródła bez dublowania zdarzeń.
+Late abandonment requires `acknowledge_late=true` if the server calculates true late abandonment. When the boundary between preview and commit has passed, the API discards the unconfirmed late opt-out and the UI refreshes the information before the next confirmation. The normal/late/late_offer_exception/none classification is stored in a private EnrollmentEvent. Haven't created the full AttendanceEvent or history view yet - it's E6 to leverage these sources without duplicating events.
 
-Globalna transakcyjna blokada tożsamości z E2 pozostaje przed blokadą Meeting, dzięki czemu blokada profilu i zapis/akceptacja współpracują także przy wielu procesach. Poprawność limitu nie zależy wyłącznie od niej: testy bez tego globalnego mechanizmu używają osobnych sesji DB i wspólnej blokady Meeting. Zmiana statusu/blokada wielu przyszłych terminów pobiera je w stabilnej kolejności ID. Po odblokowaniu stare sesje i deklaracje nie wracają.
+The global transactional identity lock from E2 stays before the Meeting lock, so that profile lock and write/accept also work together across multiple processes. The correctness of the limit does not depend solely on it: tests without this global mechanism use separate DB sessions and a common Meeting lock. Changing the status/blocking of multiple future meeting occurrences fetches them in a stable ID order. After unlocking, old sessions and declarations do not return.
 
-## Kontrakt HTTP
+## HTTP contract
 
-Wszystkie ścieżki pod `/api/v1`, wymagają sesji; mutacje również CSRF/Origin.
+All paths under `/api/v1` require a session; mutations also CSRF/Origin.
 
-- `GET /meetings/{id}/my-participation` — wyłącznie własna deklaracja, alokacja, pozycja, ewentualna oferta, termin zwykłej rezygnacji i jej aktualna klasyfikacja.
-- `PUT /meetings/{id}/my-declaration` — `{declaration: going|not-going, term_version, acknowledge_late?}`.
-- `DELETE /meetings/{id}/my-declaration` — `{term_version, acknowledge_late?}`.
-- PUT i DELETE wymagają nagłówka `Idempotency-Key` z UUID. Ten sam klucz w obrębie gracza/spotkania i inna treść daje 409. Retry zwraca stan aktualny, nie historyczny snapshot miejsca.
-- `GET /admin/meetings/{id}/offers` — rezerwacje i propozycje organizatora.
-- `POST /admin/meetings/{id}/offers` — `{player_id, term_version}`; wyłącznie dla istniejącej rezerwacji, ponowienie aktywnej propozycji zwraca ten sam obiekt.
-- `POST /offers/{id}/accept` i `/decline` — `{term_version}`; wyłącznie adresat.
-- `POST /admin/offers/{id}/close` — `{term_version, reason: no-response}`; ręczne przekazanie dalej.
-- `PATCH /admin/players/{id}` — `is_active?` i/lub `priority_status?`; żadna z tych operacji nie zmienia roli administratora.
+- `GET /meetings/{id}/my-participation` - self-declaration only, allocation, position, possible offer, normal cancellation deadline and its current classification.
+- `PUT /meetings/{id}/my-declaration` - `{declaration: going|not-going, term_version, acknowledge_late?}`.
+- `DELETE /meetings/{id}/my-declaration` - `{term_version, acknowledge_late?}`.
+- PUT and DELETE require a `Idempotency-Key` header with UUID. The same key within a player/encounter and different content results in a 409. Retry returns the current state, not a historical snapshot of the place.
+- `GET /admin/meetings/{id}/offers` - reservations and organizer's proposals.
+- `POST /admin/meetings/{id}/offers` - `{player_id, term_version}`; only for an existing reservation, retry of the active proposal returns the same property.
+- `POST /offers/{id}/accept` and `/decline` - `{term_version}`; only the addressee.
+- `POST /admin/offers/{id}/close` - `{term_version, reason: no-response}`; manual forwarding.
+- `PATCH /admin/players/{id}` - `is_active?` and/or `priority_status?`; none of these operations change the administrator's role.
 
-Mutacje deklaracji/odpowiedzi zwracają aktualne `meeting` i `participation`. Listy grupowe nie zawierają cudzych priorytetów, zdarzeń rezygnacji ani wyjątków. Szczegóły i kalendarz pokazują dodatkowo `reserved_count` i `free_count`; 13 uczestników i 1 rezerwacja oznaczają 0 wolnych miejsc, a nie wolny zapis na ostatnie miejsce.
+Declaration/response mutations return the current `meeting` and `participation`. Group lists do not contain other people's priorities, opt-out events, or exceptions. Details and calendar additionally show `reserved_count` and `free_count`; 13 participants and 1 reservation means 0 free places, not free registration for the last place.
 
-## Weryfikacja lokalna
+## Local verification
 
-macOS arm64, Python 3.13.18, PostgreSQL 14.24; izolowana `volleycrew_test` na 55432. Brak dostępu testów do dev/maybe-finance. Testy backendu i E2E wykonywane sekwencyjnie na tej samej jawnej bazie testowej.
+macOS arm64, Python 3.13.18, PostgreSQL 14.24; isolated `volleycrew_test` on 55432. No test access to dev/maybe-finance. Backend and E2E tests performed sequentially on the same explicit test database.
 
-- `npm run lint` — Ruff, ESLint, Prettier poprawnie.
-- `npm run typecheck` i `npm run build` — poprawnie.
-- `npm run api:check` — kontrakt i typy zgodne z API.
-- `VOLLEYCREW_TEST_DATABASE_URL=<baza *_test> npm run test:backend` — **52 zaliczone**, w tym 17 przypadków E4: różne priorytety, limit, last-seat race, równoczesne przyjęcia i nowy zapis, blokada/przyjęcie, zachowanie historii, receipts, granice czasu, wyjątek późnej oferty i oczekiwanie na blokadę aż do startu. Jedno ostrzeżenie biblioteki Starlette dotyczące przyszłej zmiany transportu TestClient, bez błędu testów.
-- `npm run test:frontend` — **1 test Vitest zaliczony**; zachowanie E4 sprawdza prawdziwa przeglądarka i API.
-- `VOLLEYCREW_E2E_DATABASE_URL=<baza *_test> npm run test:e2e` — **8 zaliczonych**, wcześniejsze ścieżki E2/E3 i nowa rejestracja → dalszy termin → rezerwa → rezygnacja organizatora → propozycja → jawne przyjęcie na drugim urządzeniu → refresh z 14 uczestnikami → prywatna zmiana statusu.
-- Alembic `check` na testowej DB — `No new upgrade operations detected`.
+- `npm run lint` - Ruff, ESLint, Prettier correctly.
+- `npm run typecheck` and `npm run build` - correct.
+- `npm run api:check` - contract and API-compliant types.
+- `VOLLEYCREW_TEST_DATABASE_URL=<*_test database> npm run test:backend` - **52 passed**, including 17 E4 cases: different priorities, limit, last-seat race, simultaneous admissions and new registration, block/acceptance, history preservation, receipts, time limits, late offer exception and waiting for a block until the start. One Starlette library warning for future TestClient transport change, no test failure.
+- `npm run test:frontend` - **1 Vitest passed**; E4 behavior is checked by a real browser and API.
+- `VOLLEYCREW_E2E_DATABASE_URL=<*_test database> npm run test:e2e` - **8 passed**, previous E2/E3 paths and new registration → further date → waitlist → resignation of the organizer → proposal → explicit acceptance on the second device → refresh with 14 participants → private status change.
+- Alembic `check` on test DB - `No new upgrade operations detected`.
 
-Jedno z uruchomień E2E zakończyło się timeoutem po odświeżeniu odwołanego spotkania w istniejącym scenariuszu kalendarza. Pełne ponowienie bez zmiany kodu i limitów czasu zaliczyło wszystkie 8 testów. Przyczyny nie odtworzono; obserwować ten scenariusz w CI.
+One of the E2E runs ended in a timeout after refreshing a canceled meeting in an existing calendar scenario. Full retry without code changes or timeouts passed all 8 tests. The cause has not been recreated; observe this scenario in CI.
 
-Chromium 158, desktop 1440 px i emulacja telefonu 360/390/430 px. Brak poziomego overflow w nowych kartach; wizualnie sprawdzono kartę rezerwy 360 px oraz mobilny panel aktywnej propozycji. Screenshoty w ignorowanym `volleycrew/frontend/test-results/enrollment-distant-signup--04825-cceptance-on-another-device-{desktop,mobile}/`: `reserve-*.png` i `organizer-offer.png`. Fizyczny telefon i Safari nadal nie były testowane.
+Chromium 158, desktop 1440 px and phone emulation 360/390/430 px. No horizontal overflow in new tabs; the 360 ​​px waitlist card and the active proposal mobile panel were visually checked. Screenshots in ignored `volleycrew/frontend/test-results/enrollment-distant-signup--04825-cceptance-on-another-device-{desktop,mobile}/`: `reserve-*.png` and `organizer-offer.png`. The physical phone and Safari are still untested.
 
-## Pozostałe zależności
+## Other dependencies
 
-- E5: zmiana/odwołanie terminu, nowe potwierdzenia D4, ponowne propozycje po każdej zmianie, ochrona rezerwacji i ręczne zwolnienie przy braku potwierdzenia. `reservation_kind=reconfirmation` jest fundamentem, nie gotowym procesem E5. E5 musi unieważniać stare granty w tej samej transakcji i zachowywać kolejność; obecne endpointy odrzucają niezgodną wersję.
-- E6: prywatna historia obecności z korektami i no-show, przy wykorzystaniu EnrollmentEvent. Nie generować nieobecności dla odwołania/odmowy oferty/rezerwy. Wyjątek późnej oferty nie usprawiedliwia no-show.
-- E9/E10: fizyczne przeglądarki, PostgreSQL 17/CI, Home Assistant/Ingress, Pi 4 oraz backup/restore nadal wymagają rzeczywistego odbioru. Obecny etap nie jest wydaniem produkcyjnym.
+- E5: date change/cancellation, new D4 confirmations, re-proposals after each change, reservation protection and manual release in the absence of confirmation. `reservation_kind=reconfirmation` is a foundation, not a finished E5 process. E5 must invalidate old grants in the same transaction and maintain order; current endpoints reject the incompatible version.
+- E6: private attendance history with corrections and no-shows, using EnrollmentEvent. Do not generate absences for cancellation/refusal of offer/waitlist. The late offer exception does not excuse a no-show.
+- E9/E10: physical browsers, PostgreSQL 17/CI, Home Assistant/Ingress, Pi 4 and backup/restore still require real acceptance testing. The current stage is not a production release.
 
-Następny gotowy zakres po zleceniu: **E5 — zmiana harmonogramu i odwołanie**.
+Next ready scope after the order: **E5 - Rescheduling and Cancellation**.

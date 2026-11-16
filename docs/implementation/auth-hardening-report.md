@@ -1,35 +1,35 @@
-# E2/E9 — linki, monitoring i odporność na nadużycia
+# E2/E9 - links, monitoring and abuse resistance
 
-Data: 2026-11-14. Zakres zlecony po recenzji logowania: punkt 5 końcowych priorytetów. Gałąź `feat/auth-link-hardening`, baza PR `e060c47` (main po scaleniu #9). Raport wyników lokalnych; bieżący wynik CI jest w PR. Bez wdrożenia.
+Date: 2026-11-14. Scope requested after login review: point 5 of final priorities. Branch `feat/auth-link-hardening`, PR base `e060c47` (main after merge #9). Local implementation report; the current CI result is in PR. Without deployment.
 
-## Zachowanie
+## Behavior
 
-- Linki zaproszenia, bootstrapu i resetu odczytują fragment do pamięci strony i zastępują bieżący wpis historii adresem bez sekretu/query. Zachowany jest prefiks Ingress i stan techniczny routera. Brak tokenu w localStorage/sessionStorage. Odświeżenie wymaga ponownego otwarcia oryginalnego linku; UI wyjaśnia to zachowanie. Usuwanie adresu korzysta z History API, aby nie konkurować z przejściem po zalogowaniu.
-- Dawne tokeny w ścieżce nie służą już do uwierzytelnienia; trasy przekierowują do czystego formularza z informacją o pełnym linku. Aktualne linki `#…` nadal działają, samo otwarcie nie zużywa grantów.
-- HTTP 429 wyświetla `Retry-After` jako czas oczekiwania w sekundach. Mutacje nie są automatycznie ponawiane.
-- Dodatkowy limiter ASGI działa przed odczytem body, DB i Argon2 dla czterech operacji wejścia. Budżet na źródło: seria 10, odnawianie 30/min; globalny: seria 20, odnawianie 4/s. Stan źródeł jest ograniczony do 1024 wpisów. Pozostałe operacje, w tym deklaracje i health, nie korzystają z tej bramki. Trwałe limity PostgreSQL pozostają bez zmian.
-- Ograniczone logi `volleycrew.security` zapisują czas UTC, rodzaj wyniku, operację i odcisk HMAC źródła. Nie odczytują/nie logują body, PIN-u, tokenu, cookies, pełnego URL, profilu ani nazwiska. Maksymalnie 60 zdarzeń/min/proces i jeden marker pomijania dalszych wpisów.
-- Instrukcja HA wyjaśnia interpretację zdarzeń, ograniczenia telemetrii, wspólne źródło proxy/Ingress i konieczność ochrony tunelu przed zalaniem połączeń.
+- Invite, bootstrap and reset links read the fragment into page memory and replace the current history entry with the address without the secret/query. The Ingress prefix and the technical router state are preserved. The token is not stored in localStorage/sessionStorage. Refreshing requires reopening the original link; The UI explains this behavior. Clearing the address uses the History API to not compete with the login transition.
+- Old tokens in the path are no longer used for authentication; routes redirect to a blank form with full link information. Current links `#…` still work, opening them does not consume grants.
+- HTTP 429 displays `Retry-After` as wait time in seconds. Mutations are not automatically repeated.
+- Additional ASGI limiter works before reading body, DB and Argon2 for four input operations. Per-source budget: burst of 10, replenished at 30/min; global budget: burst of 20, replenished at 4/s. Source state is limited to 1024 entries. Other operations, including declarations and health, do not use this gateway. PostgreSQL persistent limits remain unchanged.
+- Limited `volleycrew.security` logs record UTC time, result type, operation and source HMAC fingerprint. They do not read/log body, PIN, token, cookies, full URL, profile or name. Maximum of 60 events/min/process and one marker to skip further entries.
+- The HA manual explains event interpretation, telemetry limitations, common proxy/ingress source and the need to protect the tunnel from connection flooding.
 
-Nie zmieniano DTO ani schematu bazy; brak migracji. PIN, rola administratora, lista logowania, ważność sesji i wielokrotność zaproszeń są poza tym zakresem. Nie podnoszono wersji pakietu.
+The DTO and database schema were not changed; no migration. PIN, admin role, login list, session validity and multiple invites are outside this scope. The package version was not upgraded.
 
-## Weryfikacja
+## Verification
 
-Środowisko: macOS arm64, Python 3.13.18, osobny tymczasowy PostgreSQL 17.11 na porcie 59583, baza `volleycrew_hardening_test`. Backend i E2E wykonywane sekwencyjnie. Node 26.8.1, przeglądarki Playwright Chromium 158.0.8127.18 i WebKit 27.2, projekty desktop/mobile/webkit. Nie używano bazy development ani produkcji.
+Environment: macOS arm64, Python 3.13.18, separate temporary PostgreSQL 17.11 on port 59583, database `volleycrew_hardening_test`. Backend and E2E performed sequentially. Node 26.8.1, Playwright Chromium 158.0.8127.18 and WebKit 27.2 browsers, desktop/mobile/webkit projects. No development or production database was used.
 
-- Backend: `.venv/bin/python -m pytest -q` z `VOLLEYCREW_TEST_DATABASE_URL` wskazującym wyłącznie powyższą bazę, z katalogu backendu — **155 zaliczonych**. Obejmuje rzeczywiste PostgreSQL, dotychczasowe sesje i limity, konkurencyjne resety/bootstrap oraz nowe przypadki limitera i telemetrii.
-- Po końcowej zmianie czasu UTC w logach: `pytest tests/test_auth.py tests/test_auth_protection.py tests/test_security.py -q` z katalogu backendu — **18 zaliczonych**.
-- Nowe testy z kontrolowanym zegarem sprawdzają odnawianie budżetów, wspólny limit wielu źródeł, ograniczenie pamięci, brak odczytu body/wywołania dalszego API po odrzuceniu, prefiks Ingress i ograniczenie logów. Integracja sprawdza wyniki operacji oraz brak sekretów w telemetrii.
-- `npm run lint`, `npm run typecheck`, `npm run api:check` — zaliczone.
-- `npm run test:frontend` — **6 zaliczonych**, w tym poprawny/brakujący/nieprawidłowy Retry-After.
-- `npm run build` — zaliczony również po końcowej poprawce History API.
-- `npm run test:e2e -- auth.spec.ts auth-links.spec.ts` z izolowanym `VOLLEYCREW_E2E_DATABASE_URL` — **9 zaliczonych**: pełna rejestracja, login, profil, reset, blokada, odrzucone zaproszenie, czysty adres, brak sekretu w storage, reload i ponowne otwarcie, odrzucenie tokenów w ścieżce w Chromium/WebKit. Pierwszy przebieg ujawnił konflikt nawigacji routera podczas zmiany sesji; poprawiono go użyciem History API i potwierdzono pełną ścieżką.
+- Backend: `.venv/bin/python -m pytest -q` with `VOLLEYCREW_TEST_DATABASE_URL` pointing only to the above database, from the backend directory - **155 passed**. Includes real PostgreSQL, legacy sessions and limits, concurrent resets/bootstrap, and new limiter and telemetry cases.
+- After final UTC time change in logs: `pytest tests/test_auth.py tests/test_auth_protection.py tests/test_security.py -q` from backend directory - **18 passed**.
+- New timer-controlled tests check for budget renewals, shared multi-source limit, memory limit, no body read/further API call after discard, ingress prefix and log limit. Integration checks the results of operations and the lack of secrets in telemetry.
+- `npm run lint`, `npm run typecheck`, `npm run api:check` - passed.
+- `npm run test:frontend` - **6 passed**, including valid, missing and invalid Retry-After.
+- `npm run build` - passed also after the final History API fix.
+- `npm run test:e2e -- auth.spec.ts auth-links.spec.ts` with isolated `VOLLEYCREW_E2E_DATABASE_URL` - **9 passes**: full registration, login, profile, reset, lock, rejected invitation, clean address, no secret in storage, reload and reopen, reject tokens in path in Chromium/WebKit. The first pass revealed a router navigation conflict during a session change; it was corrected using the History API and confirmed with the full path.
 
-- Pełne `npm run test:e2e` na tej samej izolowanej bazie, po zakończeniu testów backendu — **83 zaliczone, 1 celowo pominięty** (klawiatura mobilna na projekcie desktop), 4,2 min. Wszystkie projekty desktop/mobile/webkit, w tym wyścigi sesji, zapisy, rezerwa, obecność, wynik, harmonogram, PDF i dostępność.
-- `git diff --check` — zaliczony.
+- Full `npm run test:e2e` on the same isolated database, after backend testing - **83 passed, 1 intentionally skipped** (mobile keyboard on desktop project), 4.2 min. All desktop/mobile/webkit projects including session races, enrollments, waitlist, attendance, result, schedule, PDF and accessibility.
+- `git diff --check` - passed.
 
-Wymagany lokalny zakres E2/E9 spełniony. Następne zadanie: osobny odbiór E11 na fizycznym telefonie/HA; pozostałe zalecenia z recenzji wymagają odrębnego zlecenia i decyzji.
+Required local range E2/E9 met. Next task: separate acceptance testing E11 on physical phone/HA; other recommendations from the review require a separate order and decision.
 
-## Granice odbioru
+## Limits of acceptance testing
 
-Bez testu produkcyjnego obrazu: lokalny daemon Docker jest niedostępny. Konfiguracja Nginx, s6 i Dockerfile nie była zmieniana. Test middleware obejmuje oba prefiksy, ale nie zastępuje odbioru obrazu ani produkcyjnego proxy/HA. Na etapie weryfikacji lokalnej nie wykonywano testów na fizycznym telefonie, instalacji HA ani publikacji. Zlecony później PR uruchamia również testy obrazów amd64/aarch64 w GitHub Actions; ich bieżący wynik jest w PR. Logi nie wysyłają automatycznych alertów i są próbkowane przy dużym ruchu. Limiter dodatkowy zakłada obecny pojedynczy worker; restart zeruje tylko jego pamięć, nie ochronę trwałą. Silniejszy login administratora, procedura ratunkowa i zmiana polityki zaproszeń pozostają osobnymi zaleceniami z recenzji.
+No production image test: local Docker daemon is unavailable. The Nginx, s6 and Dockerfile configuration was not changed. The middleware test covers both prefixes, but does not replace acceptance testing of the image or production proxy/HA. During the local verification stage, no tests were performed on a physical phone, HA installation or publication. The PR requested later also runs amd64/aarch64 image tests in GitHub Actions; their current result is in PR. Logs do not send automatic alerts and are sampled at high traffic. The additional limiter assumes a single worker present; restarting only resets its memory, not permanent protection. A stronger admin login, rescue procedure, and change to the invite policy remain separate recommendations from the review.

@@ -1,96 +1,96 @@
-# E10 — pakiet Home Assistant do samodzielnej instalacji
+# E10 - Home Assistant package for self-installation
 
-Data: 2026-11-07. Zakres zgodnie z ostatnim poleceniem: pakiet i instrukcja w repozytorium oraz lokalna weryfikacja. Użytkownik sam publikuje/dodaje repozytorium, generuje token i instaluje aplikację. Nie wykonano instalacji, aktualizacji ani zmian w docelowym HA, tunelu lub produkcyjnym PostgreSQL. Kod pozostaje lokalny, bez commita/push i wydania.
+Date: 2026-11-07. Scope as per last command: package and statement in repository and local verification. The user himself publishes/adds the repository, generates a token and installs the application. No installations, updates, or changes were made to the target HA, tunnel, or production PostgreSQL. The code remains local, without commit/push and release.
 
-## Dostarczone elementy
+## Items provided
 
-- `repository.yaml`, `volleycrew/config.yaml`, `build.yaml`, Dockerfile i `.dockerignore`. Wersja pakietu **0.1.0**, `aarch64`/`amd64`, lokalny build przez Supervisor, bez `image` z gotowym obrazem Volleycrew. Brak `host_network`, mapowania konfiguracji HA i uprawnień do API HA/Supervisora/Dockera. `/data` jest trwały.
-- Wieloetapowy build: Node 24 tylko do kompilacji, statyczny frontend, Python/FastAPI i Nginx z s6 w runtime. Runtime Debian base **9.3.0**, obrazy obu architektur i domyślny indeks multiarch przypięte do zweryfikowanych digestów; Node 24 również po digest. Backend instaluje hashowany `requirements.lock`, eksportowany z `uv.lock` bez zależności developerskich. CI sprawdza zgodność eksportu.
-- Walidowane opcje `/data/options.json` → prywatne pliki środowiska s6 (600), bez `eval` i wypisywania połączenia DB. Hasła ze znakami specjalnymi są kodowane przez SQLAlchemy URL. Publiczny URL HTTPS jest originem bez ścieżki. Zaufane adresy proxy są walidowane, `0.0.0.0/0`/`::/0` odrzucane.
-- Start: konfiguracja i sprawdzenie Nginx → ograniczone oczekiwanie na DB → kopia przed zmianą wersji/schematu → migracje → bootstrap → API i Nginx. Nieprawidłowa konfiguracja nie uruchamia migracji. Awaria inicjalizacji lub procesu zatrzymuje kontener; nie ma kasowania bazy jako naprawy. Zablokowana migracja pozostawia API zatrzymane.
-- `BOOTSTRAP_TOKEN` w opcjach umożliwia pierwszy profil administratora bez SSH. Losowy token URL-safe, co najmniej 32 znaki; grant ważny 30 minut. Restart nie przedłuża ważności, nowy token może zastąpić stary wyłącznie przed założeniem administratora. Istniejący administrator trwale zamyka bootstrap. PIN ustawia sam użytkownik na `/setup#token`; token nie trafia do logów.
-- [Instrukcja instalacji, opcji, aktualizacji, backupu i restore](../../volleycrew/DOCS.md), README aplikacji i changelog. Root README opisuje build i odtwarzalne testy pakietu.
+- `repository.yaml`, `volleycrew/config.yaml`, `build.yaml`, Dockerfile and `.dockerignore`. Package version **0.1.0**, `aarch64`/`amd64`, local build via Supervisor, without `image` with pre-built Volleycrew image. `host_network`, HA configuration mapping and HA API/Supervisor/Docker permissions are missing. `/data` is durable.
+- Multi-stage build: Node 24 for build only, static frontend, Python/FastAPI and Nginx with s6 in runtime. Runtime Debian base **9.3.0**, images of both architectures and default multiarch index pinned to verified digests; Node 24 also after digest. The backend installs hashed `requirements.lock`, exported from `uv.lock` without development dependencies. CI checks export compliance.
+- Validated options `/data/options.json` → private s6 environment files (600), without `eval` and writing out the DB connection. Passwords with special characters are encoded by SQLAlchemy URL. The public HTTPS URL is origin without a path. Trusted proxy addresses are validated, `0.0.0.0/0`/`::/0` rejected.
+- Start: Nginx configuration and check → limited waiting for DB → backup before changing version/schema → migrations → bootstrap → API and Nginx. Incorrect configuration does not trigger migration. An initialization or process failure stops the container; there is no deleting the database as a repair. Blocked migration leaves the API stuck.
+- `BOOTSTRAP_TOKEN` in options allows first administrator profile without SSH. Random URL-safe token, at least 32 characters; grant valid for 30 minutes. Restart does not extend the validity, a new token can replace the old one only before creating an administrator. Existing admin permanently closes bootstrap. The PIN is set by the user himself to `/setup#token`; the token does not go to the logs.
+- [Installation, options, update, backup and restore instructions](../../volleycrew/DOCS.md), application README and changelog. The Root README describes the build and reproducible tests of the package.
 
-## Wejścia HTTP i prywatność
+## HTTP inputs and privacy
 
-| Element | Realizacja |
-| --- | --- |
-| Wejście do własnego tunelu/proxy | Nginx `8200`, konfigurowalne mapowanie hosta HA |
-| Ingress | Nginx `8099`, **bez mapowania hosta**, ACL wyłącznie `172.30.32.2` |
-| Backend | `127.0.0.1:8000` wewnątrz kontenera |
-| Prefiks | Walidowany `X-Ingress-Path` tylko na wejściu Supervisora; wstrzyknięty HTML `<base>`, basename routera, klient API, manifest i assety działają pod zmiennym prefiksem |
-| Tożsamość | Własne profile/PIN i role Volleycrew; nagłówki tożsamości HA nie nadają uprawnień |
-| Cookies | Oddzielne nazwy i ścieżki direct/Ingress; `Secure`, sesja `HttpOnly`, `SameSite=Lax`. Wymagany HTTPS także dla HA |
-| CSRF | Token i jawne originy; origin HA w `ADDITIONAL_ORIGINS`; brak szerokiego CORS |
-| Proxy | Publiczne nagłówki Ingress są ignorowane; zaufanie XFF/proto tylko od skonfigurowanych peerów. Kontekst backendu przyjmowany wyłącznie z lokalnego Nginx |
-| Logi | Access log Nginx bez URI/query/body/cookies, Uvicorn bez access logu, wyjątki produkcyjne bez tracebacków/parametrów kierowcy; init/backup logują etapy i typy błędów |
-| Health | liveness procesu i readiness z DB oraz aktualną rewizją; utrata DB po starcie daje 503 readiness, po powrocie odzyskuje gotowość |
+| Element                           | Implementation                                                                                                                                                                 |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Entrance to your own tunnel/proxy | Nginx `8200`, configurable HA host mapping                                                                                                                                     |
+| Ingress                           | Nginx `8099`, **no host mapping**, ACL only `172.30.32.2`                                                                                                                      |
+| Backend                           | `127.0.0.1:8000` inside container                                                                                                                                              |
+| Prefix                            | Validated `X-Ingress-Path` only on Supervisor input; HTML injected `<base>`, router basename, API client, manifest and assets run under variable prefix                        |
+| Identity                          | Custom profiles/PIN and Volleycrew roles; HA identity headers do not grant permissions                                                                                         |
+| Cookies                           | Separate direct/ingress names and paths; `Secure`, session `HttpOnly`, `SameSite=Lax`. HTTPS also required for HA                                                              |
+| CSRF                              | Token and explicit origins; origin HA in `ADDITIONAL_ORIGINS`; no wide CORS                                                                                                    |
+| Proxy                             | Public Ingress headers are ignored; XFF/proto trust only from configured peers. Backend context accepted only from local Nginx                                                 |
+| Logs                              | Access log Nginx without URI/query/body/cookies, Uvicorn without access log, production exceptions without tracebacks/driver parameters; init/backup log steps and error types |
+| Health                            | process liveness and readiness with the DB and the current revision; loss of DB after startup gives 503 readiness, after return it regains readiness                           |
 
-Pakiet dodaje CSP, no-referrer i nosniff. Moduły `.mjs` mają jawny typ JavaScript — test produkcyjnego PDF wykrył brak tego mapowania w domyślnych typach Nginx. PDF.js i worker działają lokalnie także w Ingress. Fonty PDF mogą być ładowane z lokalnych blob/data, bez CDN.
+The package adds CSP, no-referrer and nosniff. `.mjs` modules have an explicit JavaScript type - production PDF testing found this mapping missing from Nginx default types. PDF.js and worker also run locally in Ingress. PDF fonts can be loaded from local blob/data, without CDN.
 
-Bazowe skrypty obrazu dotyczące bannera/log level/timezone nie wymagają wywołania Supervisora: zastąpiono pomocnicze akcje s6 neutralnymi skryptami. Konfigurację aplikacji czytamy samodzielnie z `/data/options.json`. Dzięki temu rzeczywisty pakiet działa również poza HA; harmonogram domenowy i kopie używają jawnie `Europe/Warsaw`. Usunięto zbędne zagnieżdżenie `with-contenv` w inicjalizacji DB. Emulację amd64 odnotowujemy osobno od natywnego uruchomienia.
+Base image scripts for banner/log level/timezone do not require Supervisor calls: replaced s6 helper actions with neutral scripts. We read the application configuration ourselves from `/data/options.json`. This allows the actual package to also run outside of HA; domain scheduler and copies use `Europe/Warsaw` explicitly. Removed unnecessary `with-contenv` nesting in DB initialization. We note amd64 emulation separately from native execution.
 
-## Backup i odtworzenie
+## Backup and restore
 
-`app.backup` i komenda operatora `volleycrew-backup` tworzą prywatne archiwum: custom `pg_dump`, metadane wersji/schematu i SHA-256, efektywny klucz oraz opcje. Zapis przez plik tymczasowy i atomową zmianę nazwy; staging/partial wyłączone z kopii HA. Brak automatycznego usuwania starych kopii. Archiwum nie jest samodzielnie szyfrowane.
+`app.backup` and the operator command `volleycrew-backup` create a private archive: custom `pg_dump`, version/schema and SHA-256 metadata, effective key and options. Saving via temporary file and atomic renaming; staging/partial disabled from HA copy. No automatic deletion of old copies. The archive is not self-encrypted.
 
-- Lokalnie codziennie o wskazanej godzinie Warszawy; błąd daje jedną ponowną próbę po godzinie i jawny log.
-- Przed aktualizacją wersji lub schematu: wymagana kopia, potem migracja; brak kopii blokuje start nowej wersji.
-- `backup_pre` HA tworzy aktualny zrzut zewnętrznej DB przed kopią plików aplikacji. Użytkownik musi włączyć kopie HA i **szyfrowany cel poza hostem** oraz zachować klucz odzyskiwania. Agent nie skonfigurował takiego miejsca.
-- Restore wymaga jawnego `VOLLEYCREW_RESTORE_DATABASE_URL` i `--confirm-empty-target`; odmawia nadpisania niepustej bazy, sprawdza archiwum i sumy, odrzuca ścieżki/symlinki/duplikaty. `pg_restore` działa w jednej transakcji. Opcje źródła zapisuje osobno jako `restored-options.json`, bez przekierowania połączenia z powrotem na stary serwer.
-- Domyślnie sesje są unieważniane; opcjonalne zachowanie wymaga zgodnego klucza. Konta i PIN-y, historia, miejsca, obecność, składy, wyniki i punkty pozostają. Cofnięcie kodu wymaga zgodności schematu albo odtworzenia całego zgodnego zestawu, bez automatycznego downgrade.
+- Locally every day at the indicated time in Warsaw; error gives one retry after an hour and an open log.
+- Before updating version or schema: copy required, then migration; the lack of a copy blocks the launch of the new version.
+- `backup_pre` HA creates a current dump of the external DB before copying the application files. The user must enable HA copies and **off-host encrypted target** and retain the recovery key. The agent has not configured such a place.
+- Restore requires explicit `VOLLEYCREW_RESTORE_DATABASE_URL` and `--confirm-empty-target`; refuses to overwrite non-empty database, checks archive and totals, rejects paths/symlinks/duplicates. `pg_restore` runs in one transaction. It saves the source options separately as `restored-options.json`, without redirecting the connection back to the old server.
+- By default, sessions are invalidated; optional behavior requires a matching key. Accounts and PINs, history, places, attendance, lineups, results and points remain. Rolling back the code requires either schema compatibility or re-creation of the entire compliant set, without automatic downgrade.
 
-Test odtworzył kopię **na drugim kontenerze/instancji PostgreSQL**, porównując liczebność i odciski pełnych wierszy 13 tabel domenowych: profile, harmonogram, spotkania, zgłoszenia i zdarzenia, obecność i historia, składy, wyniki, punkty oraz audyt. Źródłowa baza i sesja nadal działają; sesje w celu są odwołane. Jest to lokalny restore, nie test pobrania z docelowego magazynu poza hostem ani odzyskania całego hosta HA.
+The test recreated a copy **on a second PostgreSQL container/instance**, comparing counts and full row fingerprints of 13 domain tables: profiles, schedule, meetings, enrollments and events, attendance and history, lineups, results, points, and audit. The source database and session still work; target sessions are invalidated. This is a local restore, not a test of downloading from a target off-host storage or recovering the entire HA host.
 
-## Naprawa pierwszej migracji
+## Fix first migration
 
-Nowa, całkowicie pusta PostgreSQL 17 wykazała błąd backfillu w `0006_room`: `ORDER BY sequence` odwoływał się do kolumny nieistniejącej w `enrollment_events`. Poprawiono kolejność na `enrollment_events.created_at, enrollment_events.id`. Dodano test usuwający wyłącznie schemat jawnej jednorazowej bazy `_test` i przechodzący cały łańcuch od zera. Nie dodano nowej rewizji; bazy już będące na `0007_results` nie zmieniają danych przez tę poprawkę. Nie było wcześniejszego wydania HA tej migracji.
+The new, completely empty PostgreSQL 17 showed a backfill error in `0006_room`: `ORDER BY sequence` referenced a column that did not exist in `enrollment_events`. Corrected order to `enrollment_events.created_at, enrollment_events.id`. Added a test that removes only the explicit one-time database schema `_test` and traverses the entire chain from scratch. No new revision added; database files already on `0007_results` do not change their data due to this patch. There was no prior HA release of this migration.
 
-## Weryfikacja lokalna
+## Local verification
 
-Mac arm64, dedykowany profil Colima `volleycrew` (Linux ARM64, 2 CPU/4 GiB), oddzielne testowe sieci, kontenery i wolumeny. Obrazy produkcyjne budowane dla `linux/arm64` i `linux/amd64`; amd64 uruchamiany pod emulacją QEMU, nie na fizycznym komputerze x86 ani Pi. Python runtime **3.13.5**, Nginx **1.26.3**, klient PostgreSQL **17.11**. Kod developerski/testy: Python 3.13.18. Żadnej produkcyjnej bazy ani maybe-finance nie użyto.
+Mac arm64, dedicated Colima `volleycrew` profile (Linux ARM64, 2 CPU/4 GiB), separate test networks, containers and volumes. Production images built for `linux/arm64` and `linux/amd64`; amd64 runs under QEMU emulation, not on a physical x86 or Pi machine. Python runtime **3.13.5**, Nginx **1.26.3**, PostgreSQL client **17.11**. Development code/tests: Python 3.13.18. No production database or maybe-finance was used.
 
-Przeglądarki: Chromium **158.0.8127.18** i WebKit **27.2**; emulacja iPhone nie jest testem fizycznego Safari iOS. Certyfikat HTTPS fixture jest lokalny, samopodpisany i pomijany wyłącznie w testach. Produkcja nadal wymaga prawidłowego HTTPS i bezpiecznych cookies.
+Browsers: Chromium **158.0.8127.18** and WebKit **27.2**; iPhone emulation is not a physical Safari iOS test. The HTTPS fixture certificate is local, self-signed and only omitted in tests. Production still requires valid HTTPS and secure cookies.
 
-| Sprawdzenie | Wynik |
-| --- | --- |
-| `npm run lint`, `npm run typecheck`, `npm run api:check`, `npm run test:frontend`, `npm run build` | Poprawnie; Vitest 1 test |
-| Pełna regresja backendu na osobnej PostgreSQL 17 przez `test_container.py --backend-tests` | **115 zaliczonych**, 52,69 s; wcześniejsze ostrzeżenie Starlette/TestClient |
-| Dodatkowo `tests/test_deployment.py` po ostatnim doprecyzowaniu alfabetu tokenu | **7 zaliczonych** |
-| Zwykłe E2E Chromium desktop/mobile i WebKit | **32 zaliczone, 1 celowo pominięty** (mobilna geometria klawiatury na desktopie), 2,5 min |
-| Build `linux/arm64` i `linux/amd64` | Oba zakończone poprawnie, obrazy lokalne `volleycrew:e10-arm64` i `volleycrew:e10-amd64` |
-| Produkcyjny obraz ARM64: start, błędy, prefiksy/HTTPS, restart, kopia przed wersją, pełny mecz, DB loss/recovery, restore i logi | **Wszystkie zaliczone** |
-| Produkcyjny obraz amd64 pod QEMU: ten sam zestaw | **Wszystkie zaliczone**, nie jest to próba na fizycznym x86 |
-| Playwright na prawdziwych obrazach: direct + dwa prefiksy, profil/reload/nawigacja i rzeczywiście wyrenderowany PDF | **6/6 ARM64 + 6/6 amd64**, Chromium/WebKit; ostatnie przebiegi 8,2 s i 13,8 s |
-| Restore na drugim PostgreSQL | **Zaliczony na obu CPU**, zgodne odciski 13 tabel po meczu 5:3, osobne unieważnienie sesji, źródło nienaruszone |
-| Alembic `check` na developerskiej DB i zgodność produkcyjnego eksportu lockfile | `No new upgrade operations detected`; eksport bez różnic |
+| Checking                                                                                                                           | Result                                                                                                                |
+| ---------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `npm run lint`, `npm run typecheck`, `npm run api:check`, `npm run test:frontend`, `npm run build`                                 | Correctly; Vitest 1 test                                                                                              |
+| Full backend regression on separate PostgreSQL 17 by `test_container.py --backend-tests`                                           | **115 passes**, 52.69 sec; previous warning Starlette/TestClient                                                      |
+| Additionally, `tests/test_deployment.py` after the last refinement of the token alphabet                                           | **7 passed**                                                                                                          |
+| Plain E2E Chromium desktop/mobile and WebKit                                                                                       | **32 passed, 1 intentionally skipped** (mobile keyboard geometry on desktop), 2.5 min                                 |
+| Build `linux/arm64` and `linux/amd64`                                                                                              | Both completed successfully, local images `volleycrew:e10-arm64` and `volleycrew:e10-amd64`                           |
+| Production ARM64 image: startup, errors, prefixes/HTTPS, restart, pre-release copy, full match, DB loss/recovery, restore and logs | **All passed**                                                                                                        |
+| Production amd64 image under QEMU: same set                                                                                        | **All passed**, this is not an attempt on physical x86                                                                |
+| Playwright on real images: direct + two prefixes, profile/reload/navigation and actually rendered PDF                              | **6/6 ARM64 + 6/6 amd64**, Chromium/WebKit; last runs 8.2 s and 13.8 s                                                |
+| Restore on second PostgreSQL                                                                                                       | **Passed on both CPUs**, matching 13 table fingerprints after 5-3 match, separate session invalidation, source intact |
+| Alembic `check` on development DB and compatibility of production lockfile export                                                  | `No new upgrade operations detected`; export without differences                                                      |
 
-Wbudowany w początkowy profil Colima emulator sporadycznie kończył proste skrypty bazowe s6 sygnałem 11, także po udanym starcie. Aktualizacja **wyłącznie lokalnego środowiska testowego** do oficjalnego `tonistiigi/binfmt`/QEMU **10.2.3** pozwoliła przejść pełen zestaw amd64 bez takich awarii. Nie uznano wcześniejszych przerwanych prób za sukces i nie zmieniano domeny aplikacji, aby je omijać. CI przypina sprawdzony obraz emulatora po digest. Nie jest to nadal dowód działania na fizycznym x86/Pi.
+The emulator built into the initial Colima profile occasionally terminated simple s6 base scripts with signal 11, even after a successful start. Upgrading the **local test environment only** to the official `tonistiigi/binfmt`/QEMU **10.2.3** allowed me to run the full amd64 stack without such crashes. Previous aborted attempts were not considered a success and the application domain was not changed to bypass them. CI pins the verified emulator image after digest. This is still not proof of operation on a physical x86/Pi.
 
-Logi: `.runtime/e10-container-{arm,amd}.log`, `.runtime/e10/{browser-arm,browser-amd,backend-pg17}.log`. Archiwum testowe jest prywatne i ignorowane przez Git. Kontenery, sieci i przypisane wolumeny z zakończonych przebiegów zostały usunięte; środowisko nie jest wdrożeniem produkcyjnym.
+Logs: `.runtime/e10-container-{arm,amd}.log`, `.runtime/e10/{browser-arm,browser-amd,backend-pg17}.log`. The test archive is private and ignored by Git. Containers, networks, and assigned volumes from completed runs have been removed; the environment is not a production deployment.
 
-Do odtworzenia: `scripts/test_container.py --image <lokalny obraz> --platform linux/arm64|linux/amd64`. Test tworzy i usuwa wyłącznie własne zasoby. `--backend-tests` uruchamia dodatkowo całą regresję na osobnej `regression_test` w PostgreSQL 17, bez naruszenia źródłowej bazy sprawdzanej aplikacji. Wyniki i screenshoty są w ignorowanych `.runtime/e10*` i `volleycrew/frontend/test-results-container/`.
+To be reproduced: `scripts/test_container.py --image <local-image> --platform linux/arm64|linux/amd64`. The test only creates and deletes its own resources. `--backend-tests` additionally runs the entire regression on a separate `regression_test` in PostgreSQL 17, without affecting the source database of the application under test. The results and screenshots are in the ignored `.runtime/e10*` and `volleycrew/frontend/test-results-container/`.
 
-W pierwotnym E10 workflow budował/testował oba CPU bez publikacji obrazu; zdalnego CI wtedy nie uruchamiano. Późniejsza próba instalacji HA wykazała, że build.yaml z digestami jest odrzucany i Supervisor nadpisuje BUILD_FROM bazą Alpine. Poprawkę 0.1.1 opisuje [raport zgodności HA](ha-build-fix.md); zastępuje ona wcześniejsze założenie o zgodności build.yaml.
+In the original E10 workflow it built/tested both CPUs without publishing the image; remote CI was not started then. A later HA installation attempt showed that build.yaml with digests is discarded and Supervisor overrides the base image with Alpine via BUILD_FROM. Patch 0.1.1 is covered by [HA Compatibility Report](ha-build-fix.md); it replaces the previous build.yaml compatibility assumption.
 
-## Odbiór użytkownika po publikacji kodu
+## User acceptance testing after code publication
 
-- [ ] Kod wysłany do repozytorium, które dodaje użytkownik; zdalne CI sprawdzone.
-- [ ] Instalacja i ponowna aktualizacja/restart na Pi 4 aarch64, z pomiarem czasu/RAM builda.
-- [ ] Osobny produkcyjny PostgreSQL, poprawne opcje, token i własny PIN administratora.
-- [ ] Domena HTTPS i Ingress z własną sesją Volleycrew, właściwe originy/proxy.
-- [ ] Wejście zawodnika z telefonu poza LAN, bez konta HA; pełny cykl spotkania i PDF.
-- [ ] Codzienna kopia poza hostem i odtworzenie z tego miejsca, z kluczem odzyskiwania HA.
-- [ ] Fizyczne Chrome Android/Safari iOS i akceptacja porównania A z E9.
+- [ ] Code sent to the repository that the user adds; remote CI checked.
+- [ ] Installation and re-update/reboot on Pi 4 aarch64, with build time/RAM measurement.
+- [ ] Separate production PostgreSQL, correct options, token and own administrator PIN.
+- [ ] HTTPS and Ingress domain with its own Volleycrew session, proper origins/proxy.
+- [ ] Player entry from a phone outside the LAN, without an HA account; full series of meetings and PDF.
+- [ ] Daily off-host backup and restore from there, with HA recovery key.
+- [ ] Physical Chrome Android/Safari iOS and accept A vs E9 comparison.
 
-To są świadomie delegowane czynności, nie wykonany odbiór produkcyjny. Kolejny etap **E11** obejmuje końcowy odbiór i wydanie po tych próbach. Nie ogłaszamy instalacji na HA ani ukończenia całego projektu na podstawie samego lokalnego buildu.
+These are consciously delegated activities, production acceptance testing was not performed. The next stage **E11** includes final acceptance testing and release after these tests. We do not announce installation on HA or completion of the entire project based on local build alone.
 
-## Źródła sprawdzone w E10
+## Sources checked in E10
 
-- Lokalny `../maybe-finance`: manifest repozytorium, config/build.yaml, Dockerfile, init, Nginx i usługi. Zachowano sposób lokalnego builda; nie przeniesiono host network, procesu Node ani integracji finansowych.
-- [HA — konfiguracja aplikacji](https://contributors.home-assistant.io/apps/reference/configuration/): brak `image` oznacza lokalny build, `/data` jest trwały, oddzielny port Ingress i hook kopii.
-- [HA — Ingress](https://contributors.home-assistant.io/apps/guides/ingress/): zaufany peer `172.30.32.2`, zmienny prefiks i `X-Ingress-Path`. Własny PIN pozostaje celowym wymaganiem Volleycrew, bez nadawania ról na podstawie HA.
-- [HA — Dockerfile/build](https://contributors.home-assistant.io/apps/guides/dockerfile/): domyślny `BUILD_FROM`, zgodność ze starszym build.yaml i s6.
-- [Debian base 9.3.0](https://raw.githubusercontent.com/hassio-addons/app-debian-base/v9.3.0/base/Dockerfile): Debian Trixie/s6. Istnienie obu manifestów i digesty sprawdzono w GHCR; nie wnioskowano o ich dostępności ze starego maybe-finance.
+- Local `../maybe-finance`: repository manifest, config/build.yaml, Dockerfile, init, Nginx and services. Local build method preserved; no host network, Node process or financial integrations have been moved.
+- [HA - Application Configuration](https://contributors.home-assistant.io/apps/reference/configuration/): none `image` means local build, `/data` is persistent, separate Ingress port and copy hook.
+- [HA - Ingress](https://contributors.home-assistant.io/apps/guides/ingress/): trusted peer `172.30.32.2`, variable prefix and `X-Ingress-Path`. Custom PIN remains an intentional requirement of Volleycrew, with no role assignments based on HA.
+- [HA - Dockerfile/build](https://contributors.home-assistant.io/apps/guides/dockerfile/): default `BUILD_FROM`, compatible with legacy build.yaml and s6.
+- [Debian base 9.3.0](https://raw.githubusercontent.com/hassio-addons/app-debian-base/v9.3.0/base/Dockerfile): Debian Trixie/s6. The existence of both manifestos and digesta was checked with GHCR; their accessibility was not requested from the old maybe-finance.
 
-- [Docker — multiarch i emulacja](https://docs.docker.com/build/building/multi-platform/): oddzielenie budowania od uruchamiania i użycie oficjalnego binfmt w lokalnej VM.
+- [Docker - multiarch and emulation](https://docs.docker.com/build/building/multi-platform/): Separate build from run and use official binfmt in local VM.

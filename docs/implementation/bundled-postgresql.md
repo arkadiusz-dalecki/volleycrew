@@ -1,27 +1,27 @@
-# Własny PostgreSQL — Volleycrew 0.2.0
+# Bundled PostgreSQL - Volleycrew 0.2.0
 
-Decyzja użytkownika 2026-11-08 zastępuje wcześniejsze wymaganie osobnego serwera. Użytkownik nie ma PostgreSQL i chce instalować kompletną aplikację w HA. Agent zmienia pakiet i testuje kontenery; nie modyfikuje działającego HA ani tunelu.
+User Decision 2026-11-08 replaces the previous requirement for a separate server. The user does not have PostgreSQL and wants to install the complete application in HA. The agent changes the package and tests the containers; does not modify the running HA or tunnel.
 
-## Implementacja
+## Implementation
 
-PostgreSQL 17 jest częścią obrazu Debian/s6. Stan klastra w /data/postgresql, hasło generowane raz w /data/postgres-password (0600), osobna rola aplikacji bez superusera, listener tylko 127.0.0.1:5432. Brak mapowania portu bazy. Parametry pamięci: shared_buffers 32 MB, max_connections 30, work_mem 2 MB; pomiar na fizycznym Pi pozostaje do odbioru.
+PostgreSQL 17 is part of the Debian/s6 image. Cluster data in /data/postgresql, password generated once in /data/postgres-password (0600), separate application role without superuser, listener only 127.0.0.1:5432. No database port mapping. Memory parameters: shared_buffers 32 MB, max_connections 30, work_mem 2 MB; measurement on the physical Pi remains part of acceptance testing.
 
-DATABASE_MODE=auto i pusty host wybierają własną bazę; istniejący host zachowuje external. Zmiana utrwalonego trybu lub brak istniejącego hasła blokują start, nie tworzą pustej alternatywy. Główna wersja PG nie jest automatycznie podnoszona. Etapy s6: konfiguracja → inicjalizacja/start bazy → backup/migracje/bootstrap → przekazanie PostgreSQL do nadzorowanej usługi. Awaria bazy kończy kontener.
+DATABASE_MODE=auto and empty host select bundled database; existing host retains external. Changing the fixed mode or missing an existing password blocks the start, it does not create an empty alternative. The PostgreSQL major version is not automatically upgraded. Steps s6: configuration → initialization/start database → backup/migrations/bootstrap → handing PostgreSQL over to the supervised service. A database failure terminates the container.
 
-HA używa backup cold: zatrzymuje aplikację i zapisuje spójny klaster, również gdy aplikacja była już zatrzymana. To dodaje krótką przerwę na czas kopii. Codzienny pg_dump i obowiązkowy backup przed aktualizacją pozostają online. External wymaga świeżej kopii logicznej przed kopią HA lub niezależnej kopii serwera — sam katalog aplikacji nie zawiera zewnętrznej bazy.
+HA uses cold backup: it stops the application and saves a consistent cluster, even when the application has already been stopped. This adds a short pause for copy time. The daily pg_dump and mandatory pre-update backup remain online. External requires a fresh logical copy before the HA copy or an independent server copy - the application directory itself does not contain the external database.
 
-Dodatkowe atomowo zapisywane archiwum postgres-recovery.tar.gz umożliwia odtworzenie logiczne na pustym klastrze przed migracjami, jeśli plików klastra nie ma w przenoszonym zestawie. Przy braku archiwum albo jego uszkodzeniu start jest blokowany. Standardowa kopia HA zawiera cały klaster i nie wymaga tego mechanizmu. Próba migracji istniejącej bazy do innego trybu jest osobną operacją, poza automatyczną aktualizacją.
+An additional atomically saved postgres-recovery.tar.gz archive allows for logical recovery on an empty cluster before migrations if the cluster files are not in the migrated set. If the archive is missing or damaged, the start is blocked. A standard HA copy contains the entire cluster and does not require this mechanism. Attempting to migrate an existing database to another mode is a separate operation apart from automatic updating.
 
-## Weryfikacja
+## Verification
 
-Lokalnie na produkcyjnym ARM64 sprawdzono własny start, migracje i prawdziwe utworzenie administratora, restart oraz SIGKILL, odtworzenie logiczne na osobnym wolumenie i blokadę brakującego archiwum. Końcowa rozszerzona próba obejmuje także kopię zatrzymanego klastra i backup przy aktualizacji; jej wynik oraz oba CPU są w Checks PR.
+Locally, using the production ARM64 image, self-start, migrations and real creation of the administrator, restart and SIGKILL, logical restoration on a separate volume and blocking of the missing archive were checked. The final extended attempt also includes a copy of the stopped cluster and an upgrade backup; its result for both architectures is recorded in the PR checks.
 
-Regresja zewnętrznej bazy na PostgreSQL 17: 118 testów backendu zaliczonych; następnie dodano test bezpiecznej diagnostyki walidacji. 11 testów konfiguracji zaliczonych, lint zaliczony. Pełny scenariusz obrazu zewnętrznego: start, błędne opcje/DB/migracja, HTTPS, dwa prefiksy Ingress, cookies/CSRF, restart, backup przed aktualizacją, zapisy/obecność/drużyny/PDF/wynik/ELO, utrata DB i restore na osobnej instancji — zaliczone lokalnie. Obejmuje 6 prób UI Chromium/WebKit.
+External database regression on PostgreSQL 17: 118 backend tests passed; then a secure validation diagnostic test was added. 11 configuration tests passed, lint passed. Full external image scenario: start, incorrect options/DB/migration, HTTPS, two Ingress prefixes, cookies/CSRF, restart, backup before update, enrollments/attendance/teams/PDF/result/ELO, DB loss and restore on a separate instance - passed locally. Includes 6 Chromium/WebKit UI checks.
 
-CI buduje oba CPU z awaryjnym BUILD_FROM, wykonuje dotychczasową regresję external oraz nowy scripts/test_bundled_database.py. Zdalny wynik wymaga potwierdzenia w PR. Kopie i hasła testowe nie trafiają do artefaktów CI; wyłącznie logi i materiały testów UI.
+CI builds both CPUs with a fallback BUILD_FROM, performs the existing external regression and the new scripts/test_bundled_database.py. The remote result requires confirmation in PR. Test copies and passwords do not go to CI artifacts; only logs and UI test materials.
 
-## Odbiór użytkownika
+## User acceptance testing
 
-Po scaleniu i odświeżeniu sklepu zainstalować 0.2.0. Zachować PUBLIC_URL/token; pozostawić DATABASE_MODE=auto i pusty POSTGRES_HOST. Nie trzeba zakładać bazy ani hasła. Sprawdzić administratora, restart HA, kopię i odtworzenie na docelowym Pi oraz magazyn kopii poza hostem. Instalacja i pomiar zasobów Pi nie są deklarowane jako wykonane przez agenta.
+After merging and refreshing the store, install 0.2.0. Keep PUBLIC_URL/token; leave DATABASE_MODE=auto and empty POSTGRES_HOST. There is no need to create a database or password. Check the administrator, HA restart, copy and restore on the target Pi, and copy storage outside the host. Installation and measurement of Pi resources are not declared as performed by the agent.
 
-Źródła: [PostgreSQL initdb](https://www.postgresql.org/docs/17/app-initdb.html), [wymagania spójnej kopii plików](https://www.postgresql.org/docs/17/backup-file.html), [backup cold w HA](https://contributors.home-assistant.io/apps/reference/configuration/).
+Sources: [PostgreSQL initdb](https://www.postgresql.org/docs/17/app-initdb.html), [consistent file backup requirements](https://www.postgresql.org/docs/17/backup-file.html), [cold backup in HA](https://contributors.home-assistant.io/apps/reference/configuration/).

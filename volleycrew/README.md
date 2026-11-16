@@ -1,7 +1,7 @@
 # Volleycrew
 
-Aplikacja prywatnej grupy siatkarskiej: kalendarz i zapisy, rezerwa, obecność, drużyny na boisku, lista podpisów PDF oraz ranking ELO.
+An app for a private volleyball group: calendar and enrollments, waitlist, attendance, teams on the court, PDF signature sheets and ELO rankings.
 
-Home Assistant buduje ją lokalnie przy instalacji, tak jak maybe-finance. Obsługiwane architektury: Raspberry Pi 64-bit (`aarch64`) i `amd64`. Od 0.2.0 zawiera własny PostgreSQL 17 z automatyczną konfiguracją i trwałymi danymi. Wymaga domeny HTTPS. Istniejące konfiguracje zewnętrznej bazy pozostają obsługiwane. Użytkownicy Volleycrew logują się profilem i PIN-em; nie potrzebują kont HA.
+Home Assistant builds the app locally during installation, like maybe-finance. Supported architectures: 64-bit Raspberry Pi (`aarch64`) and `amd64`. Since 0.2.0, it includes PostgreSQL 17 with automatic configuration and persistent data. An HTTPS domain is required. Existing external database configurations remain supported. Players sign in to Volleycrew with a username and password or optional Google login; they do not need HA accounts.
 
-[Instalacja i konfiguracja](DOCS.md) · [Historia wersji](CHANGELOG.md)
+[Installation and configuration](DOCS.md) · [Changelog](CHANGELOG.md)

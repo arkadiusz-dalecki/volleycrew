@@ -1,155 +1,155 @@
-# Etapy budowy i zadania dla agentów
+# Construction stages and tasks for agents
 
-Każdy etap jest osobnym, reviewowalnym przyrostem. Domyślnie realizacja sekwencyjna. Osobne gałęzie pracy są możliwe dopiero po ustaleniu wspólnego kontraktu i wyraźnym zleceniu; sam plan nie uruchamia agentów. Nie rozpoczynać produkcyjnej implementacji tylko dlatego, że dokument istnieje.
+Each stage is a separate, reviewable increment. By default, sequential execution. Separate branches of work are only possible after establishing a common contract and a clear order; the plan itself does not trigger the agents. Don't start a production implementation just because the document exists.
 
-## E0 — zamknięcie fundamentów
+## E0 - foundation closure
 
-Wejście: cały indeks planu, `architecture.md`, `decisions.md`, lokalna referencja maybe-finance. Zależności: polecenie rozpoczęcia.
+Input: entire plan index, `architecture.md`, `decisions.md`, local maybe-finance reference. Dependencies: start command.
 
-- Potwierdzić D1 i proponowany zakres D9: host HA, CPU, domena/TLS, metoda wystawienia, PostgreSQL, odpowiedzialność za backup.
-- Zweryfikować aktualne dokumentacje HA, Python/FastAPI, React/Vite i obrazu bazowego. Zapisać wspierane wersje oraz zgodność `amd64/aarch64`.
-- Ustalić porty bez konfliktu z maybe-finance; nazwy bazy, sluga i ustawień.
-- Zapisać decyzje: stack z planu lub uzgodniona zmiana; metoda logowania i ograniczeń PIN; model sesji i termin ważności.
-- Przejść D2–D6 na przykładach. Gdy odpowiedzi jeszcze nie ma, oznaczyć zależne podzadania; można budować fundamenty bez udawania gotowej polityki.
+- Confirm D1 and the proposed D9 scope: HA host, CPU, domain/TLS, issuance method, PostgreSQL, backup responsibility.
+- Verify current HA, Python/FastAPI, React/Vite and base image documentation. Note the supported versions and compatibility `amd64/aarch64`.
+- Establish ports without conflict with maybe-finance; database, service and settings names.
+- Record decisions: stack from plan or agreed change; login and PIN restriction method; session model and expiration date.
+- Complete D2–D6 with examples. If there is no answer yet, mark dependent subtasks; you can build foundations without pretending to have a ready-made policy.
 
-Odbiór: agent potrafi opisać drogę telefonu z internetu do API oraz sposób odtworzenia DB. Rejestr ma decyzje albo precyzyjnie wskazane otwarte zależności. Samo przeczytanie plików nie kończy E0, jeśli brak ustaleń niezbędnych dla wybranego zakresu.
+Acceptance testing: the agent can describe the phone's path from the Internet to the API and how to recreate the DB. The registry has decisions or precisely indicated open dependencies. Merely reading the files does not complete E0 if the findings necessary for the selected scope are missing.
 
-## E1 — szkielet i środowisko
+## E1 - skeleton and environment
 
-Zależności: techniczny zakres E0. Czytać: architektura, weryfikacja.
+Dependencies: technical scope E0. Read: architecture, verification.
 
-- Utworzyć strukturę produkcyjną obok `prototype/`, konfigurację formatowania/lintowania, lockfile, testową konfigurację i przykładowe ustawienia bez sekretów.
-- Uruchomić PostgreSQL developerską; pustą migrację i pierwsze tabele bazowe ustalić z modelem E3.
-- Backend: health live/ready, konfiguracja, sesje DB, obsługa błędów i zależność wstrzykiwanego zegara.
-- Frontend: router, pusty AppShell A, design tokens, klient API, generowanie typów OpenAPI i podstawowe stany loading/error.
-- Zdefiniować komendy: dev, lint, typecheck, test backend, migracje, test frontend/e2e, build. Dodać CI uruchamiające je w izolowanych usługach.
+- Create a production structure next to `prototype/`, formatting/linting configuration, lockfile, test configuration and sample settings without secrets.
+- Run PostgreSQL development; empty migration and establish the first base tables with the E3 model.
+- Backend: health live/ready, configuration, DB sessions, error handling and injected clock dependency.
+- Frontend: router, empty AppShell A, design tokens, API client, OpenAPI type generation and basic loading/error states.
+- Define the commands: dev, lint, typecheck, backend test, migrations, frontend/e2e test, build. Add CI to run them on isolated services.
 
-Odbiór: nowy checkout uruchamia się z README bez ręcznego poprawiania kodu; health ready sprawdza DB; frontend dochodzi do API; build produkcyjny przechodzi; CI nie dotyka produkcji.
+Acceptance testing: new checkout starts from README without manually correcting the code; health ready checks DB; frontend reaches API; production build goes through; CI does not touch production.
 
-## E2 — sesje, PIN i zaproszenia
+## E2 - sessions, PIN and invitations
 
-Zależności: E1, D6 dla pełnej polityki profili. Czytać: sekcje dostępu w domenie, frontend, weryfikacja.
+Dependencies: E1, D6 for full profile policy. Read: domain access sections, frontend, verification.
 
-- Modele Player, Invite, Session, PinResetGrant i trwałe ograniczenia prób logowania.
-- Jednorazowy bootstrap Arkadiusza; losowy, unieważnialny link zaproszenia; nowa rejestracja tylko z aktywnym linkiem i zawsze ze statusem gościa.
-- Rejestracja, profil chooser wg D6, logowanie, zapamiętana sesja, wylogowanie, zmiana PIN-u i grant resetu.
-- Autoryzacja roli w każdym administracyjnym endpointzie; publiczne DTO profilu; unieważnianie sesji po blokadzie/resetach.
-- UI ścieżek wejścia i profilu, komunikaty wygasłego zaproszenia oraz resetu.
+- Player, Invite, Session, PinResetGrant models and persistent restrictions on login attempts.
+- One-time bootstrap of Arkadiusz; random, voidable invite link; new registration only with an active link and always with guest status.
+- Registration, chooser profile according to D6, login, remembered session, logout, PIN change and reset grant.
+- Role authorization in each administrative endpoint; public profile DTO; session invalidation after lock/reset.
+- Entry and profile path UI, expired invitation and reset messages.
 
-Odbiór: po ponownym otwarciu użytkownik ma sesję; nowe urządzenie wymaga PIN-u; gracz nie uzyskuje admina przez zmianę requestu; unieważniony link nie rejestruje nowych osób; ograniczenia prób i reset mają testy integracyjne. D6 pozostawione otwarte oznacza nieukończone odpowiednie operacje, nie ich milczące pominięcie.
+Acceptance testing: after reopening, the user has a session; new device requires PIN; the player does not gain admin by changing the request; a revoked link does not register new people; attempts and reset limitations have integration tests. D6 left open indicates that the relevant operations are not completed, not tacitly skipped.
 
-## E3 — modele spotkań i kalendarz
+## E3 - meeting models and calendar
 
-Zależności: E1/E2; D6 dla operacji blokowania. Czytać: model i harmonogram w domenie, kalendarz w frontendzie.
+Dependencies: E1/E2; D6 for blocking operations. Read: model and schedule in the domain, calendar in the frontend.
 
-- Migracje ScheduleVersion, Meeting i Enrollment z ograniczeniami i indeksami.
-- Domyślny wtorkowy harmonogram i strefa, czysta funkcja generowania terminów, scalenie wystąpień z trwałymi rekordami.
-- Idempotentne rozwiązanie wystąpienia do Meeting przy mutacji.
-- Najbliższe spotkanie, szczegóły i paginowany zakres kalendarza. Publiczna lista graczy bez danych prywatnych.
-- Frontend kalendarza i szkielet szczegółów z danymi API, pustym stanem i odwołanym terminem.
+- ScheduleVersion, Meeting and Enrollment migrations with constraints and indexes.
+- Default Tuesday schedule and zone, clean function for generating meeting occurrences, merging occurrences with persistent records.
+- Idempotent solution to the Meeting request with mutation.
+- Upcoming meeting, details and paginated calendar scope. Public list of players without private data.
+- Calendar frontend and details skeleton with API data, empty status and canceled appointment.
 
-Odbiór: przejście do przyszłego miesiąca i zapis terminu nie jest ograniczone do najbliższego tygodnia; dwa żądania tworzą ten sam Meeting; testy DST i nowego dnia tygodnia; historyczny termin ma stabilny identyfikator.
+Acceptance testing: moving to next month and saving the date is not limited to the next week; two requests create the same Meeting; DST and new day of the week tests; the historical term has a stable identifier.
 
-## E4 — deklaracje, priorytety i rezerwa
+## E4 - declarations, priorities and waitlist
 
-Zależności: E2/E3; D2 i D3. Czytać: transakcja zapisu i reguły miejsc.
+Dependencies: E2/E3; D2 and D3. Read: write transaction and place rules.
 
-- EnrollmentEvent, SeatOffer i endpointy deklaracji/ofert. Jedna blokada Meeting dla wszystkich zmian alokacji.
-- Trzy poziomy pierwszeństwa (założyciel > zawodnik > gość) i kolejność, wypieranie przed granicą, ochrona miejsca po granicy, zwalnianie miejsc.
-- Jawne przyjęcie/odmowa/zamknięcie oferty; rezerwacja miejsca według D2. Ręczna komunikacja przez Messenger, bez integracji.
-- Karta własnego stanu, uczestnicy i rezerwa. Serwerowe komunikaty o konflikcie, przekroczeniu granicy i wygaśnięciu oferty.
-- Przyjęcie późnej oferty zapisuje dane potrzebne do wyjątku rezygnacji.
+- EnrollmentEvent, SeatOffer and declaration/offer endpoints. One Meeting lock for all allocation changes.
+- Three levels of priority (founder > player > guest) and order, pushing out before the border, protecting the place after the border, releasing places.
+- Open acceptance/rejection/closing of the offer; seat reservation according to D2. Manual communication via Messenger, without integration.
+- Own status card, participants and waitlist. Server messages about conflict, border crossing and offer expiration.
+- Accepting a late offer saves the data needed for the opt-out exception.
 
-Odbiór: testy na dwóch równoczesnych sesjach DB dowodzą limitu 14; powtórzenie nie zmienia kolejności; założyciel wypiera tylko zgodnie z regułą czasu; gracz rezerwy wymaga potwierdzenia; cudzej/starej oferty nie można przyjąć. E2E zapisuje dalszy termin i sprawdza rezultat po odświeżeniu.
+Acceptance testing: testing on two concurrent DB sessions proves limit 14; repetition does not change the order; the founder displaces only according to the rule of time; waitlist player requires confirmation; someone else's/old offer cannot be accepted. E2E saves the next date and checks the result after refreshing.
 
-## E5 — zmiana harmonogramu i odwołanie
+## E5 - rescheduling and cancellation
 
-Zależności: E3/E4; D4. Czytać: harmonogram i stany spotkań.
+Dependencies: E3/E4; D4. Read: schedule and meeting statuses.
 
-- Podgląd zmian od wybranej daty, wersjonowanie harmonogramu, przesunięcie jednego spotkania i odwołanie.
-- Zmiana wersji terminu, aktualizacja zapisów/ofert zgodnie z D4, ponowne potwierdzenie.
-- UI administratora z podsumowaniem zakresu przed zatwierdzeniem, UI zawodnika ze starym i nowym terminem.
-- Weryfikacja uprawnień i konfliktu wersji przy drugiej karcie administratora.
+- Preview of changes from the selected date, versioning of the schedule, postponing one meeting and canceling.
+- Changing the term version, updating enrollments/offers in accordance with D4, re-confirmation.
+- Admin UI with pre-approval scope summary, player UI with old and new deadline.
+- Verification of permissions and version conflict on the second admin tab.
 
-Odbiór: zmiana dnia od daty obejmuje rekordy istniejące i wystąpienia przyszłe; brak duplikatów; stare potwierdzenie nie jest aktualnym; odwołany termin widać w historii i nie tworzy nieobecności.
+Acceptance testing: changing day from date includes existing records and future occurrences; no duplicates; the old confirmation is not current; a canceled appointment is visible in the history and does not create an absence.
 
-## E6 — obecność i drużyny
+## E6 - Attendance and Teams
 
-Zależności: E4/E5; D5. Czytać: obecność i drużyny, panel organizatora w frontendzie.
+Dependencies: E4/E5; D5. Read: attendance and teams, organizer panel in the frontend.
 
-- Attendance i zdarzenia prywatnej historii, szkic oraz zatwierdzenie obecności.
-- Klasyfikacja rezygnacji i wyjątek późnej oferty; no-show dopiero przy zatwierdzeniu, zgodnie z D5.
-- Dwa generatory składów: losowy i wyrównany. ELO do czasu E8 może wynosić bazowe 1000 w prawdziwych danych, bez fikcyjnych punktów z prototypu.
-- Edycja szkicu, weryfikacja członkostwa/obecności/liczebności, zatwierdzenie i kontrolowany powrót do zmian.
-- Boisko z pełnymi nazwiskami, rotacją i ręczną zamianą pełnych drużyn; widok zatwierdzonych składów dla graczy.
+- Attendance and private history events, draft and attendance confirmation.
+- Cancellation classification and late offer exception; no-show only on commit, according to D5.
+- Two lineups generators: random and balanced. ELO by E8 may be base 1000 in real data, without dummy points from the prototype.
+- Draft editing, membership/attendance/number verification, approval and controlled rollback.
+- Court with full names, rotation and manual replacement of full teams; View approved lineups for players.
 
-Odbiór: każda obecna osoba jest dokładnie w jednym składzie; nieobecni nie trafiają do generatora; oba tryby działają dla 11–14 osób, mniejsze liczby mają jawną walidację; edycja 7:7 pozwala zamienić osoby; historia jest prywatna także przez bezpośredni URL/API. Testy ponowionego zatwierdzenia bez duplikatów.
+Acceptance testing: every person present is in exactly one lineup; absentees do not go to the generator; both modes work for 11-14 people, smaller numbers have explicit validation; 7:7 edition allows you to swap people; history is private also via direct URL/API. Duplicate-free recommit tests.
 
-## E7 — lista podpisów
+## E7 - Signature List
 
-Zależności: E6 i D7.
+Dependencies: E6 and D7.
 
-- Generowanie PDF po zatwierdzeniu faktycznej obecności; data, I LO w Gdańsku, numer, imię/nazwisko, miejsce na podpis.
-- Autoryzowany podgląd/pobranie; polskie znaki i dostarczony font, bez wysyłania danych do zewnętrznego generatora.
-- Źródłem PDF są wyłącznie faktycznie obecni. Po korekcie obecności ponowne generowanie pobiera aktualne dane; nie dodawać niezatwierdzonego wariantu eksportu z deklaracji.
+- PDF generation after confirmation of actual attendance; date, I LO in Gdańsk, number, name/surname, place for signature.
+- Authorized preview/download; Polish characters and the provided font, without sending data to an external generator.
+- PDF sources are only those actually present. After presence correction, regeneration downloads the current data; do not add an unapproved export variant from the declaration.
 
-Odbiór: odczyt i wizualna kontrola wygenerowanego pliku dla 14 osób i długich nazwisk; druk A4 bez obcięć; zmiana obecności zmienia kolejną wygenerowaną listę; zwykły gracz nie pobiera dokumentu administracyjnego.
+Acceptance testing: reading and visual inspection of the generated file for 14 people and long names; A4 print without cropping; changing presence changes the next generated list; an ordinary player does not download an administrative document.
 
-## E8 — wyniki, ELO i korekty
+## E8 - results, ELO and corrections
 
-Zależności: E6, D8.
+Dependencies: E6, D8.
 
-- Zatwierdzić symulacje wzoru i przykładowe przyrosty; zapisać wersję algorytmu i precyzję.
-- Wdrożyć czystą funkcję oceny spotkania, ResultRevision, RatingEntry, transakcyjny zapis i ochronę przed powtórzeniem.
-- Zrealizować politykę 0:0 i korekt. Przy replay sprawdzić również korektę składu i przeniesienie kolejności w historii.
-- Formularz wyniku z podsumowaniem, ranking, historia spotkań, szczegóły zmian punktów.
+- Validate pattern simulations and sample increments; save the algorithm version and precision.
+- Implement pure meeting rating, ResultRevision, RatingEntry, transactional write and replay protection.
+- Implement a 0:0 policy and corrections. When replaying, also check the lineup adjustments and moving the order in history.
+- Result form with summary, ranking, match history, details of point changes.
 
-Odbiór: spełnione własności matematyczne w `verification.md`; wynik 5:3 nie liczy się drugi raz po retry; nieobecny nie ma RatingEntry; korekta daje ten sam ranking co przeliczenie historii od początku; awaria nie zapisuje połowy meczu.
+Acceptance testing: mathematical properties met in `verification.md`; the result 5:3 does not count for the second time after the retry; absent has no RatingEntry; correction gives the same ranking as recalculating the history from the beginning; the crash doesn't save half of the match.
 
-## E9 — integracja UI A i próby na telefonie
+## E9 - UI A integration and attempts on the phone
 
-Stan: implementacja i kontrola lokalna wykonane; [raport i porównanie A](e9-report.md). Odbiór fizycznych telefonów i akceptacja porównania wizualnego pozostają otwarte.
+Status: implementation and local control completed; [report and comparison A](e9-report.md). Acceptance testing of physical phones and acceptance of visual comparison remain open.
 
-Zależności: E2–E8. Czytać: frontend i weryfikacja.
+Dependencies: E2–E8. Read: frontend and verification.
 
-- Sprawdzić wszystkie trasy, odświeżenia, wygasłe sesje, błędy/konflikty i powrót po utracie sieci.
-- Ujednolicić tokeny CSS i komponenty; usunąć demo/przełącznik wariantów z builda produkcyjnego.
-- Obsłużyć klawiaturę, fokus, cele dotykowe i nazwy graczy na boisku. Dołączyć fonty lokalnie.
-- Przejść pełny scenariusz uczestnika i organizatora w rozmiarach 360/390/430 i desktop. Dodać manifest/ikony jeśli mieszczą się w ustalonym zakresie.
+- Check all routes, refreshes, expired sessions, errors/conflicts and network loss recovery.
+- Unify CSS tokens and components; remove demo/variant switcher from production build.
+- Support keyboard, focus, touch targets and player names on court. Include fonts locally.
+- Complete the full participant and organizer scenario in 360/390/430 and desktop sizes. Add manifest/icons if they are within the specified range.
 
-Odbiór: zaakceptowane porównanie z wariantem A, brak poziomego overflow i zasłoniętych przycisków, obsługa Chrome Android i Safari iOS sprawdzona z podaniem wersji. Emulacja to etap kontroli, nie dowód testu na fizycznym urządzeniu.
+Acceptance testing: accepted comparison with variant A, no horizontal overflow and covered buttons, Chrome Android and Safari iOS support checked with version information. Emulation is a control step, not proof of test on a physical device.
 
-## E10 — pakiet Home Assistant
+## E10 - Home Assistant Pack
 
-Zakres użytkownika z 2026-11-07: samodzielne dodanie repozytorium, token i instalacja w HA. Agent przygotowuje pakiet i sprawdza go lokalnie; nie wykonuje instalacji ani zmian w HA/tunelu. [Raport E10](e10-report.md) oddziela weryfikację kontenerów od odbioru na Pi.
+User scope from 2026-11-07: adding the repository, token and installation in HA yourself. The agent prepares the package and checks it locally; does not perform installations or changes to the HA/tunnel. [Report E10](e10-report.md) separates container verification from acceptance testing on Pi.
 
-Zależności: E0/E1 oraz działająca aplikacja; D1/D10. Eksperyment z pustym kontenerem można wykonać wcześniej jako część E1, bez ogłaszania gotowego wdrożenia.
+Dependencies: E0/E1 and running application; D1/D10. An experiment with an empty container can be performed earlier as part of E1, without announcing a ready deployment.
 
-- Manifest repozytorium i aplikacji, Dockerfile, s6, oba listenery Nginx, opcje konfiguracji, health, migracje i logi.
-- Przeprowadzić test produkcyjnego obrazu z testową DB; sprawdzić start po braku DB, błędnej konfiguracji i migracji.
-- Sprawdzić Ingress pod dynamicznym prefiksem oraz bezpośrednią domenę HTTPS; sesje i CSRF w obu trybach.
-- Zbudować/testować oba CPU; zastosować D10: lokalny build w HA, brak pola `image` z gotowym obrazem Volleycrew, wersjonowanie przez `config.yaml`, ręczna instalacja/aktualizacja. Sprawdzić build na Pi 4 (RAM/czas). Udokumentować dodanie repozytorium, odświeżenie sklepu, backup i aktualizację. CI może testować build bez publikowania obrazu.
-- Wykonać backup i odtworzenie na osobnej instancji, opisać rollback schematu i obrazu.
+- Repository and application manifest, Dockerfile, s6, both Nginx listeners, configuration options, health, migrations and logs.
+- Test the production image with the test DB; check start after missing DB, incorrect configuration and migration.
+- Check Ingress under dynamic prefix and direct HTTPS domain; sessions and CSRF in both modes.
+- Build/test both CPUs; use D10: local build in HA, missing field `image` with ready Volleycrew image, versioning via `config.yaml`, manual installation/update. Check the build on Pi 4 (RAM/time). Document the addition of the repository, refreshing the store, backup and update. CI can test the build without publishing an image.
+- Perform a backup and restore on a separate instance, describe the rollback of the diagram and image.
 
-Odbiór: instalacja i aktualizacja w docelowym HA, trwałość danych po restarcie, poprawny dostęp z telefonu poza LAN, bez konta HA dla zawodnika. Wynik sprawdzenia drugiej architektury opisany; nie utożsamiać samej kompilacji z uruchomieniem.
+Acceptance testing: installation and update in the target HA, data durability after restart, correct access from the phone outside the LAN, without an HA account for the player. The result of checking the second architecture described; do not equate compilation with launch.
 
-## E10 — własny PostgreSQL 0.2.0
+## E10 - bundled PostgreSQL 0.2.0
 
-Zlecone 2026-11-08. Zastępuje wymóg osobnego serwera w nowej instalacji. Własna baza z automatycznym hasłem i trwałym /data; zachowanie istniejącego external; migracje, restart/awaria/aktualizacja, backup i restore HA. Odbiór: realny start i bootstrap bez osobnego serwera, dane po restartach, odtworzenie na nowym wolumenie, blokada startu przy braku kopii, kontrole obu CPU. Instalację wykonuje użytkownik.
+Commissioned 2026-11-08. Replaces the requirement for a separate server in a new installation. Bundled database with automatic password and persistent /data; maintaining the existing external; migrations, restart/failure/update, HA backup and restore. Acceptance testing: real start and bootstrap without a separate server, data after restarts, restoration on a new volume, start lock in the absence of copies, checks of both CPUs. The installation is performed by the user.
 
-## E11 — odbiór i pierwsze wydanie
+## E11 - acceptance testing and first release
 
-Zależności: wszystkie wymagane etapy, rozstrzygnięte D1–D10 albo jawnie zawężony zakres zatwierdzony przez użytkownika.
+Dependencies: All required steps, resolved D1-D10, or explicit scope approved by the user.
 
-- Przejść scenariusz szkolnej sali: 14 zapisów, rezygnacja, oferta, przyjęcie, kontrola obecności, drużyny, podpisy, wynik i ranking.
-- Przejść scenariusz zmiany harmonogramu, odwołania i korekty według zatwierdzonych zasad.
-- Audyt autoryzacji i sesji, brak sekretów w logach, odtworzenie danych, monitoring dostępności i log błędów.
-- Przekazać instrukcję administratora: zaproszenie, PIN reset, harmonogram, rezerwa, obecność, wynik, backup/restore.
-- Przed publikacją/instalacją postępować zgodnie z upoważnieniem użytkownika; plan nie jest poleceniem publikacji.
+- Complete the school venue scenario: 14 enrollments, withdrawal, offer, acceptance, attendance control, teams, signings, result and ranking.
+- Pass scenario rescheduling, cancellations and corrections according to approved rules.
+- Authorization and session audit, no secrets in logs, data recovery, accessibility monitoring and error log.
+- Provide administrator instructions: invitation, PIN reset, schedule, waitlist, attendance, result, backup/restore.
+- Before publishing/installing, follow the user's authorization; the plan is not a publication order.
 
-Odbiór: wszystkie kryteria wydania z `verification.md` mają dowód. Użytkownik zatwierdza zakres i zachowanie. Pozostałe prace mają osobne zadania; błędy w limitach, prywatności, trwałości i rankingu blokują wydanie.
+Acceptance testing: All release criteria from `verification.md` have proof. The user approves the scope and behavior. The remaining jobs have separate tasks; bugs in quotas, privacy, persistence and ranking block the release.
 
-## Format zlecenia pojedynczego etapu
+## Single stage order format
 
 ```text
 Zrealizuj E<n> z docs/implementation/tasks.md.
@@ -161,64 +161,64 @@ Raportuj: zmiany, testy i ich wynik, nierozstrzygnięte zależności,
 pozostałe ryzyka oraz następne gotowe zadanie. Zaktualizuj postęp.
 ```
 
-## Uzupełnienie E3/E5/E9 — kalendarz administratora
+## Supplement E3/E5/E9 - Admin Calendar
 
-Zlecone 2026-11-08: widoczna data na karcie, najbliższe spotkanie w bocznym panelu, planowanie w kalendarzu zamiast ustawień, pojedynczy termin i cotygodniowa seria od–do. Odbiór: uprawnienia, brak kolizji, zachowanie zapisów i wyjątków, powrót wcześniejszej reguły po serii, sprawdzenie desktop/mobile/WebKit. [Raport](calendar-management-report.md).
+Ordered 2026-11-08: visible date on the card, next meeting in the side panel, planning in the calendar instead of settings, single date and weekly series from-to. Acceptance testing: permissions, no collisions, behavior of enrollments and exceptions, return of previous rule after series, desktop/mobile/WebKit checking. [Report](calendar-management-report.md).
 
-## Uzupełnienie E2/E9 — poprawki mobilne i instalacja
+## E2/E9 Supplement - Mobile Fixes and Installation
 
-Zlecone 2026-11-08 po zrzutach z iPhone: formularz pojedynczego terminu bez wychodzących pól/ramki, usunięcie podpisu spotkania, rozwijany wybór konta z pamięcią ostatniego logowania, przełącznik widoku administrator/użytkownik, przycisk dodania aplikacji na iOS i Android. Zakres i dowody: [raport](mobile-improvements-report.md).
+Ordered 2026-11-08 after screenshots from iPhone: single appointment form without outgoing fields/frame, removal of meeting signature, drop-down account selection with last login memory, administrator/user view switch, button to add applications for iOS and Android. Scope and evidence: [report](mobile-improvements-report.md).
 
-## Uzupełnienie E3/E5/E9 — usuwanie i istniejące serie
+## Supplement E3/E5/E9 - Deletion and Existing Series
 
-Zlecone 2026-11-08: „Usuń spotkanie” także dla odwołanych terminów, bez ich dalszej prezentacji i odradzania z harmonogramu; widoczna lista istniejących serii z edycją i usuwaniem, również dla dotychczasowej domyślnej reguły wtorkowej. Odbiór: uprawnienia, trwałość usunięcia, zakres serii, zachowana historia rozegranych meczów, zwolnienie ofert/miejsc bez nieobecności, wersje/podgląd i UI mobile/desktop.
+Ordered 2026-11-08: „Usuń spotkanie” also for canceled meeting occurrences, without their further presentation and removal from the schedule; visible list of existing series with editing and deleting, also for the current default Tuesday rule. Acceptance testing: permissions, permanence of deletion, scope of series, preserved history of played matches, release of offers/slots without absences, versions/preview and UI mobile/desktop.
 
-## Uzupełnienie E3/E9 — osobisty kalendarz
+## Supplement E3/E9 - Personal Calendar
 
-Zlecone 2026-11-08: „Dodaj do kalendarza” z wyborem Google, Outlook, Apple i innych aplikacji. Odbiór: bieżąca data/godzina/miejsce, poprawne UTC/DST i polskie znaki, bez eksportu odwołanych/usuniętych spotkań i danych uczestników, plik ICS oraz czytelne ograniczenie do jednorazowego eksportu.
+Ordered 2026-11-08: „Dodaj do kalendarza” with a selection of Google, Outlook, Apple and other applications. Acceptance testing: current date/time/place, correct UTC/DST and Polish characters, no export of canceled/deleted meetings and participant data, ICS file and a clear limitation to one-time export.
 
-Zlecone 2026-11-09 uzupełnienie osobistego kalendarza: przycisk także na kafelkach oraz zbiorczy plik dla wyświetlanego miesiąca lub najbliższych 12 miesięcy. Weryfikacja i źródła importu w [raporcie](personal-calendar-report.md).
+Ordered on 2026-11-09 to complete the personal calendar: a button also on the tiles and a collective file for the displayed month or the next 12 months. Verification and import sources in [report](personal-calendar-report.md).
 
+Update 2026-11-09: Monthly/12-month bulk export discontinued at user request. Single term export buttons remain on tiles and in details.
 
-Aktualizacja 2026-11-09: eksport zbiorczy miesiąca/12 miesięcy wycofany na prośbę użytkownika. Pozostają przyciski eksportu pojedynczego terminu na kafelkach i w szczegółach.
+## Supplement E4/E6/E9 - Initial Teams
 
-## Uzupełnienie E4/E6/E9 — wstępne drużyny
+Ordered 2026-11-09: court with confirmed enrollments before attendance, ELO by default, automatic refresh after declarations and resignations, saved draw/manual replacement of the administrator and use of preview after checking attendance. Acceptance testing: limit of 14 and one place per person, no waitlist/offers, current ELO, list/second tab conflicts, privacy, no presence/ELO effects and mobile view. Scope and results: [report](preliminary-court-report.md).
 
-Zlecone 2026-11-09: boisko z potwierdzonych zapisów przed obecnością, domyślnie ELO, automatyczne odświeżanie po deklaracjach i rezygnacjach, zapisane losowanie/ręczna zamiana administratora oraz wykorzystanie podglądu po sprawdzeniu obecności. Odbiór: limit 14 i jedno miejsce na osobę, brak rezerwy/ofert, aktualne ELO, konflikty listy/drugiej karty, prywatność, brak skutków w obecności/ELO i widok mobile. Zakres i wyniki: [raport](preliminary-court-report.md).
+## Addendum E3/E9 - Meeting Navigation Gestures
 
-## Uzupełnienie E3/E9 — gesty nawigacji spotkań
+Commissioned 2026-11-11: left/right gesture and next/previous meeting buttons on main screen and details. Acceptance testing: chronology also for moved meeting occurrences and month/year boundaries, skipping deleted ones, no declaration during navigation, no collisions with scrolling/forms/touching and read error handling.
 
-Zlecone 2026-11-11: gest w lewo/prawo oraz przyciski następnego/poprzedniego spotkania na głównym ekranie i szczegółach. Odbiór: chronologia także dla przesuniętych terminów i granic miesięcy/lat, pomijanie usuniętych, brak deklaracji przy nawigacji, brak kolizji z przewijaniem/formularzami/dotknięciami i obsługa błędu odczytu.
+### Seamless tile - addition 2026-11-11
 
+Commissioned and implemented: movement of the entire tile with the finger, return after a short/cancelled gesture, directional transition also from buttons, downloading a new term before the animation and limiting movement according to the system settings. Evidence and limitations: [navigation report](meeting-navigation-report.md#seamless-tile---addition-2026-11-11).
 
-### Płynny kafelek — uzupełnienie 2026-11-11
+## Supplement E2/E9 - links, monitoring and abuse resistance
 
-Zlecone i zaimplementowane: ruch całego kafelka za palcem, powrót po krótkim/anulowanym geście, kierunkowe przejście także z przycisków, pobranie nowego terminu przed animacją i ograniczenie ruchu według ustawienia systemu. Dowody i ograniczenia: [raport nawigacji](meeting-navigation-report.md#płynny-kafelek--uzupełnienie-2026-11-11).
+Commissioned 2026-11-14 after login review. Scope: removing the secret from the address after opening the link, discarding tokens in the path, Retry-After support, limited and secretless event logs, and limiting bursts of authentication requests before DB access. Acceptance testing: PostgreSQL tests of permanent limits/resets, controlled clock of the additional limiter, checking the logs for the lack of secrets and E2E registration/reset with a clean address and reopening the link. Without deployment and without changing other login decisions.
 
-## Uzupełnienie E2/E9 — linki, monitoring i odporność na nadużycia
+## Supplement E2/E9 - Optional Google, 2026-11-15
 
-Zlecone 2026-11-14 po recenzji logowania. Zakres: usuwanie sekretu z adresu po otwarciu linku, odrzucenie tokenów w ścieżce, obsługa Retry-After, ograniczone i pozbawione sekretów logi zdarzeń oraz ograniczanie gwałtownych serii żądań uwierzytelniania przed dostępem do DB. Odbiór: testy PostgreSQL trwałych limitów/resetów, kontrolowany zegar dodatkowego limitera, sprawdzenie logów na brak sekretów oraz E2E rejestracji/resetu z czystym adresem i ponownego otwarcia linku. Bez wdrożenia i bez zmiany pozostałych decyzji o logowaniu.
+Ordered: connecting Google to the existing profile after confirming the PIN, logging in using `sub`, disconnecting using the PIN, HA and UI configuration and operator instructions. Acceptance testing: migration, sessions and unique bindings on PostgreSQL; signature/issuer/audience/exp/nonce, PKCE, state binding to browser and connecting session, one-time and expiration, account lockout, provider errors and lack of automatic registration. E2E with a local test provider and separate explicit acceptance testing with a real Google client. PIN and invitation policy remain available; Ingress refers to PUBLIC_URL.
 
-## Uzupełnienie E2/E9 — opcjonalne Google, 2026-11-15
+## Supplement E2/E9 - login and password, 2026-11-15
 
-Zlecone: połączenie Google z istniejącym profilem po potwierdzeniu PIN-u, logowanie po `sub`, odłączenie po PIN-ie, konfiguracja HA oraz UI i instrukcja operatora. Odbiór: migracja, sesje i unikalne powiązania na PostgreSQL; podpis/issuer/audience/exp/nonce, PKCE, związanie stanu z przeglądarką i sesją łączącą, jednorazowość i wygaśnięcie, blokada konta, błędy dostawcy i brak automatycznej rejestracji. E2E z lokalnym dostawcą testowym i osobny jawny odbiór z rzeczywistym klientem Google. PIN i polityka zaproszeń pozostają dostępne; Ingress odsyła do PUBLIC_URL.
+Mandated: separate username and password instead of profile directory/PIN; registration, bootstrap, password change/reset and Google confirmations. The user does not require player migration (the only registered one is the organizer). Acceptance testing: no public directory/endpoint PIN; unique login regardless of case; correct hashing and errors, persistent limits and session expiration; preservation of organizer profile data and one-time configuration; tests of PostgreSQL, browsers and both packages.
 
-## Uzupełnienie E2/E9 — login i hasło, 2026-11-15
+## Addendum E2/E9 - Join via Google, 2026-11-15
 
-Zlecone: osobna nazwa użytkownika i hasło zamiast katalogu profili/PIN-u; rejestracja, bootstrap, zmiana/reset hasła i potwierdzenia Google. Użytkownik nie wymaga migracji graczy (jedyny zarejestrowany to organizator). Odbiór: brak publicznego katalogu/endpointu PIN; unikalność loginu bez względu na wielkość liter; poprawne hashowanie i błędy, trwałe limity i wygaśnięcie sesji; zachowanie danych profilu organizatora i jednorazowa konfiguracja; testy PostgreSQL, przeglądarek i obu pakietów.
+Requested: registration from an active invitation via Google, hint of an editable name/surname, confirmation and an account without a password. Acceptance testing: linking the grant to the browser/invitation, invalidation of the invitation during the process, expiration/replay/competition, no duplication and escalation of privileges, optional setting of login/password after a new Google ID, protection against disconnection of the last method; PostgreSQL, UI mobile/WebKit and HA images.
 
-## Uzupełnienie E2/E9 — Dołącz przez Google, 2026-11-15
+## Supplement E2/E9 - passwords and invitations Messenger, 2026-11-15
 
-Zlecone: rejestracja z aktywnego zaproszenia przez Google, podpowiedź edytowalnego imienia/nazwiska, potwierdzenie i konto bez hasła. Odbiór: powiązanie grantu z przeglądarką/zaproszeniem, unieważnienie zaproszenia w trakcie procesu, wygaśnięcie/replay/konkurencja, brak duplikacji i eskalacji uprawnień, opcjonalne ustawienie loginu/hasła po nowym dowodzie Google, ochrona przed odłączeniem ostatniej metody; PostgreSQL, UI mobile/WebKit i obrazy HA.
+Recommended: minimum password of 8 characters without forcing character types and opening invitations from Messenger. New invites carry the token in the query, old fragments remain supported. Acceptance testing: UI/API validation, registration/change/reset with short password, deletion of query/fragment without storage, additional parameters and changed fragment, invalidation of invitations and compatibility with the old format. [Report](messenger-invites-report.md).
 
-## Uzupełnienie E2/E9 — hasła i zaproszenia Messenger, 2026-11-15
+## Supplement E9 - Modern Web Guidance, 2026-11-15
 
-Zlecone: minimum hasła 8 znaków bez wymuszania rodzajów znaków oraz otwieranie zaproszeń z Messengera. Nowe zaproszenia przenoszą token w query, stare fragmenty pozostają obsługiwane. Odbiór: walidacja UI/API, rejestracja/zmiana/reset z krótkim hasłem, usunięcie query/fragmentu bez storage, dodatkowe parametry i zmieniony fragment, unieważnianie zaproszeń oraz zgodność ze starym formatem. [Raport](messenger-invites-report.md).
+Requested after review: All six UI fixes described in [report](modern-web-guidance-report.md). Acceptance testing local: registration/reset/profile/Google forms use common compatibility check, invalid field has focus and description, showing password does not change value or autocomplete; dialogs limit scrolling according to engine support; text grows at 200% preference without horizontal scrolling 320-1440 px; footer does not jump through initial viewport when loading data; routes have separate chunks and download error handling. The regression includes Chromium/WebKit, the actual API, and a separate test PostgreSQL. Without changing the backend/DTO, migration, additional API cache and deployment; physical acceptance testing E9/E11 remains open.
 
+Complement 2026-11-16 in the same package 0.3.6: fix missing access data of existing demo accounts after PIN migration and handling of competing unique indexes on term materialization (bug revealed by CI). [Report](modern-web-guidance-report.md#supplements-after-creating-pr---2026-11-16) contains diagnosis, scope and results of 216 backend tests. No migration/change of contract and no change of seat rules.
 
-## Uzupełnienie E9 — Modern Web Guidance, 2026-11-15
+## Documentation — English translation (2026-11-16)
 
-Zlecone po przeglądzie: wszystkie sześć poprawek UI opisanych w [raporcie](modern-web-guidance-report.md). Odbiór lokalny: formularze rejestracji/resetu/profilu/Google korzystają ze wspólnego sprawdzania zgodności, błędne pole ma fokus i opis, pokazywanie hasła nie zmienia wartości ani autocomplete; dialogi ograniczają przewijanie zgodnie ze wsparciem silnika; tekst rośnie przy 200% preferencji bez poziomego przewijania 320–1440 px; stopka nie przeskakuje przez początkowy viewport przy ładowaniu danych; trasy mają odrębne chunki i obsługę błędu pobierania. Regresja obejmuje Chromium/WebKit, rzeczywiste API i osobną testową PostgreSQL. Bez zmiany backendu/DTO, migracji, dodatkowego cache API i wdrożenia; fizyczny odbiór E9/E11 pozostaje otwarty.
-
-
-Uzupełnienie 2026-11-16 w tej samej paczce 0.3.6: naprawa brakujących danych dostępu istniejących kont demo po migracji PIN oraz obsługi konkurujących indeksów unikalnych przy materializacji terminu (błąd ujawniony przez CI). [Raport](modern-web-guidance-report.md#uzupełnienia-po-utworzeniu-pr--2026-11-16) zawiera diagnozę, zakres i wyniki 216 testów backendu. Bez migracji/zmiany kontraktu i bez zmiany reguł miejsc.
+Completed at the user's request: translate all project documentation, including setup and HA operation, specifications, decisions, backlog and historical reports. Preserve actual Polish UI labels and historical product decisions. Verify local links and heading anchors, Markdown structure, command examples and numerical values. This follow-up changes documentation only; application tests and deployment are outside its scope.
