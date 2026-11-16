@@ -179,6 +179,7 @@ export function ProfilePage() {
               <PasswordField
                 label="Powtórz nowe hasło"
                 value={repeat}
+                match={password}
                 onChange={setRepeat}
                 fresh
                 disabled={busy}

@@ -89,7 +89,7 @@ test("connect Google with a password, log in through Google and disconnect", asy
   const player = await (await context.request.get("/api/v1/me")).json();
   await page.goto("/profile");
   await page
-    .getByLabel("Hasło potwierdzające zmianę")
+    .getByLabel("Hasło potwierdzające zmianę", { exact: true })
     .fill("Player-test-passphrase-456");
   await page.getByRole("button", { name: "Połącz konto Google" }).click();
   await expect(
@@ -122,7 +122,7 @@ test("connect Google with a password, log in through Google and disconnect", asy
   expect(signedIn.id).toBe(player.id);
   expect(signedIn.role).toBe("player");
   await page
-    .getByLabel("Hasło potwierdzające zmianę")
+    .getByLabel("Hasło potwierdzające zmianę", { exact: true })
     .fill("Player-test-passphrase-456");
   await page.getByRole("button", { name: "Odłącz konto Google" }).click();
   await expect(
@@ -252,7 +252,7 @@ test("invite Google join offers editable names, creates no password and can add 
     has_password: true,
   });
   await page
-    .getByLabel("Hasło potwierdzające zmianę")
+    .getByLabel("Hasło potwierdzające zmianę", { exact: true })
     .fill("Optional-password-from-Google");
   await page.getByRole("button", { name: "Odłącz konto Google" }).click();
   await expect(

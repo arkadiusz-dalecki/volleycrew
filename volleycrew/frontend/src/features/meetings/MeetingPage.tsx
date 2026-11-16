@@ -1,3 +1,4 @@
+import { LoadingCard } from "../../components/LoadingCard";
 import { MeetingNavigation } from "./MeetingNavigation";
 import { PreliminaryCourt } from "../room/PreliminaryCourt";
 import { AddToCalendar } from "./AddToCalendar";
@@ -105,9 +106,7 @@ export function MeetingPage() {
         <h1>{id ? "Spotkanie" : "Najbliższe spotkanie"}</h1>
       </div>
       {meeting.isPending ? (
-        <section className="card" role="status">
-          Wczytujemy spotkanie…
-        </section>
+        <LoadingCard message="Wczytujemy spotkanie…" />
       ) : !item && meeting.isError ? (
         <section className="card" role="alert">
           <h2>Nie udało się wczytać spotkania</h2>

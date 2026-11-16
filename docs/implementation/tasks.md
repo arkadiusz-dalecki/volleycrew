@@ -214,3 +214,8 @@ Zlecone: rejestracja z aktywnego zaproszenia przez Google, podpowiedź edytowaln
 ## Uzupełnienie E2/E9 — hasła i zaproszenia Messenger, 2026-11-15
 
 Zlecone: minimum hasła 8 znaków bez wymuszania rodzajów znaków oraz otwieranie zaproszeń z Messengera. Nowe zaproszenia przenoszą token w query, stare fragmenty pozostają obsługiwane. Odbiór: walidacja UI/API, rejestracja/zmiana/reset z krótkim hasłem, usunięcie query/fragmentu bez storage, dodatkowe parametry i zmieniony fragment, unieważnianie zaproszeń oraz zgodność ze starym formatem. [Raport](messenger-invites-report.md).
+
+
+## Uzupełnienie E9 — Modern Web Guidance, 2026-11-15
+
+Zlecone po przeglądzie: wszystkie sześć poprawek UI opisanych w [raporcie](modern-web-guidance-report.md). Odbiór lokalny: formularze rejestracji/resetu/profilu/Google korzystają ze wspólnego sprawdzania zgodności, błędne pole ma fokus i opis, pokazywanie hasła nie zmienia wartości ani autocomplete; dialogi ograniczają przewijanie zgodnie ze wsparciem silnika; tekst rośnie przy 200% preferencji bez poziomego przewijania 320–1440 px; stopka nie przeskakuje przez początkowy viewport przy ładowaniu danych; trasy mają odrębne chunki i obsługę błędu pobierania. Regresja obejmuje Chromium/WebKit, rzeczywiste API i osobną testową PostgreSQL. Bez zmiany backendu/DTO, migracji, dodatkowego cache API i wdrożenia; fizyczny odbiór E9/E11 pozostaje otwarty.

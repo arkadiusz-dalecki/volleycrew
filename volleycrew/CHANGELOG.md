@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.6
+
+- Improve modal scroll containment without changing the page scrollbar or scroll position. Safari retains native focus isolation where backdrop containment is not supported.
+- Identify mismatched passwords with an accessible field error and native focus handling across registration, reset, profile and Google password setup. Add a password visibility toggle that preserves autocomplete and the entered value.
+- Respect larger browser text preferences, opt into OS text scaling where supported, and let controls and headings grow or wrap.
+- Reserve space while routes and meeting/ranking data load to avoid the footer jumping through the initial viewport. Load private views on demand and show recovery controls when a view download fails.
+- Accept new passwords of 8–128 characters and make invitation links work without preserving a URL fragment, including Messenger browser handoffs. Existing fragment invitations still work; reset/setup/Google grants remain fragment-only. External proxies must not log invitation query parameters.
+- No new database migrations compared with 0.3.5. Back up before updating the Home Assistant app normally. Upgrades from 0.3.4 or earlier still require the 0.3.5 login migration and organizer setup described below.
+
 ## 0.3.5
 
 - Replace profile selection and PINs with a private username and password. Keep existing profiles, participation history and ELO; old PINs and sessions no longer work.

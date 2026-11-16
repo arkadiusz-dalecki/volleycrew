@@ -301,6 +301,7 @@ export function RegisterPage({ bootstrap = false }: { bootstrap?: boolean }) {
           <PasswordField
             label="Powtórz hasło"
             value={repeat}
+            match={password}
             onChange={setRepeat}
             fresh
             disabled={busy}
@@ -391,6 +392,7 @@ export function ResetPasswordPage() {
           <PasswordField
             label="Powtórz nowe hasło"
             value={repeat}
+            match={password}
             onChange={setRepeat}
             fresh
             disabled={busy}
