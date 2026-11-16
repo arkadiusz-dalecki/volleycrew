@@ -1,39 +1,39 @@
-# E2/E9 — poprawki mobilne, logowanie i instalacja
+# E2/E9 - Mobile fixes, login and installation
 
-Data: 2026-11-08. Wersja pakietu HA: **0.3.1** (poprawkowa po 0.3.0). Zakres: cztery uwagi ze zrzutów i przełącznik widoku administratora, bez wdrożenia na HA.
+Date: 2026-11-08. HA package version: **0.3.1** (fixed after 0.3.0). Scope: four notes with screenshots and admin view switch, without deployment on HA.
 
-## Spełnione kryteria
+## Criteria met
 
-- Formularz pojedynczego spotkania: usunięto domyślną ramkę fieldset, ograniczono szerokości kontrolek i skorygowano natywne pola daty/godziny Safari; jedna kolumna na telefonie.
-- Usunięto wskazany podpis pod nagłówkiem najbliższego spotkania.
-- Logowanie: natywny select z „Wybierz użytkownika” na nowym urządzeniu. Maskowanie nazwisk i przydomki zachowane. Zapamiętane ID pochodzi z udanego uwierzytelnienia lub aktywnej sesji; zniknięcie profilu przywraca pustą opcję. PIN nie trafia do pamięci trwałej.
-- Przełącznik „Administrator / Użytkownik” widoczny także na telefonie. Podgląd pozostaje na własnym koncie, pokazuje zwykłe drużyny/wynik i ukrywa zarządzanie kalendarzem, salą, ofertami oraz ustawienia. Administracyjne trasy są osłonięte także w podglądzie. Powrót do administratora jest zawsze dostępny. Wybór jest zapamiętany dla konta w obrębie sesji przeglądarki.
-- Przycisk „Dodaj aplikację do telefonu” na ekranach dostępu i w stopce po zalogowaniu. Używa `beforeinstallprompt`, gdy dostępny; pozostałym użytkownikom pokazuje instrukcję platformy w dostępnym dialogu. Ukrywa się po `appinstalled` i w trybie standalone. Manifest ma PNG 192/512 oraz lokalną ikonę Apple 180. Instalacja nie dodaje cache danych ani zapisów offline.
+- Single meeting form: removed default fieldset frame, limited control widths and adjusted Safari's native date/time fields; one column on the phone.
+- The indicated caption under the heading of the next meeting has been removed.
+- Login: native select from „Wybierz użytkownika” on new device. Masking of names and nicknames preserved. The remembered ID comes from a successful authentication or active session; profile disappearance restores an empty option. The PIN does not go to permanent memory.
+- „Administrator / Użytkownik” switch also visible on the phone. The preview stays in your own account, shows the usual teams/score and hides the calendar, room, offers and settings management. Administrative routes are also hidden in the preview. Back to administrator is always available. The selection is remembered for the account within the browser session.
+- „Dodaj aplikację do telefonu” button on access screens and in the footer after logging in. Uses `beforeinstallprompt` when available; shows other users the platform instructions in the accessible dialog. Hides after `appinstalled` and in standalone mode. The manifest has PNG 192/512 and the local Apple icon 180. The installation does not add data cache or offline enrollments.
 
-## Weryfikacja
+## Verification
 
-Środowisko lokalne macOS arm64; izolowana baza `volleycrew_test` na 127.0.0.1:55432. Node 26.8.1, Playwright 1.65.0, Chromium desktop/mobile i mobilny WebKit.
+Local environment macOS arm64; isolated database `volleycrew_test` on 127.0.0.1:55432. Node 26.8.1, Playwright 1.65.0, Chromium desktop/mobile and mobile WebKit.
 
-- `npm --prefix volleycrew/frontend run lint`: zaliczone bez ostrzeżeń.
-- `npm --prefix volleycrew/frontend run build`: zaliczone (TypeScript i Vite).
-- `npm --prefix volleycrew/frontend run test`: 1 test zaliczony.
-- `git diff --check`: zaliczone.
-- `VOLLEYCREW_E2E_DATABASE_URL=…/volleycrew_test npm --prefix volleycrew/frontend run test:e2e`: pełny przebieg kontrolny — 49 zaliczonych, 4 niepowodzenia i 1 celowo pominięty (klawiatura mobilna na desktopie). Trzy niepowodzenia wynikały ze starego selektora radio w teście wygaśnięcia sesji; czwarte wykryło brak powrotu fokusu po instrukcji instalacji w Safari. Selektor dostosowano do select; przycisk instalacji jawnie otrzymuje fokus przed otwarciem dialogu.
-- Po poprawkach `npm --prefix volleycrew/frontend run test:e2e -- mobile-improvements.spec.ts ui.spec.ts`: **26 zaliczonych, 1 celowo pominięty**, bez błędów we wszystkich trzech projektach. Łącznie wszystkie 53 aktywne scenariusze mają pozytywny wynik w pełnym przebiegu lub końcowym powtórzeniu; nie wykonywano kolejnego pełnego przebiegu.
-- Obejrzano zrzuty formularza Chromium/WebKit, logowania i instrukcji instalacji. Formularz sprawdzono geometrycznie w 360/390/430 px; kontrola dostępności i szerokości pozostałych tras także w 768/1440 px. Zrzuty: `volleycrew/frontend/test-results/mobile-improvements-*/{calendar-fixed,install-help}.png` (generowane, poza repozytorium).
-- Nowe testy E2E: pusty/ostatni/usunięty profil, nieudane logowanie bez zapamiętania, przełączanie widoków i osłona tras, geometria formularza 360/390/430, prompt instalacji i ukrycie przycisku oraz instrukcje platform i fokus dialogu.
-- Pierwsze uruchomienie testu podglądu miało niepoprawną nazwę przycisku w selektorze; poprawiono selektor na istniejące „Dodaj spotkanie” i uruchomiono pełny zestaw od początku.
+- `npm --prefix volleycrew/frontend run lint`: passed without warnings.
+- `npm --prefix volleycrew/frontend run build`: passed (TypeScript and Vite).
+- `npm --prefix volleycrew/frontend run test`: 1 test passed.
+- `git diff --check`: passed.
+- `VOLLEYCREW_E2E_DATABASE_URL=…/volleycrew_test npm --prefix volleycrew/frontend run test:e2e`: full check run - 49 passed, 4 failed and 1 intentionally skipped (mobile keyboard on desktop). Three failures were due to the old radio selector in the session expiration test; the fourth detected no focus return after installation instructions in Safari. Selector adapted to select; the install button explicitly receives focus before opening the dialog.
+- After fixes `npm --prefix volleycrew/frontend run test:e2e -- mobile-improvements.spec.ts ui.spec.ts`: **26 passed, 1 intentionally skipped**, no errors in all three projects. In total, all 53 active scenarios have a positive result in the full run or final repeat; no further complete run was performed.
+- Viewed screenshots of the Chromium/WebKit form, login and installation instructions. The form was checked geometrically at 360/390/430 px; accessibility control and width of other routes also in 768/1440 px. Screenshots: `volleycrew/frontend/test-results/mobile-improvements-*/{calendar-fixed,install-help}.png` (generated, outside the repository).
+- New E2E tests: empty/last/deleted profile, failed login without remembering, view switching and route shield, 360/390/430 form geometry, install prompt and button hide, and platform instructions and dialog focus.
+- The first run of the preview test had an incorrect button name in the selector; corrected the selector to the existing „Dodaj spotkanie” and started the full set from scratch.
 
-## Zależności i odbiór
+## Dependencies and acceptance testing
 
-Brak nowych zależności npm, migracji i otwartych decyzji dla tego zakresu. Faktyczne dodanie ikony i uruchomienie z niej na iPhonie/Androidzie wymaga odbioru na urządzeniach pod docelowym HTTPS; emulacja nie zastępuje fizycznej próby. iOS nie udostępnia stronie automatycznej instalacji: użytkownik musi wybrać Udostępnij → Do ekranu początkowego. Zachowanie wynika z [instrukcji Apple](https://support.apple.com/guide/iphone/open-as-web-app-iphea86e5236/27/ios/27); dostępność promptu opisuje [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeinstallprompt_event).
+No new npm dependencies, migrations, or open decisions for this scope. The actual addition of the icon and booting from it on iPhone/Android requires acceptance testing on devices under the target HTTPS; emulation does not replace physical attempts. iOS does not provide an automatic installation page: the user must select Share → To Home Screen. The behavior follows from [Apple manual](https://support.apple.com/guide/iphone/open-as-web-app-iphea86e5236/27/ios/27); The prompt's accessibility is described by [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeinstallprompt_event).
 
-Następny krok: odbiór wyglądu i instalacji przez użytkownika; pozostałe kryteria E9/E10/E11 nadal według indeksu planu. Nie przeprowadzano publikacji ani instalacji na HA.
+Next step: user acceptance testing of appearance and installation; the remaining E9/E10/E11 criteria continue according to the plan index. No publications or installations were performed on HA.
 
-## Poprawki CI w PR #5
+## CI fixes in PR #5
 
-Dwa przebiegi CI dla 42860cd ujawniły pozostawiony selektor karty profilu w `container-tests/ingress.spec.ts`. Natywna opcja select nie jest klikalną kartą; testy obu CPU zatrzymywały się na logowaniu, mimo zaliczonych startu, migracji, HTTPS/Ingress, restartu, backupu przed aktualizacją i cyklu meczu. Test pakietu wybiera teraz profil przez etykietę select i `selectOption`.
+Two CI runs for the 42860cd revealed a left profile card selector in `container-tests/ingress.spec.ts`. Native select is not a clickable tab; tests of both CPUs stopped at logging in, despite successful startup, migration, HTTPS/Ingress, restart, pre-update backup and match cycle. The suite test now selects a profile by the select label and `selectOption`.
 
-W przebiegu push pojawiła się również utrata nowej sesji podczas logowania/wylogowania. Nowy test `e2e/auth-races.spec.ts` opóźnia anonimową odpowiedź `/me` do chwili po udanym logowaniu. Przed poprawką test deterministycznie wracał do logowania (brak nagłówka spotkania po uwolnieniu odpowiedzi). Logowanie anuluje teraz poprzednie zapytania i czyści dane poprzedniego konta przed publikacją nowej sesji, tak jak rejestracja/reset. Middleware ignoruje `401` anulowanego żądania, a obsługa wygaśnięcia nie czyści sesji zastąpionej podczas oczekiwania na anulowanie.
+In the push process there was also a loss of a new session during login/logout. The new `e2e/auth-races.spec.ts` test delays the anonymous `/me` response until after a successful login. Before the fix, the test deterministically returned to the login (no meeting header after the response was released). Login now cancels previous requests and clears previous account data before publishing a new session, just like registration/reset. The middleware ignores the `401` canceled request and the expiration handler does not clear the session overwritten while waiting for cancellation.
 
-Lokalny lint, unit i build: zaliczone. `auth-races.spec.ts auth.spec.ts mobile-improvements.spec.ts ui.spec.ts`: **32 zaliczone, 1 celowo pominięty**, Chromium desktop/mobile i WebKit. Nowe CI jest właściwym dowodem dla pakietów obu CPU.
+Local lint, unit and build: passed. `auth-races.spec.ts auth.spec.ts mobile-improvements.spec.ts ui.spec.ts`: **32 passed, 1 intentionally skipped**, Chromium desktop/mobile and WebKit. The new CI is the correct evidence for both CPU packages.

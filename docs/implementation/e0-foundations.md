@@ -1,83 +1,82 @@
-> Aktualizacja 2026-11-08: użytkownik zlecił własny PostgreSQL w pakiecie. Od 0.2.0 nowe instalacje nie wymagają osobnego serwera. Wcześniejsze ustalenia poniżej są historyczne; aktualne zachowanie opisują architecture.md i bundled-postgresql.md.
+> Update 2026-11-08: user requested bundled PostgreSQL in a package. Since 0.2.0, new installations do not require a separate server. Previous findings below are historical; architecture.md and bundled-postgresql.md describe the current behavior.
 
-# E0 — ustalenia fundamentów
+# E0 - establishing foundations
 
-Data: 2026-11-06. Stan: część techniczna przygotowana do E1; D2 zatwierdzone, D3 zatwierdzone wraz z prywatnością statusu; D4 zatwierdzone (każda zmiana wymaga potwierdzenia, zachowuje kolejność i rezerwacje, obejmuje oferty); D5 zatwierdzone (korekty, usprawiedliwienia, późne przyjście, dopisanie bez deklaracji); D6 zatwierdzone (blokada, zwolnienie przyszłych miejsc, zachowanie historii, przydomek i maskowana lista logowania). Nie wykonano instalacji, połączenia z HA ani produkcyjną bazą. Wyniki poniżej to ustalenia projektowe i weryfikacja dokumentacji, nie testy kontenera.
+Date: 2026-11-06. Status: technical part prepared for E1; D2 approved, D3 approved with status privacy; D4 approved (any change requires confirmation, preserves order and reservations, includes offers); D5 approved (corrections, excuses, late arrival, addition without declaration); D6 approved (lock, release future places, preserve history, nickname and masked login list). No installation, connection to HA or production database was performed. The results below are design findings and documentation verification, not container tests.
 
-## Ustalenia użytkownika
+## User settings
 
-| Obszar | Potwierdzone |
-| --- | --- |
-| Host | Raspberry Pi 4, Home Assistant 64-bit, `aarch64` |
-| Dostęp spoza domu | Cloudflare Tunnel; użytkownik skonfiguruje jak w maybe-finance. Konfiguracja tunelu poza aktualnym zakresem |
-| Baza | Osobny serwer PostgreSQL, a nie serwer używany przez maybe-finance |
-| Wydanie pierwsze | Pełny cykl opisany w indeksie planu, wraz z listą PDF, wynikami i ELO |
-| Backup | Obecnie brak. Docelowo codziennie i przed aktualizacją, z kopią poza hostem |
-| Wdrożenia | Uruchamiane ręcznie |
+| Area                         | Confirmed                                                                                                  |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Host                         | Raspberry Pi 4, Home Assistant 64-bit, `aarch64`                                                           |
+| Access from outside the home | Cloudflare Tunnel; the user will configure as in maybe-finance. Tunnel configuration outside current scope |
+| Database                     | A separate PostgreSQL server, not the server used by maybe-finance                                         |
+| First edition                | The complete cycle is described in the plan index, along with PDF list, results and ELO                    |
+| Backup                       | Currently none. Ultimately daily and before update, with a copy off the host                               |
+| Deployments                  | Manually activated                                                                                         |
 
-Nie ustalono jeszcze lokalizacji osobnego serwera PostgreSQL, jego wersji, adresu, pojemności ani miejsca docelowego backupów. Nie prosić o hasła w rozmowie. Domena i konkretna konfiguracja Cloudflare nie są warunkiem rozpoczęcia E1.
+The location of a separate PostgreSQL server, its version, address, capacity and backup destination have not yet been determined. Do not ask for passwords in conversation. A Cloudflare domain and specific configuration are not required to start E1.
 
-## Wybory techniczne na start E1
+## Technical choices for the start of E1
 
-- Frontend: zaakceptowany UI A, React 19, TypeScript, Vite, React Router, TanStack Query. Dokładny zestaw stabilnych wersji przypiąć w lockfile E1, bez canary.
-- Node.js 24 LTS do budowania i CI; brak Node w runtime aplikacji. Wersji 20 z referencyjnego Dockerfile nie przenosimy.
-- Python 3.13 z aktualnym patchem bezpieczeństwa, FastAPI, Pydantic 2, SQLAlchemy 2, Alembic, asyncpg. Python 3.13 odpowiada kandydatowi runtime Debian 13; zgodność zestawu potwierdzi instalacja i testy E1.
-- PostgreSQL 17 jako docelowa gałąź dla nowego serwera i lokalnych testów. Nie zakładać, że serwer już istnieje. Dokładny patch z aktualnej wspieranej gałęzi w chwili instalacji. Inna istniejąca wersja wymaga jawnego sprawdzenia zgodności.
-- Obraz runtime: kandydat `hassio-addons` Debian base 9.3.0 / Debian 13 z s6. Wydanie widoczne w oficjalnym repozytorium; ścieżkę obrazu, digest i manifesty obu CPU trzeba sprawdzić w E1 przed przypięciem. Nie deklarujemy jeszcze zweryfikowanego obrazu multiarch.
-- Produkcja priorytetowo `aarch64`; `amd64` pozostaje drugim celem build/test. Ograniczyć RAM: statyczny frontend, jeden proces API, brak Redis/Celery. Budowanie frontendowych assetów nie należy do startu kontenera.
-- Slug aplikacji: `volleycrew`; folder aplikacji: `volleycrew/`; nazwa bazy i użytkownika: `volleycrew`. Oddzielne hasło i uprawnienia tylko do własnej bazy, bez superusera.
-- Proponowane porty: Nginx bezpośredni `8200/tcp` z mapowaniem hosta konfigurowalnym w HA; Ingress `8099` wyłącznie wewnętrzny, bez mapowania; Uvicorn `127.0.0.1:8000`. Port 8199 należy do referencyjnego maybe-finance. Dostępności hostowego 8200 jeszcze nie sprawdzono; przed instalacją dopuszczalna zmiana mapowania.
+- Frontend: UI A accepted, React 19, TypeScript, Vite, React Router, TanStack Query. Pin the exact set of stable versions in the E1 lockfile, without canary.
+- Node.js 24 LTS for build and CI; Node missing in application runtime. We do not migrate version 20 from the reference Dockerfile.
+- Python 3.13 with current security patch, FastAPI, Pydantic 2, SQLAlchemy 2, Alembic, asyncpg. Python 3.13 corresponds to the Debian 13 runtime candidate; The kit's compatibility will be confirmed by E1 installation and testing.
+- PostgreSQL 17 as target branch for new server and local tests. Don't assume the server already exists. Exact patch from the current supported branch at the time of installation. Another existing version requires an explicit compatibility check.
+- Runtime image: candidate `hassio-addons` Debian base 9.3.0 / Debian 13 with s6. Release visible in the official repository; the image path, digest and manifests of both CPUs must be checked in E1 before pinning. We do not declare a verified multiarch image yet.
+- Priority production of `aarch64`; `amd64` remains the second build/test target. Limit RAM: static frontend, one API process, no Redis/Celery. Building frontend assets is not part of the container startup.
+- Application slug: `volleycrew`; application folder: `volleycrew/`; database and username: `volleycrew`. Separate password and permissions only for the bundled database, no superuser.
+- Proposed ports: Nginx direct `8200/tcp` with host mapping configurable in HA; Ingress `8099` internal only, no mapping; Uvicorn `127.0.0.1:8000`. Port 8199 belongs to the reference maybe-finance. Availability of the host 8200 has not yet been verified; mapping change allowed before installation.
 
-Te wybory są bazą implementacyjną, nie twierdzeniem o najnowszych wersjach wszystkich bibliotek. Dokładne wersje i dowody zgodności przechodzą do lockfile oraz raportu E1.
+These selections are an implementation foundation, not a claim about the latest versions of all libraries. Exact versions and proof of compliance go to the lockfile and the E1 report.
 
-## Dostęp i konfiguracja
+## Access and configuration
 
-Docelowa droga: telefon → domena HTTPS w Cloudflare → skonfigurowany przez użytkownika Tunnel → listener Nginx Volleycrew → statyczny frontend lub `/api/v1` → FastAPI → osobny PostgreSQL.
+Target path: phone → HTTPS domain in Cloudflare → user-configured Tunnel → Nginx Volleycrew listener → static frontend or `/api/v1` → FastAPI → separate PostgreSQL.
 
-Cloudflare nie zastępuje logowania aplikacji. Użytkownicy nie potrzebują kont Home Assistant. Nagłówki od proxy mogą wpływać na rozpoznawanie HTTPS tylko przy połączeniu od wskazanego zaufanego peera. Adres/CIDR tunelu trzeba podać przy wdrożeniu; nie wpisywać na ślepo wszystkich sieci prywatnych. Usuwanie/maskowanie tokenów zaproszenia i resetu w logach oraz polityka Referrer mają ograniczać wycieki z URL.
+Cloudflare does not replace app login. Users do not need Home Assistant accounts. Proxy headers can only affect HTTPS resolution when connected from a specified trusted peer. The tunnel address/CIDR must be provided during deployment; do not blindly enter all private networks. Removing/masking invite and reset tokens in logs and the Referrer policy are intended to limit URL leaks.
 
-Ingress jest dodatkową ścieżką. Dokumentacja HA zaleca zaufane tożsamości HA i brak drugiego logowania; nasz plan zakłada oddzielne profile Volleycrew. Dlatego nie włączać automatycznego mapowania konta HA na Arkadiusza. Przed zakończeniem E10 sprawdzić cookies i dodatkowe logowanie pod prefiksem Ingress; gdy nie da się uzyskać poprawnego działania, przedstawić użytkownikowi wariant otwierania samodzielnej aplikacji z panelu HA. Działający publiczny dostęp przez Tunnel jest główną ścieżką zawodnika.
+Ingress is an additional path. HA documentation recommends trusted HA identities and no second logins; our plan is to have separate Volleycrew profiles. Therefore, do not enable automatic mapping of the HA account to Arkadiusz. Before completing E10, check cookies and additional login under the Ingress prefix; when proper operation cannot be obtained, present the user with the option of opening a standalone application from the HA panel. The working public access through the Tunnel is the main path for the player.
 
-Ustawienia do zaimplementowania w E1/E10: `DATABASE_URL` lokalnie; opcje HA `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`; `PUBLIC_URL`, `TRUSTED_PROXY_CIDRS`, `SESSION_SECRET`. Sekrety poza repozytorium. Frontend i API mają wspólny origin. Ustawienia, które nie są jeszcze znane, mają jawne wymagania walidacyjne zamiast zgadywanych produkcyjnych wartości.
+Settings to be implemented in E1/E10: `DATABASE_URL` locally; HA options `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`; `PUBLIC_URL`, `TRUSTED_PROXY_CIDRS`, `SESSION_SECRET`. Secrets outside the repository. Frontend and API have a common origin. Settings that are not yet known have explicit validation requirements instead of guessed production values.
 
-## Sesje i ochrona PIN — zatwierdzone w E2
+## Sessions and PIN protection - approved in E2
 
-Sześciocyfrowy PIN i samodzielna rejestracja z zaproszenia pozostają wymaganiami produktu. Bazą techniczną jest Argon2id, losowa sesja z hashem tokenu w bazie i cookie HttpOnly/Secure. Parametry Argon2 dobrać pomiarem na Raspberry Pi; ograniczyć liczbę jednoczesnych kosztownych prób.
+The six-digit PIN and self-registration from the invitation remain product requirements. The technical base is Argon2id, a random session with a token hash in the database and an HttpOnly/Secure cookie. Select Argon2 parameters by measuring them on Raspberry Pi; limit the number of simultaneous costly attempts.
 
-Zatwierdzone przez użytkownika 2026-11-06: 30 dni bezczynności sesji, twarde wygaśnięcie po 180 dniach; reset PIN-u ważny 30 minut, jednorazowy. Po 5 błędnych próbach na profil w 15 minut kolejne próby są czasowo odrzucane do końca okna. Bez trwałej blokady konta. Techniczna ochrona źródła: 30 nieudanych PIN-ów/15 minut. Liczniki w DB działają po restarcie; implementacja i dowody w raporcie E2.
+User Approved 2026-11-06: 30 days session idle, hard expire after 180 days; PIN reset valid for 30 minutes, one-time use. After 5 failed attempts per profile in 15 minutes, subsequent attempts are temporarily rejected until the end of the window. No permanent account blocking. Technical source protection: 30 failed PINs/15 minutes. The counters in the DB work after a restart; implementation and evidence in the E2 report.
 
-## Backup i odtworzenie
+## Backup and restore
 
-Polityka częstotliwości zatwierdzona; realizacja jeszcze nie istnieje. Przed E10 ustalić cel kopii poza hostem, retencję, harmonogram, właściciela i sygnalizację nieudanego backupu. Proponowana retencja do uzgodnienia: 14 dziennych kopii. Codzienny backup oznacza możliwość utraty zmian od ostatniej udanej kopii; czas odtwarzania do uzgodnienia, nie jest obecnie SLA.
+Frequency policy approved; implementation does not exist yet. Before E10, determine the purpose of the off-host copy, retention, schedule, owner and signaling of a failed backup. Proposed retention to be agreed: 14 daily copies. Daily backup means you may lose changes since the last successful copy; recovery time to be agreed, currently not SLA.
 
-Przed aktualizacją wykonać spójny `pg_dump` narzędziem zgodnym z serwerem oraz kopię potrzebnej konfiguracji/sekretów, następnie przekazać kopię poza host. Dane zaszyfrować w miejscu przechowania i ograniczyć dostęp. Kopia katalogu plików działającej PostgreSQL nie zastępuje logicznego backupu.
+Before updating, make a consistent `pg_dump` with a tool compatible with the server and a copy of the necessary configuration/secrets, then transfer the copy outside the host. Encrypt the data where it is stored and limit access. A copy of the file directory of a running PostgreSQL does not replace a logical backup.
 
-Odtworzenie: nowa pusta baza → odtworzenie dumpa i potrzebnej konfiguracji → uruchomienie zgodnego obrazu → kontrola użytkowników, terminów, historii i ELO → ewentualne unieważnienie sesji. Test wykonać na osobnym środowisku. Backup samej aplikacji HA nie obejmuje automatycznie osobnego serwera DB.
+Recreating: new empty database → restoring the dump and the necessary configuration → running a compatible image → controlling users, meeting occurrences, history and ELO → possible session invalidation. Perform the test in a separate environment. Backing up the HA application itself does not automatically include a separate DB server.
 
-## Otwarte zależności i gotowość
+## Open dependencies and readiness
 
-- E1: można przygotować szkielet z lokalną testową PostgreSQL, po zleceniu tego etapu. W E1 wykonać resolver zależności oraz próbny build runtime na obu CPU; brak takiej próby nie jest dowodem zgodności.
-- E2: blokada i jej wpływ na przyszłe miejsca zatwierdzone; przydomek rozróżniający identyczne nazwiska zatwierdzony, samodzielna edycja przydomka w profilu zatwierdzona; katalog logowania zatwierdzony: lista imion i maskowanych nazwisk, wybór profilu, sześciocyfrowy PIN. Parametry sesji i limitów zatwierdzone w E2.
-- E4: D2 i D3 zatwierdzone. Rezerwa obejmuje ręczne propozycje bez timeoutu, wycofanie po odmowie/pominięciu, nowy czas ponownego zgłoszenia i osobne rezerwacje dla wielu wolnych miejsc; reguły w domain-api.md.
-- E5: D4 zatwierdzone — każda zmiana wymaga potwierdzenia nowego terminu, także przy propozycjach z rezerwy; pierwotna kolejność i rezerwacje zachowane. Miejsca czekają bez timeoutu, zwalnia je ręcznie administrator.
-- E6: D5 zatwierdzone — korekty/usprawiedliwienia z powodem i audytem, spóźniony jako obecny bez osobnej kary, dopisanie istniejącego niezablokowanego profilu przy wolnym niezarezerwowanym miejscu i limicie 14.
-- E7: D7 zatwierdzone — PDF z faktycznie obecnych po kontroli, możliwość ponownego generowania po poprawkach.
-- E8: K=32 zatwierdzone wraz z przykładami 5:0 (+16/−16), 3:2 (+3,2/−3,2) i 3:3 (0/0) dla równych drużyn. Zatwierdzone również: dokładne wartości i prezentacja do 1 miejsca, 0:0 bez ELO z zachowaniem obecności, korekty wyników z powodem i przeliczeniem późniejszych meczów. Parametry oczekiwań, historyczne korekty składów i porządek spotkań o tej samej dacie pozostają w D8.
-- E10: lokalizacja/wersja DB, cel backupu, zaufane proxy i wolny port pozostają szczegółami wdrożeniowymi. D10 zatwierdzone: jak w maybe-finance, lokalne budowanie przez Supervisor z repozytorium aplikacji i ręczna aktualizacja po zmianie wersji manifestu. Własny gotowy obraz w GHCR nie jest wymagany. Budowanie zachodzi podczas instalacji/aktualizacji, nie podczas każdego startu. Na Pi 4 sprawdzić RAM i czas budowania.
+- E1: you can prepare a skeleton with a local test PostgreSQL after ordering this step. In E1, perform a dependency resolver and a trial runtime build on both CPUs; the absence of such an attempt is not proof of compliance.
+- E2: lockdown and its impact on future confirmed seats; nickname distinguishing identical surnames approved, independent edition of nickname in the profile approved; approved login directory: list of names and masked surnames, profile selection, six-digit PIN. Session and limit parameters approved in E2.
+- E4: D2 and D3 approved. Waitlist includes manual proposals without timeout, withdrawal after rejection/bypass, new resubmission time and separate reservations for multiple vacancies; rules in domain-api.md.
+- E5: D4 approved - each change requires confirmation of the new date, also for proposals from the waitlist; original order and reservations preserved. Places are waiting without timeout, they are released manually by the administrator.
+- E6: D5 approved - corrections/excuses with reason and audit, late as present without separate penalty, adding an existing unblocked profile with a free unreserved place and a limit of 14.
+- E7: D7 approved - PDF from actually present after inspection, ability to regenerate after corrections.
+- E8: K=32 approved with examples 5:0 (+16/−16), 3:2 (+3.2/−3.2) and 3:3 (0/0) for equal teams. Also approved: exact values and presentation to one decimal place, 0:0 without ELO with attendance, corrections of results with reason and recalculation of later matches. Expectation parameters, historical lineup corrections and same-date match schedule remain in D8.
+- E10: DB location/version, backup target, trusted proxy and free port remain implementation details. D10 committed: as in maybe-finance, local build by Supervisor from application repository and manual update when manifest version changes. Your own ready-made image in GHCR is not required. The build happens during installation/update, not at every startup. On Pi 4, check RAM and build time.
 
-## Źródła sprawdzone 2026-11-06
+## Sources checked 2026-11-06
 
-- [HA: konfiguracja](https://contributors.home-assistant.io/apps/reference/configuration/) i [Ingress](https://contributors.home-assistant.io/apps/guides/ingress/): oddzielne wejście bezpośrednie, ochrona listenera Ingress, prefiks ścieżek.
-- [Debian base — oficjalne wydania](https://github.com/hassio-addons/app-debian-base/releases): kandydat 9.3.0, Debian 13; wydanie nie jest dowodem pobrania manifestu obrazu.
-- [Node — wersje](https://nodejs.org/en/about/previous-releases): gałąź 24 LTS, 20 EOL.
-- [Vite — wymagania](https://vite.dev/guide/): Node co najmniej 20.19 / 22.12; wybrano wspieraną gałąź 24, dokładną zgodność sprawdzi E1.
-- [React — wersje](https://react.dev/versions): gałąź 19.
-- [Python — wsparcie](https://devguide.python.org/versions/): Python 3.13 w okresie poprawek bezpieczeństwa do 2029-10.
-- [FastAPI — przypinanie wersji](https://fastapi.tiangolo.com/deployment/versions/) i [PostgreSQL — polityka wersji](https://www.postgresql.org/support/versioning/): przypinanie przetestowanych wydań i zgodność backupu/aktualizacji.
+- [HA: configuration](https://contributors.home-assistant.io/apps/reference/configuration/) and [Ingress](https://contributors.home-assistant.io/apps/guides/ingress/): separate direct input, Ingress listener protection, path prefix.
+- [Debian base - official releases](https://github.com/hassio-addons/app-debian-base/releases): candidate 9.3.0, Debian 13; release is not proof of downloading the image manifest.
+- [Node - Versions](https://nodejs.org/en/about/previous-releases): 24 LTS, 20 EOL branch.
+- [Vite - Requirements](https://vite.dev/guide/): Node at least 20.19 / 22.12; supported branch 24 has been selected, exact compatibility will be checked by E1.
+- [React Releases](https://react.dev/versions): branch 19.
+- [Python Support](https://devguide.python.org/versions/): Python 3.13 through 2029-10 security patches.
+- [FastAPI - version pinning](https://fastapi.tiangolo.com/deployment/versions/) and [PostgreSQL - version policy](https://www.postgresql.org/support/versioning/): pinning of tested releases and backup/update compatibility.
 
-Aktualizacja wymagań 2026-11-06: statusy założyciel > zawodnik > gość, domyślnie gość. Statusy prywatne, niezależne od uprawnień administratora. Przydomek do rozróżniania profili zatwierdzony; szkolny PDF bez przydomka.
+Requirements update 2026-11-06: statuses founder > player > guest, guest by default. Private statuses, independent of administrator rights. Nickname to distinguish profiles approved; school PDF without nickname.
 
+## Candidate verification in E10 - 2026-11-07
 
-## Weryfikacja kandydata w E10 — 2026-11-07
-
-[Raport E10](e10-report.md) potwierdza dostępność i digesty Debian base 9.3.0 dla obu CPU, lokalny build ARM64/amd64 oraz testy z PostgreSQL 17. Baza jest używana przez Dockerfile; od 0.1.1 jest przypięta bezpośrednio, bez build.yaml. Samodzielna instalacja użytkownika, właściwy serwer produkcyjny, docelowe proxy i magazyn kopii nadal nie są dowodem wdrożenia na Pi.
+[Report E10](e10-report.md) confirms availability and digests of Debian base 9.3.0 for both CPUs, local ARM64/amd64 build and tests with PostgreSQL 17. The base image is used by Dockerfile; since 0.1.1 it is pinned directly, without build.yaml. A standalone user installation, proper production server, target proxy, and copy storage are still not proof of deployment on the Pi.

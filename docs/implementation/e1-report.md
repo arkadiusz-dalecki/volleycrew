@@ -1,46 +1,46 @@
-# E1 — szkielet aplikacji
+# E1 - Application skeleton
 
-Data: 2026-11-06. Stan: implementacja gotowa i zweryfikowana lokalnie. Pełny odbiór E1 oczekuje na uruchomienie CI z PostgreSQL 17; build obrazu HA na obu CPU pozostaje niewykonany. Nie wdrożono nic na Home Assistant, nie utworzono produkcyjnej bazy ani nie opublikowano obrazu.
+Date: 2026-11-06. Status: implementation ready and locally verified. Full acceptance testing E1 awaits CI launch with PostgreSQL 17; HA image build on both CPUs remains undone. Not deployed anything on Home Assistant, no production database created and no image published.
 
-## Zakres wykonany
+## Scope completed
 
-- FastAPI, walidowane ustawienia, async SQLAlchemy, wstrzykiwany zegar UTC, sesje DB na żądanie i bezpieczny kontrakt błędów.
-- Liveness bez wymagania DB oraz readiness sprawdzające połączenie i zgodność `alembic_version` z aktualną migracją.
-- Alembic z bazową migracją bez tabel domenowych. Powtórne uruchomienie migracji nie zmienia stanu. Modele profili i spotkań pozostają w E2/E3.
-- React/TypeScript/Vite z React Router i TanStack Query, układ A, cztery zakładki, stany puste i wskaźnik połączenia API z loading/błędem/ponowieniem. Fonty dostarczane lokalnie.
-- OpenAPI eksportowane z backendu do `frontend/openapi.json`, wygenerowane typy klienta w `src/lib/api/schema.d.ts`, kontrola ich aktualności.
-- `npm run setup`, wspólny `npm run dev`, migracje, lint/format, typecheck, testy i build. Lockfile npm oraz uv.
-- `compose.dev.yaml`: osobna developerska PostgreSQL 17 na localhost, trwały wolumen, healthcheck. Bez połączeń do maybe-finance.
-- CI: `.github/workflows/checks.yml`, usługa PostgreSQL 17 i izolowane testy/build. Workflow nie publikuje i nie wdraża aplikacji.
+- FastAPI, validated settings, async SQLAlchemy, injected UTC clock, on-demand DB sessions and secure error contract.
+- Liveness without DB requirement and readiness checking the connection and compatibility of `alembic_version` with the current migration.
+- Alembic with base migration without domain tables. Rerunning the migration does not change the state. Profile and meeting models remain in E2/E3.
+- React/TypeScript/Vite with React Router and TanStack Query, layout A, four tabs, empty states and API connection indicator with loading/error/retry. Fonts delivered locally.
+- OpenAPI exported from the backend to `frontend/openapi.json`, generated client types in `src/lib/api/schema.d.ts`, checking their validity.
+- `npm run setup`, common `npm run dev`, migrations, lint/format, typecheck, tests and build. Lockfile npm and uv.
+- `compose.dev.yaml`: separate PostgreSQL 17 development on localhost, persistent volume, healthcheck. No connections to maybe-finance.
+- CI: `.github/workflows/checks.yml`, PostgreSQL 17 service and isolated tests/build. Workflow does not publish or deploy applications.
 
-## Weryfikacja wykonana
+## Verification completed
 
-Środowisko lokalne: macOS ARM64, Node 26.8.1 (projekt i CI wskazują 24 LTS), Python 3.13.18 pobrany przez uv 0.13.7. Backend z lockfile: FastAPI 0.162.0, SQLAlchemy 2.0.57, Alembic 1.20.1, asyncpg 0.32.0. Frontend: React 19.3.1, Vite 8.3.6; pełne wersje w lockfile.
+Local environment: macOS ARM64, Node 26.8.1 (project and CI indicate 24 LTS), Python 3.13.18 downloaded via uv 0.13.7. Backend with lockfile: FastAPI 0.162.0, SQLAlchemy 2.0.57, Alembic 1.20.1, asyncpg 0.32.0. Frontend: React 19.3.1, Vite 8.3.6; full versions in lockfile.
 
-| Sprawdzenie | Wynik |
-| --- | --- |
-| `npm run setup` | Powodzenie; instalacja przez lockfile |
-| `npm run lint` | Ruff i ESLint/Prettier przechodzą |
-| `npm run typecheck` | Przechodzi |
-| `npm run api:check` | OpenAPI i wygenerowane typy są aktualne |
-| Backend z `VOLLEYCREW_TEST_DATABASE_URL` | 7 testów przechodzi, w tym rzeczywista migracja i nieaktualny schemat |
-| `npm run test:frontend` | 1 test przechodzi: błąd gotowości API i powrót po ponowieniu |
-| `npm run build` | Przechodzi; statyczny build w `frontend/dist` |
-| `npm run test:e2e` | 2 testy Chromium: desktop 1440 × 1000 i mobile 390 × 844; rzeczywiste API, trasy po reloadzie, brak overflow |
-| Kontrola wizualna | Obejrzane screenshoty obu wariantów rozmiaru; pliki generowane w ignorowanym `frontend/test-results` |
+| Checking                                    | Result                                                                                                 |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `npm run setup`                             | Success; installation via lockfile                                                                     |
+| `npm run lint`                              | Ruff and ESLint/Prettier pass                                                                          |
+| `npm run typecheck`                         | Passed                                                                                                 |
+| `npm run api:check`                         | OpenAPI and generated types are up to date                                                             |
+| Backend with `VOLLEYCREW_TEST_DATABASE_URL` | 7 tests pass including actual migration and stale schema                                               |
+| `npm run test:frontend`                     | 1 test passes: API ready error and return for retry                                                    |
+| `npm run build`                             | It passes; static build in `frontend/dist`                                                             |
+| `npm run test:e2e`                          | 2 Chromium tests: desktop 1440 × 1000 and mobile 390 × 844; real API, routes after reload, no overflow |
+| Visual inspection                           | Viewed screenshots of both size variants; files generated in ignored `frontend/test-results`           |
 
-Testy DB wykonano na **PostgreSQL 14.24**, dostępnej lokalnie, w nowym klastrze `.runtime/postgres` i osobnej bazie `volleycrew_test`. Domyślny Compose i CI nadal używają PostgreSQL 17. Testy 14 nie dowodzą zgodności 17; wynik CI trzeba dopisać po rzeczywistym uruchomieniu. Lokalny klaster jest developerski, tylko localhost:55432, z auth trust, i nie nadaje się do produkcji.
+DB tests were performed on **PostgreSQL 14.24**, available locally, in the new `.runtime/postgres` cluster and a separate database `volleycrew_test`. Default Compose and CI still use PostgreSQL 17. Tests 14 do not prove compatibility 17; CI result must be added after the actual launch. The local cluster is development, only localhost:55432, with auth trust, and is not suitable for production.
 
-## Pozostałe ograniczenia
+## Other restrictions
 
-- Docker nie jest zainstalowany w tym środowisku. Nie uruchomiono Compose ani nie pobrano/testowano obrazu bazowego HA i manifestów `aarch64/amd64`. Te sprawdzenia pozostają otwarte; s6/Nginx i instalowalny pakiet są zakresem E10.
-- Nie wykonano GitHub Actions: repozytorium nie zostało wypchnięte przez agenta. Dodanie workflow nie oznacza zielonego CI.
-- TestClient zgłasza deprecjację transportu httpx w aktualnej Starlette; testy działają. Przed E2 sprawdzić migrację transportu testowego, bez wyciszania ostrzeżenia jako substytutu poprawki.
-- Brak logowania, danych uczestników, harmonogramu, deklaracji, PDF i ELO w aplikacji produkcyjnej. Zakładki są szkieletem, nie demonstracją zakończonych funkcji.
-- Ingress, cookies, CSRF, zaufane proxy i prefiks URL nie są jeszcze zaimplementowane. Aktualny klient działa na wspólnym origin `/api`; obsługa prefiksu wymaga testów E10.
+- Docker is not installed in this environment. Compose was not started and the HA base image and `aarch64/amd64` manifests were not downloaded/tested. These checks remain open; s6/Nginx and the installable package are scoped to E10.
+- GitHub Actions not performed: repository not pushed by agent. Adding workflow does not mean green CI.
+- TestClient reports httpx transport deprecation in current Starlette; tests work. Before E2, check for test transport migration, without silencing the warning as a substitute for a fix.
+- No login, participant data, schedule, declaration, PDF and ELO in the production application. Tabs are a framework, not a demonstration of completed functions.
+- Ingress, cookies, CSRF, trusted proxy and URL prefix are not implemented yet. The current client is running on shared origin `/api`; prefix support requires E10 tests.
 
 ## Handoff
 
-Szkielet jest gotowy do rozpoczęcia E2 po zleceniu przez użytkownika. Najpierw przeczytać `domain-api.md`, `frontend.md` i zatwierdzony D6. Przed implementacją sesji zamknąć ich czas ważności i limity prób wskazane w E0. D8 pozostaje częściowo otwarte, a szczegóły produkcyjnej bazy i backupów wracają przed E10.
+The skeleton is ready to start E2 when requested by the user. First read `domain-api.md`, `frontend.md` and approved D6. Before implementing sessions, close their expiration time and attempt limits indicated in E0. D8 remains partially open, and details of the production database and backups return before E10.
 
-Komendy lokalnego uruchomienia i testów są w głównym README; nie tworzyć drugiej, rozbieżnej instrukcji w tym raporcie.
+Local run and test commands are in the main README; do not create a second, divergent instruction in this report.

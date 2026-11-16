@@ -1,47 +1,47 @@
-# Wstępne boisko — 2026-11-09
+# Preliminary court - 2026-11-09
 
-Zakres: uzupełnienie E4/E6/E9 zlecone przez użytkownika. Wersja pakietu HA: **0.3.2** (patch po 0.3.1). Implementacja na gałęzi `feat/manage-series-and-print-signatures`; bez zmian w produkcyjnej bazie.
+Scope: E4/E6/E9 supplement requested by the user. HA package version: **0.3.2** (patch after 0.3.1). Implementation on branch `feat/manage-series-and-print-signatures`; no changes to the production database.
 
-## Kryteria odbioru
+## Acceptance testing criteria
 
-- Przed sprawdzeniem obecności szczegóły spotkania pokazują boisko z potwierdzonych miejsc. Domyślny podział minimalizuje różnicę średnich aktualnego ELO, jest deterministyczny i obejmuje każdą osobę dokładnie raz. Obowiązują limit 14 i maksymalnie 7 na stronę; dla 0–1 jest czytelny stan pusty.
-- Rezerwa, oferty, nieaktywne profile i oczekujący na ponowne potwierdzenie pozostają poza boiskiem. Podgląd nie zapisuje obecności, oficjalnych drużyn ani rankingu.
-- Własny zapis/rezygnacja/przyjęcie oferty odświeżają podgląd natychmiast. Inne urządzenia odczytują zmiany co 30 s oraz po powrocie do karty. Nie jest to transmisja push.
-- Administrator zapisuje wspólny podział losowy, ręczne zamiany albo wraca do ELO. Zmiana deklaracji, terminu lub punktów unieważnia wyjątek. Powrót tej samej listy osób po rezygnacji nie przywraca starego podziału.
-- Token wejścia, rewizja oraz blokada spotkania odrzucają nieaktualny zapis i równoległe zmiany (409). Użytkownik ma podgląd bez narzędzi administracyjnych; serwer sprawdza rolę i CSRF. DTO nie ujawnia prywatnych statusów ani powodów korekt.
-- Po zatwierdzeniu obecności „Użyj wstępnego podziału” tworzy oficjalny szkic z podglądu, jeżeli osoby i punkty są zgodne. Inaczej wyrównuje faktycznie obecnych. Oficjalne zatwierdzenie drużyn pozostaje osobnym krokiem.
+- Before checking attendance, meeting details are shown to the court from confirmed locations. The default split minimizes the difference in averages of the current ELO, is deterministic and includes each person exactly once. There is a limit of 14 and a maximum of 7 per side; for 0–1 there is a readable empty state.
+- Waitlist, offers, inactive profiles and those waiting for reconfirmation remain out of court. The preview does not save attendance, official teams or rankings.
+- Your own subscription/resignation/acceptance of the offer refreshes the preview immediately. Other devices read changes every 30 seconds and after returning to the card. This is not a push transmission.
+- Administrator saves common random split, manual swaps or returns to ELO. Changing the declaration, deadline or points invalidates the exception. Returning the same list of people after resignation does not restore the old split.
+- Entry token, revision and meeting lock discard stale records and parallel changes (409). The user has a preview without administrative tools; the server checks the role and CSRF. DTO does not disclose private statuses or reasons for corrections.
+- After confirming attendance, „Użyj wstępnego podziału” creates an official draft from the preview if the people and points match. Otherwise the balances actually present. Official approval of teams remains a separate step.
 
-## Implementacja i migracja
+## Implementation and migration
 
-Osobny serwis `preliminary_teams.py`, GET publiczny dla zalogowanych i PUT administratora. Migracja `0010_preliminary_teams` po 0009 dodaje tabelę wyjątków administratora; nie przenosi danych obecności ani demo. Domyślny ELO powstaje podczas odczytu bez zapisu do tabeli. Zmiany podglądu nie zwiększają wersji spotkania, więc nie unieważniają wydruku ani formularza obecności. Przed aktualizacją HA obowiązuje istniejąca procedura kopii i migracji. Migracja wykonana lokalnie na bazie developerskiej.
+Separate service `preliminary_teams.py`, GET public for logged in users and PUT for the administrator. `0010_preliminary_teams` migration after 0009 adds admin exception table; does not transfer attendance or demo data. The default ELO is created when reading without writing to the table. Preview changes do not increase the meeting version, so they do not invalidate the printout or attendance form. The existing backup and migration procedure applies before an HA update. Migration performed locally on the development database.
 
-Frontend korzysta z tego samego boiska wariantu A co oficjalne składy. Wybrane osoby są powiązane z odciskiem i rewizją, by nie wykonać zamiany na nieaktualnej liście. Odczyt z błędem wskazuje ostatni podział; ponowiony zapis po utracie odpowiedzi nie wykonuje drugiego losowania.
+The frontend uses the same court variant A as the official lineups. Selected people are associated with a fingerprint and revision so as not to be replaced on an outdated list. An error reading indicates the last split; re-saving after losing the response does not perform a second draw.
 
-## Weryfikacja
+## Verification
 
-Środowisko: macOS arm64, Python 3.13.18, lokalny PostgreSQL, izolowana baza `volleycrew_test`; Chromium 158.0.8127.18 i WebKit Playwright (emulacja iPhone, nie fizyczny Safari).
+Environment: macOS arm64, Python 3.13.18, local PostgreSQL, isolated database `volleycrew_test`; Chromium 158.0.8127.18 and WebKit Playwright (iPhone emulation, not physical Safari).
 
-- `VOLLEYCREW_TEST_DATABASE_URL=… npm run test:backend`: **144 zaliczone**, w tym 11 nowych przypadków podglądu. Obejmują 0/1/2/8/14 osób, zgodność ELO, prywatność i brak skutków ubocznych, rezerwę/oferty, zmianę terminu/punktów, join–cancel, niepoprawne podziały, uprawnienia i konkurencyjne zapisy oraz przekazanie do oficjalnych drużyn.
-- `npm run lint`, `npm run typecheck`, `npm run api:check`: zaliczone.
-- `npm run test:frontend`: **4 zaliczone**; `npm run build`: zaliczony.
-- `VOLLEYCREW_E2E_DATABASE_URL=… npm run test:e2e`: **71 zaliczonych, 1 celowo pominięty** (desktopowy przypadek klawiatury mobilnej), pełny przebieg 3,7 min w projektach desktop Chromium, mobile Chromium i iPhone/WebKit. Nowy scenariusz sprawdza wspólną ręczną zamianę, podgląd użytkownika, natychmiastowy join/cancel, odświeżenie drugiej karty, brak zatwierdzonej obecności, dostępność i brak poziomego przewijania.
-- Lokalny podgląd developerski terminu 17 listopada: API 200, boisko widoczne z aktualnych zapisów, screenshot `/tmp/volleycrew-preliminary-local.png`; bez zmiany deklaracji podczas kontroli.
-- Kontrola wizualna screenshotu WebKit 390 px: wstępne boisko i narzędzia administratora mieszczą się w karcie; obie strony i nazwiska są czytelne.
+- `VOLLEYCREW_TEST_DATABASE_URL=… npm run test:backend`: **144 passed**, including 11 new preview cases. These include 0/1/2/8/14 people, ELO compliance, privacy and no side effects, reserve/offers, rescheduling/points, join-cancel, invalid splits, eligibility and competitive enrollments, and transfer to official teams.
+- `npm run lint`, `npm run typecheck`, `npm run api:check`: passed.
+- `npm run test:frontend`: **4 passed**; `npm run build`: passed.
+- `VOLLEYCREW_E2E_DATABASE_URL=… npm run test:e2e`: **71 passed, 1 intentionally skipped** (desktop mobile keyboard case), full run of 3.7 min on desktop Chromium, mobile Chromium and iPhone/WebKit projects. The new scenario checks common manual replacement, user preview, immediate join/cancel, second tab refresh, no presence validated, accessibility and no horizontal scrolling.
+- Local developer preview of November 17: API 200, court visible from current enrollments, screenshot `/tmp/volleycrew-preliminary-local.png`; without changing the declaration during the inspection.
+- WebKit 390 px screenshot visual control: pre-court and admin tools fit in a tab; both sides and names are legible.
 
-## Pozostałe zależności
+## Other dependencies
 
-Odbiór wyglądu przez użytkownika, fizyczny telefon i instalacja/aktualizacja na HA pozostają do wykonania. Nowe dane demo z 17 listopada istnieją tylko w lokalnej bazie developerskiej. Nie wykonano wdrożenia produkcyjnego ani testów obrazu HA w tym uzupełnieniu.
+User acceptance testing of appearance, physical phone and HA installation/update remain to be done. The new demo data from November 17 only exists in the local development database. No production deployment or HA image testing was performed in this complement.
 
-## Uzupełnienie etykiety deklaracji
+## Complement the declaration label
 
-Na prośbę użytkownika „Będę” zastąpiono „Potwierdzam obecność”. Akcja nadal zapisuje deklarację, a obecność na sali pozostaje osobnym zatwierdzeniem administratora. Zaktualizowano selektory istniejących scenariuszy. Po zmianie: typecheck oraz 3 E2E wstępnego boiska (desktop/mobile/WebKit) zaliczone; brak nowych zależności.
+At user request, „Będę” has been replaced with „Potwierdzam obecność”. The action still saves the declaration, and attendance at the venue remains a separate admin approval. Selectors for existing scenarios have been updated. After the change: typecheck and 3 E2E pre-court (desktop/mobile/WebKit) passed; no new dependencies.
 
-## Przygotowanie PR 0.3.2 — 2026-11-10
+## Preparation of PR 0.3.2 - 2026-11-10
 
-Manifest HA podbity z 0.3.1 do 0.3.2; changelog zawiera cały zakres gałęzi. Przed publikacją ponownie zaliczone lint, typecheck, kontrakt OpenAPI, `git diff --check` oraz 13 testów konfiguracji/pakietu. Wcześniejsze pełne wyniki 144 backend / 71 E2E oraz końcowe 3 E2E po zmianie etykiety pozostają dowodami funkcjonalnymi. CI sprawdzi bieżący commit i obrazy obu architektur. PR nie wdraża aplikacji na HA.
+HA manifest bumped from 0.3.1 to 0.3.2; changelog contains the entire range of branches. Before publication, lint, typecheck, OpenAPI contract, `git diff --check` and 13 configuration/package tests were passed again. Previous full results of 144 backend / 71 E2E and final 3 E2E after relabeling remain functional evidence. CI will check the current commit and images of both architectures. PR does not deploy applications on HA.
 
-## Poprawka CI PR #6 — 2026-11-11
+## CI PR Patch #6 - 2026-11-11
 
-Oba obrazy zbudowały się, lecz scenariusz `scripts/test_container.py` próbował deklaracji na trwające najbliższe spotkanie. Uruchomienie CI 2026-11-10 o 17:09–17:14 UTC przypadło po wtorkowym starcie 18:00 w Warszawie; API słusznie zwracało 409 `enrollment_closed`. Endpoint najbliższego spotkania celowo uwzględnia trwający mecz.
+Both images built, but the `scripts/test_container.py` scenario tried to declare for the ongoing next meeting. The launch of CI 2026-11-10 at 17:09–17:14 UTC was after the Tuesday start at 18:00 in Warsaw; The API was correctly returning 409 `enrollment_closed`. The endpoint of the next match deliberately takes into account the ongoing match.
 
-Fixture wybiera teraz zaplanowane wystąpienie z kalendarza od jutra w strefie Europe/Warsaw, z dwutygodniowym oknem. Dalszy cykl nadal zapisuje deklaracje przez rzeczywiste API, a dopiero potem przesuwa testowe spotkanie na salę. Nie zmieniono reguł produkcyjnych ani limitów zapisów. Dodano 4 regresje na rzeczywistym API/PostgreSQL: wtorek przed startem, w godzinie startu, w trakcie i po spotkaniu; każda rozwiązuje przyszły termin i skutecznie zapisuje deklarację. Wszystkie 4 zaliczone, lint i kompilacja skryptu zaliczone. Pełne testy obrazów obu CPU weryfikuje ponowny przebieg CI po publikacji poprawki.
+Fixture now selects a scheduled appearance from the calendar starting tomorrow in the Europe/Warsaw zone, with a two-week window. The next cycle continues to write declarations through the actual API, and only then moves the test meeting to the venue. No production rules or enrollment limits have been changed. Added 4 regressions on the real API/PostgreSQL: Tuesday before the start, at the start time, during and after the meeting; each solves the future term and effectively saves the declaration. All 4 passed, lint and script compilation passed. Full image tests of both CPUs verified by CI re-run after patch release.

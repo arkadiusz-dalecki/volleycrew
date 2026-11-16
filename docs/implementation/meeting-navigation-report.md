@@ -1,45 +1,44 @@
-# E3/E9 — nawigacja gestem między spotkaniami
+# E3/E9 - Gesture navigation between meetings
 
-Zlecone i zaimplementowane 2026-11-11. Gałąź `feat/meeting-swipe-navigation`.
+Commissioned and implemented on 2026-11-11. Branch `feat/meeting-swipe-navigation`.
 
-Na głównym ekranie i w szczegółach gest w lewo przechodzi do następnego spotkania, w prawo do poprzedniego. Przyciski „Poprzednie” / „Następne” zapewniają tę samą akcję dla myszy, klawiatury i czytnika ekranu. Gest wymaga pojedynczego palca, ruchu co najmniej 60 px, przewagi osi poziomej i czasu poniżej sekundy. Pionowe przewijanie, kontrolki/formularze, dialogi, anulowanie i gesty wielopalcowe nie uruchamiają przejścia.
+On the main screen and in details, a gesture to the left goes to the next meeting, to the right to the previous one. „Poprzednie” / „Następne” buttons provide the same action for mouse, keyboard and screen reader. The gesture requires a single finger, a movement of at least 60 px, a horizontal axis advantage and a time of less than a second. Vertical scrolling, controls/forms, dialogs, cancels, and multi-finger gestures do not trigger the transition.
 
-Nowy odczyt `/api/v1/meetings/adjacent` zwraca najbliższych sąsiadów według aktualnego startu i ID, bez ograniczenia miesiąca/roku. Uwzględnia trwałą historię, odwołania, przesunięcia, znaczniki usunięcia i wyliczane niezakończone terminy aktywnych serii. Nie tworzy spotkań; przejście do wirtualnego terminu korzysta z dotychczasowego `resolve`, bez deklaracji udziału. Kontrakt OpenAPI i klient TypeScript wygenerowane razem. Bez nowych migracji. Na zlecenie użytkownika wersja pakietu podniesiona z 0.3.2 do 0.3.3; aktualizacja standardowa po kopii zapasowej.
+New read `/api/v1/meetings/adjacent` returns nearest neighbors by current start and ID, without month/year limitation. Includes persistent history, references, offsets, deletion markers, and enumerated unfinished meeting occurrences of active series. Does not create meetings; moving to a virtual date uses the existing `resolve`, without declaration of participation. OpenAPI contract and TypeScript client generated together. No new migrations. At the request of the user, the package version was upgraded from 0.3.2 to 0.3.3; standard update after backup.
 
-## Weryfikacja lokalna
+## Local verification
 
-- PostgreSQL 17: osobna tymczasowa instancja na porcie 55439, wyłącznie `volleycrew_swipe_test`. `pytest volleycrew/backend/tests/test_meetings.py -q`: 9 zaliczonych. Nowe przypadki: obie strony, brak sąsiada, granica roku, DST (167 h między wtorkami), wieloletnia przerwa, koniec serii, jednakowy start i kolejność ID, odwołanie/usunięcie/przesunięcie, odczyt bez utrwalania, autoryzacja i walidacja strefy czasu.
-- `npm run test:e2e -- e2e/meeting-navigation.spec.ts e2e/calendar.spec.ts e2e/ui.spec.ts`: 20 zaliczonych, 1 celowo pominięty (klawiatura mobilna na desktopie). Chromium desktop/mobile i WebKit: nawigacja, gesty ignorowane, brak mutacji deklaracji, odświeżenie adresu, błąd odczytu i ponowienie, geometria, kontrast i cele dotykowe. Kontrola szerokości 360/390/430/768/1440 px w istniejącej macierzy UI.
-- Końcowe powtórzenie `meeting-navigation.spec.ts`: 3 zaliczone, w tym natywne zdarzenia dotykowe Chromium przez CDP na projekcie mobile; pozostałe przypadki używają zdarzeń TouchEvent w przeglądarce.
-- `npm run lint`, `npm run typecheck`, `npm run api:check`, `npm run test:frontend` (4 testy), `npm run build`, `git diff --check`: zaliczone.
-- Screenshoty Playwright w ignorowanym `volleycrew/frontend/test-results/`; widok mobilny sprawdzony wizualnie.
+- PostgreSQL 17: separate temporary instance on port 55439, `volleycrew_swipe_test` only. `pytest volleycrew/backend/tests/test_meetings.py -q`: 9 passed. New cases: both sides, no neighbor, year limit, DST (167 h between Tuesdays), multi-year break, end of series, same start and ID order, reference/delete/move, read without persistence, time zone authorization and validation.
+- `npm run test:e2e -- e2e/meeting-navigation.spec.ts e2e/calendar.spec.ts e2e/ui.spec.ts`: 20 passed, 1 intentionally skipped (mobile keyboard on desktop). Chromium desktop/mobile and WebKit: navigation, gestures ignored, no declaration mutations, address refresh, read and retry error, geometry, contrast and touch targets. 360/390/430/768/1440 px width control in existing UI matrix.
+- Final repeat `meeting-navigation.spec.ts`: 3 passed, including native Chromium touch events via CDP on mobile project; the remaining cases use TouchEvents in the browser.
+- `npm run lint`, `npm run typecheck`, `npm run api:check`, `npm run test:frontend` (4 tests), `npm run build`, `git diff --check`: passed.
+- Playwright screenshots in ignored `volleycrew/frontend/test-results/`; mobile view visually checked.
 
-## Pozostałe zależności
+## Other dependencies
 
-Stan przed publikacją PR: lokalne kontrole zaliczone; wyniki zdalnego CI będą dostępne w PR. Nie wykonano instalacji Home Assistant ani odbioru gestów na fizycznym iPhonie/Androidzie. Nie uruchamiano testów obrazów HA (zmiana API/UI bez infrastruktury). Kolejny odbiór: gesty na fizycznych telefonach, szczególnie przy krawędziach ekranu, gdzie przeglądarka/system może obsługiwać własną nawigację.
+Status before PR publication: local inspections passed; remote CI results will be available in PR. Home Assistant installation and gesture acceptance testing have not been performed on a physical iPhone/Android. HA image tests were not run (API/UI change without infrastructure). Another acceptance testing: gestures on physical phones, especially at the edges of the screen where the browser/system can handle its own navigation.
 
-## Synchronizacja testu po pierwszym CI
+## Test synchronization after first CI
 
-Ślad pierwszego CI wykazał, że URL zmieniał się przed zakończeniem renderowania nowego spotkania. Gdy poprzedni ekran również miał aktywny przycisk „Poprzednie”, test wysyłał gest powrotu do starego komponentu, zanim pobrano nowych sąsiadów. Dodano identyfikator wyświetlanego spotkania na kontenerze i oczekiwanie na ten konkretny ekran przed kolejnym gestem. Zachowano asercje dokładnych adresów oraz brak zmian deklaracji.
+The first CI trace showed that the URL was changing before the new encounter had finished rendering. When the previous screen also had the „Poprzednie” button active, the test sent a return gesture to the old component before new neighbors were downloaded. Added the ID of the displayed meeting on the container and waiting for that specific screen before the next gesture. Assertions of exact addresses and no changes to declarations have been maintained.
 
-## Opóźnione 401 po wylogowaniu
+## Delayed 401 after logout
 
-Drugi przebieg CI ujawnił istniejący wyścig: odpowiedź administracyjnego odczytu 401 dotarła po wylogowaniu i montażu listy profili, a globalny handler usunął nowy publiczny query z cache. Lista pozostawała w stanie ładowania mimo odpowiedzi 200. Dodany kontrolowany test `auth-races.spec.ts` odtworzył błąd lokalnie (1 niezaliczony przed poprawką). Handler ignoruje teraz zdarzenie, jeżeli nie ma zalogowanej sesji; czyszczenie prywatnych danych aktywnej sesji pozostaje bez zmian.
+The second CI pass revealed an existing race condition: the administrative read 401 response arrived after logging out and mounting the profile list, and the global handler removed the new public query from the cache. The list remained in the loading state despite the 200 response. Added controlled test `auth-races.spec.ts` reproduced the error locally (1 failed before fix). The handler now ignores the event if there is no logged session; clearing the private data of the active session remains unchanged.
 
-Po poprawce: `auth-races.spec.ts`, `mobile-improvements.spec.ts` i `meeting-navigation.spec.ts` — 21 zaliczonych w Chromium desktop/mobile i WebKit. Lint, typy, build i diff-check ponownie zaliczone.
+Post-fix: `auth-races.spec.ts`, `mobile-improvements.spec.ts` and `meeting-navigation.spec.ts` - 21 passed in Chromium desktop/mobile and WebKit. Lint, types, build and diff-check passed again.
 
+## Seamless tile - addition 2026-11-11
 
-## Płynny kafelek — uzupełnienie 2026-11-11
+Branch `feat/meeting-card-animation`, continuation of E3/E9 requested by the user. The entire meeting card (date, status, participation and personal calendar) follows your finger. The gesture starts on a card outside the controls; other sections do not start navigation. Short/cancelled gesture returns smoothly to zero; the lack of a neighbor limits the displacement and gives a feeling of resistance. The full gesture and buttons trigger an exit in the navigation direction (220 ms), and a new tile enters from the opposite side (300 ms). Vertical scrolling and previous gesture protections remain.
 
-Gałąź `feat/meeting-card-animation`, kontynuacja E3/E9 na zlecenie użytkownika. Cała karta spotkania (data, status, udział i osobisty kalendarz) podąża za palcem. Gest rozpoczyna się na karcie poza kontrolkami; pozostałe sekcje nie uruchamiają nawigacji. Krótki/anulowany gest wraca łagodnie do zera; brak sąsiada ogranicza przesunięcie i daje odczucie oporu. Pełny gest i przyciski uruchamiają wyjazd w kierunku nawigacji (220 ms), a nowy kafelek wjeżdża z przeciwnej strony (300 ms). Pionowe przewijanie i dotychczasowe zabezpieczenia gestów pozostają.
+We fetch the persistent meeting details before the exit animation, even when they are already in the cache. The virtual term still uses resolve. The error preserves the current tab and undoes the swipe. During the transition, the data is cached, so there is no intermediate loading screen. `prefers-reduced-motion: reduce` disables panning and animations. No API changes or migrations. At the request of the user, the package version was upgraded from 0.3.3 to 0.3.4; standard HA update after backup.
 
-Szczegóły trwałego terminu pobieramy przed wyjazdem, także gdy są już w cache. Wirtualny termin nadal korzysta z resolve. Błąd zachowuje obecną kartę i cofa przesunięcie. Przy przejściu dane są w cache, więc nie ma pośredniego ekranu ładowania. `prefers-reduced-motion: reduce` wyłącza przesuwanie i animacje. Bez zmian API i migracji. Na zlecenie użytkownika wersja pakietu podniesiona z 0.3.3 do 0.3.4; standardowa aktualizacja HA po kopii zapasowej.
+Local verification:
 
-Weryfikacja lokalna:
+- Separate PostgreSQL 17 on 55439, database `volleycrew_swipe_test`; the tests did not use the development or production database.
+- `npm run test:e2e -- e2e/meeting-navigation.spec.ts e2e/calendar.spec.ts`: 6 passed (Chromium desktop/mobile and WebKit). Tile position control during movement and after short gesture, native Chromium touch, both directions, buttons, scroll/gestures ignored, detail and neighbor errors, retry, limited motion mode, declaration behavior and no horizontal overflow.
+- Lint, typecheck, build, 4 existing frontend tests and `git diff --check`: passed.
+- Mobile screenshot during the gesture checked visually; files in ignored `volleycrew/frontend/test-results/`.
 
-- Osobna PostgreSQL 17 na 55439, baza `volleycrew_swipe_test`; testy nie korzystały z bazy developerskiej ani produkcyjnej.
-- `npm run test:e2e -- e2e/meeting-navigation.spec.ts e2e/calendar.spec.ts`: 6 zaliczonych (Chromium desktop/mobile i WebKit). Kontrola pozycji kafelka podczas ruchu i po krótkim geście, natywny dotyk Chromium, oba kierunki, przyciski, przewijanie/gesty ignorowane, błędy szczegółów i sąsiadów, ponowienie, tryb ograniczonego ruchu, zachowanie deklaracji i brak poziomego przepełnienia.
-- Lint, typecheck, build, 4 istniejące testy frontendowe i `git diff --check`: zaliczone.
-- Screenshot mobilny w trakcie gestu sprawdzony wizualnie; pliki w ignorowanym `volleycrew/frontend/test-results/`.
-
-Publikacja PR i pełne CI zlecone w kolejnym kroku; wyniki dla końcowego commita będą dostępne w PR. Nie wykonywano wdrożenia Home Assistant. Odczucie animacji i gestów na fizycznym iPhonie/Androidzie pozostaje do odbioru. Nie zmieniano backendu ani infrastruktury; nie uruchamiano ich pełnych zestawów testów.
+PR publication and full CI ordered in the next step; results for the final commit will be available in PR. Home Assistant deployment was not performed. The feel of animations and gestures on a physical iPhone/Android is subject to acceptance testing. No backend or infrastructure changes; their full test suites were not run.

@@ -1,36 +1,36 @@
-# E2/E9 — wpisywany login i hasło
+# E2/E9 - login and password entered
 
-Aktualizacja: rejestracja przez Google z zaproszenia i konta bez hasła rozszerzają opisany zakres. Końcowy stan i wyniki: [raport rejestracji Google](google-registration-report.md).
+Update: Google sign-up by invitation and passwordless account expands the scope described. Final status and results: [Google registration report](google-registration-report.md).
 
-Data: 2026-11-15. Użytkownik zastąpił wcześniejszy wybór profilu i PIN osobną nazwą użytkownika i hasłem. Potwierdził, że jedyny zarejestrowany profil to organizator; migracja graczy nie jest potrzebna. Zmiana rozszerza otwarty PR #11 z Google. Bez wdrożenia i bez zmian w produkcyjnej bazie.
+Date: 2026-11-15. The user replaced the previous profile selection and PIN with a separate username and password. He confirmed that the only profile registered was the organizer; Player migration is not needed. The change extends open PR #11 with Google. Without deployment and without changes to the production database.
 
-## Zachowanie
+## Behavior
 
-- Login 3–32 znaki ASCII (litery/cyfry, kropka, myślnik, podkreślenie), normalizacja do małych liter i usunięcie skrajnych spacji. Unikalność wymuszona w PostgreSQL; równoczesne rejestracje oraz różna wielkość liter nie tworzą dwóch kont o tym samym loginie.
-- Nowe hasło 15–128 punktów kodowych Unicode, bez obcinania, normalizacji i usuwania spacji. Argon2id z losową solą i dotychczasowymi parametrami. Frontend liczy Unicode także dla emoji, wspiera menedżery haseł i pełną klawiaturę. Bez zmieniania globalnej walidacji innych formularzy.
-- Rejestracja i bootstrap wymagają loginu/hasła; rejestracja nadal wymaga aktywnego zaproszenia i nadaje gościa. Nie ma publicznego katalogu loginów/profili ani wyboru z listy.
-- Zmiana hasła wymaga obecnego hasła. Reset od organizatora działa przez jednorazowy 30-minutowy fragment URL; pozwala ustawić hasło i odzyskać/zastąpić login. Konflikt nazwy nie zużywa grantu. Reset odłącza Google; samodzielna zmiana hasła zachowuje powiązanie. Zmiany unieważniają wcześniejsze sesje/granty i pozostawiają świeżą sesję bieżącego urządzenia.
-- Google nadal wskazuje istniejący profil przez zweryfikowany sub. Połączenie/odłączenie wymaga obecnego hasła, bez PIN-u. Profile bez ustawionego hasła po migracji nie logują się również przez dawną sesję/Google.
-- Trwałe limity 5 błędów/konto i 30/źródło w oknie 15 minut; potwierdzenia Google współdzielą licznik konta. Brak konta i konto zablokowane mają ten sam błąd i koszt sprawdzenia zastępczego hasha. Ochrona serii przed DB, logi bez sekretów, CSRF, oddzielność Ingress i kanonicznego OAuth pozostają.
-- Własny login jest widoczny w profilu i w odpowiedziach konta/organizatora; nie trafia do list grupy, uczestników ani PDF. Przeglądarka pamięta tylko login; hasła nie są zapisywane w storage.
+- Login 3–32 ASCII characters (letters/numbers, dot, dash, underscore), normalization to lowercase letters and trimming leading and trailing spaces. Uniqueness enforced in PostgreSQL; simultaneous registrations and different capitalization do not create two accounts with the same login.
+- New password 15-128 Unicode code points, no truncation, normalization or whitespace removal. Argon2id with random salt and existing parameters. The frontend also counts Unicode for emojis, supports password managers and a full keyboard. Without changing the global validation of other forms.
+- Registration and bootstrap require login/password; registration still requires an active invitation and admits a guest. There is no public login/profile directory or list selection.
+- Changing your password requires your current password. Organizer reset works via a one-time 30-minute URL snippet; allows you to set a password and recover/replace your login. A name conflict does not consume the grant. Reset disconnects Google; changing the password yourself preserves the association. The changes invalidate previous sessions/grants and leave the current device session fresh.
+- Google still indicates existing profile by verified sub. Connection/disconnection requires current password, no PIN. Profiles without a password set after migration also do not log in via the old session/Google.
+- Permanent limits of 5 errors/account and 30/source in a 15 minute window; Google confirmations share an account counter. No account and blocked account have the same error and cost to check the replacement hash. Burst protection before DB access, secretless logs, CSRF, Ingress separation and canonical OAuth remain.
+- Your own login is visible in the profile and in the account/organizer's responses; it does not go to the group, participant or PDF lists. The browser only remembers the login; passwords are not saved in storage.
 
-## Migracja i obsługa organizatora
+## Migration and organizer support
 
-`0012_password_login` zmienia kolumnę PIN-u na nullable password_hash, usuwa stare hashe PIN i dodaje prywatny unikalny username z ograniczeniami pary i formatu. Zmienia tabelę grantów na password_reset_grants, unieważnia stare sesje i granty oraz usuwa oczekujące przepływy Google. Dane profili, historia, zapisy i ELO pozostają. Dawne PIN-y nie są hasłami i nie ma endpointu migracji graczy.
+`0012_password_login` changes the PIN column to nullable password_hash, removes old PIN hashes and adds a private unique username with pair and format restrictions. Changes the grants table to password_reset_grants, invalidates old sessions and grants, and deletes pending Google flows. Profile data, history, enrollments and ELO remain. Old PINs are not passwords and there is no player migration endpoint.
 
-Dla organizatora bez nowych danych dostępny jest nowy operatorowy grant setup: nowy losowy BOOTSTRAP_TOKEN w opcjach HA + restart + PUBLIC_URL/setup#token. Stary wykorzystany token nie jest reaktywowany. Ustawienie danych zachowuje istniejące ID, rolę, status, nazwisko i historię, odłącza poprzednie Google i ponownie zamyka bootstrap; kolejne tokeny nie zastępują konta z już ustawionym hasłem. Alternatywa poza HA: npm run auth:bootstrap -- --rotate. Procedura i kopia przed aktualizacją: [DOCS](../../volleycrew/DOCS.md#przejście-z-pin-u-na-login-i-hasło).
+For the organizer without new data, a new operator grant setup is available: new random BOOTSTRAP_TOKEN in the HA + restart + PUBLIC_URL/setup#token options. The old used token is not reactivated. Setting data preserves existing ID, role, status, name and history, disconnects previous Google and closes bootstrap again; subsequent tokens do not replace an account with an already set password. Non-HA alternative: npm run auth:bootstrap -- --rotate. Procedure and pre-update copy: [DOCS](../../volleycrew/DOCS.md#switching-from-pin-to-login-and-password).
 
-Downgrade zachowuje profile, ale **nie odtwarza PIN-ów ani loginów**; nie jest procedurą cofnięcia dostępu. Rollback wymaga zgodnego obrazu i kopii sprzed aktualizacji. Wersja pakietu pozostaje 0.3.4 (bez zlecenia zmiany wersji). Automatyczny backup startu wykrywa także zmianę head migracji.
+Downgrade preserves profiles but **does not restore PINs or logins**; is not an access rollback procedure. Rollback requires a compatible image and pre-upgrade copy. The package version remains 0.3.4 (no version change request). Automatic startup backup also detects head migration changes.
 
-## Weryfikacja
+## Verification
 
-- Lokalny PostgreSQL 17.11, Python 3.13.18, Node 26.8.1, macOS arm64. Wyłącznie bazy testowe: volleycrew_password_test oraz osobna volleycrew_password_e2e_test na tymczasowym klastrze loopback. Po rozdzieleniu baz pełny backend: **197 zaliczonych**, 2 istniejące ostrzeżenia HTTPX. Nowe testy obejmują format/normowanie loginów, długość i dokładność haseł, brak ujawniania danych, konkurencję loginów, wspólne limity, odzyskiwanie loginu i przejście istniejącego organizatora z zachowaniem danych oraz zamknięciem bootstrapu.
-- **10 testów jednostkowych frontendu** zaliczonych, w tym Unicode/whitespace i formularze Ingress. Lint, typy, kontrakt OpenAPI i build zaliczone lokalnie.
-- Pełne E2E desktop/mobile/WebKit: **83 zaliczone, 1 celowo pominięty na desktopie** (4,3 min). Dedykowane Google: **6 zaliczonych** (20,5 s), z połączeniem po haśle, logowaniem na ten sam profil i odłączeniem. Lokalny wystawca podpisuje RSA; callback, PKCE i sesje wykonuje rzeczywisty kod. Mobilne zrzuty logowania i profilu sprawdzono wizualnie; zapisano lokalnie poza repozytorium.
-- Docker lokalnie niedostępny; rzeczywiste obrazy amd64/aarch64, HTTPS/Ingress i backup/restore w CI dla końcowego HEAD PR. Wynik w PR; lokalne buildy/atrapa Google nie zastępują tych testów.
+- Local PostgreSQL 17.11, Python 3.13.18, Node 26.8.1, macOS arm64. Only test database: volleycrew_password_test and a separate volleycrew_password_e2e_test on a temporary loopback cluster. After separating the databases, full backend: **197 passed**, 2 existing HTTPX warnings. The new tests include login format/normalization, password length and accuracy, non-disclosure, login competition, shared limits, login recovery, and transitioning the existing organizer with data preservation and bootstrap closure.
+- **10 frontend unit tests** passed, including Unicode/whitespace and Ingress forms. Lint, types, OpenAPI contract and build passed locally.
+- Full E2E desktop/mobile/WebKit: **83 passed, 1 intentionally skipped on desktop** (4.3 min). Dedicated Google: **6 passes** (20.5 s), with password connection, login to the same profile and disconnection. The local issuer signs the RSA; callback, PKCE and sessions executes the actual code. Mobile login and profile screenshots checked visually; saved locally outside the repository.
+- Docker locally unavailable; actual amd64/aarch64, HTTPS/Ingress and CI backup/restore images for final HEAD PR. PR result; local builds/Google dummy do not replace these tests.
 
-## Ograniczenia odbioru
+## Limitations of acceptance testing
 
-Nie konfigurowano projektu Google ani rzeczywistego konta, nie wdrażano na HA i nie wykonywano odbioru na fizycznym telefonie/PWA. Po wdrożeniu organizator musi jednorazowo ustawić login i hasło przez nowy link setup. Dotychczasowe sesje/PIN-y są celowo nieważne. Pełna migracja graczy oraz logowanie e-mailem nie należą do zlecenia.
+No Google project or real account setup, no deployment to HA, and no acceptance testing performed on physical phone/PWA. After deployment, the organizer must set the login and password once via a new setup link. Existing sessions/PINs are intentionally invalid. Full player migration and email login are not included in the order.
 
-Podstawa polityki długości: [OWASP Authentication Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html), odczyt 2026-11-15. Dokument nie jest deklaracją kompletnej zgodności z NIST/ASVS.
+Length policy basis: [OWASP Authentication Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html), read 2026-11-15. The document is not a declaration of complete compliance with NIST/ASVS.

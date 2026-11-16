@@ -1,54 +1,54 @@
-# E3 — modele spotkań i kalendarz
+# E3 - Meeting Models and Calendar
 
-Data: 2026-11-06. Stan: zaimplementowany i sprawdzony lokalnie. Bez wdrożenia HA, commita ani publikacji. Etap obejmuje terminy i ich odczyt; deklaracje uczestnictwa i alokacja miejsc należą do E4.
+Date: 2026-11-06. Status: Implemented and verified locally. Without HA deployment, commit or publication. The stage includes meeting occurrences and reading them; participation declarations and seat allocation belong to E4.
 
-## Odbiór E3
+## Acceptance testing E3
 
-| Kryterium | Realizacja i dowód |
-| --- | --- |
-| ScheduleVersion, Meeting, Enrollment | Migracja `0003_meetings`: wersje harmonogramu z wykluczeniem nakładających się przedziałów, unikalny termin źródłowy, para spotkanie/gracz, sekwencja kolejności i indeksy. `alembic check` nie wykrywa różnic względem modeli |
-| Domyślny harmonogram | Wtorek 18:00, 120 minut, Europe/Warsaw, I LO w Gdańsku; limit 14. Migracja dodaje wyłącznie regułę, bez fikcyjnych meczów i zawodników |
-| Wyliczanie i scalenie | Czysty moduł `app/domain/schedule.py`, daty lokalne przeliczane na UTC. Wystąpienia wirtualne są scalane z trwałymi rekordami. Przesunięty rekord zastępuje pierwotny termin, odwołany pozostaje widoczny |
-| Dalsze miesiące | API zakresu 1–366 dni z paginacją; miesiąc można wybrać bezpośrednio i przeglądać dalej. Brak granicy najbliższego tygodnia ani roku. Testy odczytują 2040/2041, a E2E otwiera termin 10 lat po miesiącu testowym |
-| Idempotentne otwarcie | UUIDv5 wynika z ID wersji harmonogramu i daty źródłowej. `POST /meetings/resolve` waliduje regułę, tworzy rekord przez INSERT ON CONFLICT i zwraca go. Testy dwóch żądań HTTP oraz dwóch niezależnych transakcji DB dowodzą identycznego ID i jednego rekordu |
-| DST, dzień tygodnia i granice | Testy marcowej i październikowej zmiany czasu, roku przestępnego, przejścia przez rok i zmiany wtorku na czwartek/piątek. Przedziały wersji są lewostronnie domknięte, prawostronnie otwarte |
-| Stabilna historia | ID i data źródłowa zostają po przesunięciu rzeczywistego startu; odczyt pod tym samym adresem działa po zakończeniu terminu. Niewytworzone minione wystąpienia nie udają historii rozegranych spotkań |
-| Prywatność | Kalendarz, szczegóły, harmonogram i lista grupy wymagają sesji. DTO uczestnika/gracza zawiera tylko ID, imię, nazwisko i przydomek; brak statusu priorytetu, roli, PIN-u i danych prywatnej historii. Zablokowany profil nie otwiera nowych rekordów |
-| UI wariantu A | Miesięczny kalendarz i lista, wybór miesiąca/dnia, oznaczenie odwołania, najbliższy termin z API, szczegóły i powrót do miesiąca spotkania. Puste stany, błąd z ponowieniem i informacja o starych danych przy błędzie odświeżania |
+| Criterion                            | Implementation and proof                                                                                                                                                                                                                                              |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ScheduleVersion, Meeting, Enrollment | `0003_meetings` Migration: Schedule versions excluding overlapping slots, unique source term, match/player pair, order sequence and indexes. `alembic check` does not detect differences from models                                                                  |
+| Default schedule                     | Tuesday 18:00, 120 minutes, Europe/Warsaw, I LO in Gdańsk; limit 14. Migration adds only the rule, without fictitious matches and players                                                                                                                             |
+| Enumerate and merge                  | Pure `app/domain/schedule.py` module, local dates converted to UTC. Virtual instances are merged with persistent records. The postponed record replaces the original appointment, the canceled one remains visible                                                    |
+| Further months                       | API range 1-366 days with pagination; you can select the month directly and browse further. There is no limit to the next week or year. Tests read 2040/2041 and E2E opens the deadline 10 years after the test month                                                 |
+| Idempotent opening                   | UUIDv5 results from the schedule version ID and source date. `POST /meetings/resolve` validates the rule, creates a record via INSERT ON CONFLICT and returns it. Tests of two HTTP requests and two independent DB transactions prove an identical ID and one record |
+| DST, day of the week and boundaries  | Tests for March and October time changes, leap year, year transition and change from Tuesday to Thursday/Friday. The version compartments are closed on the left and open on the right                                                                                |
+| Stable history                       | The ID and source date remain after the actual start is postponed; reading at the same address works after the deadline. Unmaterialized past meetings do not pretend to be the history of matches played                                                              |
+| Privacy                              | Calendar, details, schedule and group list require a session. The participant/player's DTO contains only ID, name, surname and nickname; no priority status, role, PIN and private history data. A blocked profile does not open new records                          |
+| UI variant A                         | Monthly calendar and list, month/day selection, cancellation marking, next API date, details and return to the month of the meeting. Empty states, retry error and old data information on refresh error                                                              |
 
-## Kontrakt i zachowanie
+## Contract and behavior
 
-- `GET /api/v1/schedule`: wersje reguły (poniedziałek=0, niedziela=6).
-- `GET /api/v1/calendar?from=YYYY-MM-DD&to=YYYY-MM-DD&limit=50&offset=0`: daty kalendarzowe Europe/Warsaw, `to` wyłączne, maksymalnie 366 dni na żądanie. Zwraca `items`, `total` i `next_offset`. Obsługiwane lata zapytań 1970–9998; to granica reprezentacji technicznej, bez ograniczenia do najbliższych terminów.
-- `POST /api/v1/meetings/resolve`: `{schedule_version_id, source_date}`. Samo otwarcie nie deklaruje obecności, nie zajmuje miejsca i nie tworzy Enrollment. Nowy rekord może dotyczyć przyszłego lub jeszcze trwającego poprawnego wystąpienia; minionego nie można utworzyć. Już zapisany rekord pozostaje odczytywalny i idempotentnie rozwiązywany również po czasie, zmianie reguły i odwołaniu. Deklaracje E4 muszą oddzielnie sprawdzać przyszły start i stan spotkania.
-- `GET /api/v1/meetings/next`: najwcześniejsze nieodwołane i niezakończone spotkanie, którego koniec jeszcze nie minął, także aktualnie trwające; brak terminu daje `null`.
-- `GET /api/v1/meetings/{id}`: trwały termin i bezpieczne listy uczestników/rezerwy.
-- `GET /api/v1/players`: paginowana lista aktywnych profili dla zalogowanej grupy. Anonimowy katalog logowania nadal jest osobnym, maskowanym DTO z E2.
+- `GET /api/v1/schedule`: rule versions (Monday=0, Sunday=6).
+- `GET /api/v1/calendar?from=YYYY-MM-DD&to=YYYY-MM-DD&limit=50&offset=0`: Europe/Warsaw calendar dates, `to` exclusive, maximum 366 days on request. Returns `items`, `total`, and `next_offset`. Query years supported 1970–9998; is the limit of technical representation, without limitation to the nearest meeting occurrences.
+- `POST /api/v1/meetings/resolve`: `{schedule_version_id, source_date}`. The opening itself does not declare presence, does not take up space and does not create Enrollment. The new record may refer to a future or ongoing valid occurrence; the past cannot be created. An already written record remains readable and idempotently resolved even after time, rule changes and revocations. E4 declarations must separately check future start and meeting status.
+- `GET /api/v1/meetings/next`: the earliest uncancelled and unfinished meeting whose end has not yet passed, also currently in progress; missing term gives `null`.
+- `GET /api/v1/meetings/{id}`: persistent deadline and secure attendee lists/waitlists.
+- `GET /api/v1/players`: paginated list of active profiles for the logged in group. The anonymous login directory is still a separate, masked DTO from E2.
 
-Źródło reguły domyślnej ma datę początkową 1970-01-01, co nie tworzy historycznych spotkań. Czas trwania liczymy jako rzeczywisty odstęp od początku w UTC. Dotychczas nie ustalono zachowania dla lokalnej godziny, która nie istnieje lub występuje dwukrotnie podczas zmiany czasu; czysta funkcja jawnie odrzuca taki początek zamiast przesuwać go po cichu. Domyślne 18:00 tego problemu nie ma. E5 musi zwalidować proponowaną regułę przed jej zapisem i, jeśli potrzebna będzie taka godzina, uzyskać rozstrzygnięcie polityki DST.
+The default rule source has a start date of 1970-01-01, which does not create historical encounters. We count the duration as the actual interval from the beginning in UTC. No behavior has yet been established for a local time that does not exist or occurs twice during a time change; a pure function explicitly discards such a start instead of moving it silently. Default 18:00 does not have this problem. E5 must validate the proposed rule before writing it and, if time is needed, obtain DST policy resolution.
 
-## Weryfikacja
+## Verification
 
-Środowisko lokalne: macOS arm64, Python 3.13.18, PostgreSQL 14.24 na 127.0.0.1:55432; osobna baza `volleycrew_test`. Testy integracyjne i seeder E2E wymagają sufiksu `_test`, nie korzystają z dev ani maybe-finance.
+Local environment: macOS arm64, Python 3.13.18, PostgreSQL 14.24 on 127.0.0.1:55432; separate database `volleycrew_test`. Integration tests and the E2E seeder require the `_test` suffix, they do not use dev or maybe-finance.
 
-- `npm run lint` — Ruff, ESLint i Prettier poprawnie.
-- `npm run typecheck` — poprawnie.
-- `npm run api:check` — aktualny OpenAPI i wygenerowane typy.
-- `VOLLEYCREW_TEST_DATABASE_URL=<baza *_test> npm run test:backend` — **35 zaliczonych**. Jedno ostrzeżenie zależności Starlette o przyszłej zmianie transportu TestClient, bez błędu testów.
-- `npm run test:frontend` — **1 test Vitest zaliczony**.
-- `VOLLEYCREW_E2E_DATABASE_URL=<baza *_test> npm run test:e2e` — **6 zaliczonych** w Chromium 158: wcześniejsze ścieżki E2, nawigacja i nowy pełny scenariusz kalendarza. Kontrola overflow i screenshoty 360/390/430/1440 px; błąd sieci przez przerwanie żądań przeglądarki i ponowienie do prawdziwego API.
-- `npm run build` — poprawny build produkcyjny.
-- Alembic `check` na testowej DB — `No new upgrade operations detected`.
+- `npm run lint` - Ruff, ESLint and Prettier correctly.
+- `npm run typecheck` - Correct.
+- `npm run api:check` - Current OpenAPI and generated types.
+- `VOLLEYCREW_TEST_DATABASE_URL=<*_test database> npm run test:backend` - **35 passed**. One Starlette dependency warning about future TestClient transport change, no test failure.
+- `npm run test:frontend` - **1 Vitest passed**.
+- `VOLLEYCREW_E2E_DATABASE_URL=<*_test database> npm run test:e2e` - **6 Passes** in Chromium 158: legacy E2 paths, navigation and new full calendar scenario. Overflow control and screenshots 360/390/430/1440 px; network error by aborting browser requests and retrying to the real API.
+- `npm run build` - correct production build.
+- Alembic `check` on test DB - `No new upgrade operations detected`.
 
-Screenshoty (ignorowane w git): `volleycrew/frontend/test-results/calendar-calendar-future-n-16f7f-sistent-detail-and-recovery-{desktop,mobile}/`, pliki `calendar-360.png`, `calendar-390.png`, `calendar-430.png`, `calendar-1440.png` i `meeting-detail.png` stosownie do projektu. Wizualnie sprawdzono kalendarz 360 px i mobilne szczegóły. To emulacja Chromium, bez testu fizycznego telefonu/Safari. Fikcyjne odwołanie istnieje wyłącznie w seedzie E2E.
+Screenshots (ignored in git): `volleycrew/frontend/test-results/calendar-calendar-future-n-16f7f-sistent-detail-and-recovery-{desktop,mobile}/`, files `calendar-360.png`, `calendar-390.png`, `calendar-430.png`, `calendar-1440.png` and `meeting-detail.png` according to the project. The 360 ​​px calendar and mobile details were visually checked. It's a Chromium emulation, no phone/Safari physical test. The dummy reference only exists in the E2E seed.
 
-## Przekazanie do E4
+## Forward to E4
 
-- Enrollment jest fundamentem bez endpointu zapisu. E4 wdraża całą alokację pod blokadą Meeting: limit, trzy priorytety, rezerwacje, oferty i ponowienia. Otwarcie terminu w E3 nie oznacza odebrania kryterium zapisu zawodnika z E4.
-- `declared_at` i `queue_number` porządkują zgłoszenia. Ponowny zapis po wycofaniu wymaga nowego czasu i numeru; powtórzenie bieżącej deklaracji musi zachować oba. Samo odświeżenie strony niczego nie zmienia.
-- Pole `accepted_late_offer` trzeba powiązać z rzeczywistym zdarzeniem/SeatOffer w E4, bez możliwości nadania wyjątku przez klienta.
-- Dopiero E4 dołącza zwolnienie przyszłych miejsc/ofert do blokady profilu i umożliwia zmianę prywatnego priorytetu administratorowi. Zachować kolejność blokad identity → harmonogram/spotkanie, aby nie wprowadzić deadlocków; operacje harmonogramu E5 współpracują z blokadą reguły używaną w resolverze.
-- E5 dostarcza edycję i odwoływanie z UI/API; obecny kod odczytu już poprawnie uwzględnia takie rekordy, testowane bezpośrednią zmianą fixture DB.
-- PostgreSQL 17/CI, pakiet HA, Ingress, test Pi 4 i backup/restore nadal oczekują na właściwe etapy. Lokalny test nie jest dowodem wdrożenia.
+- Enrollment is a foundation without a write endpoint. E4 implements the entire allocation under the Meeting lock: limit, three priorities, reservations, offers and retries. Opening a date in E3 does not mean that the criteria for registering a player from E4 will be withdrawn.
+- `declared_at` and `queue_number` are sorting out reports. Re-registration after withdrawal requires a new time and number; repeating the current declaration must preserve both. Just refreshing the page doesn't change anything.
+- The `accepted_late_offer` field must be associated with the actual event/SeatOffer in E4, without the possibility of assigning an exception by the client.
+- Only E4 attaches the release of future places/offers to the profile lock and allows the administrator to change the private priority. Maintain the order of locks identity → schedule/meeting to avoid deadlocks; E5 schedule operations work with the rule lock used in the resolver.
+- E5 provides editing and referencing from UI/API; the current reading code already correctly includes such records, tested by directly changing the fixture DB.
+- PostgreSQL 17/CI, HA suite, Ingress, Pi 4 test and backup/restore are still pending. A local test is not proof of deployment.
 
-Następny gotowy etap po zleceniu: **E4 — deklaracje, priorytety i rezerwa**.
+The next ready stage after the order: **E4 - declarations, priorities and waitlist**.
