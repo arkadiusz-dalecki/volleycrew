@@ -215,3 +215,12 @@ Na `/join?token=token` po włączeniu Google pokazujemy Dołącz przez Google ni
 Profil Google-only pokazuje własne dane, informację o Google jako metodzie logowania i przycisk dodania opcjonalnego loginu/hasła. Nowy dowód Google prowadzi do `/profile/password#token`; formularz respektuje istniejącą politykę loginu/hasła. Odłączenie Google bez hasła nie jest oferowane. Po dodaniu hasła dostępne są dotychczasowe zmiana hasła i odłączenie. Znany sub po ponownym zaproszeniu nie pokazuje formularza nadpisującego istniejące nazwisko. Zablokowanie, utrata sesji, wygasły/cofnięty link i HTTP 429 mają bezpieczne komunikaty; brak automatycznego ponawiania mutacji.
 
 Uzupełnienie komunikatu braku tokenu (2026-11-15): wskazówka dla Messengera o skopiowaniu pełnego linku z oryginalnej wiadomości i wklejeniu go do Safari lub Chrome.
+
+
+## Poprawki MWG — 2026-11-15
+
+Wspólne pola danych dostępu mają jawne etykiety połączone przez for/id i zachowują username/current-password/new-password. Przycisk „Pokaż hasło” jest przełącznikiem aria-pressed z niezmienną nazwą i kontekstem konkretnego pola; nie wysyła formularza ani nie zmienia hasła. Powtórzenie hasła korzysta z natywnej walidacji zgodności także po zmianie pierwszego pola. Komunikat i aria-invalid pojawiają się po nieudanej próbie wysłania, fokus trafia w błędne pole, a edycja usuwa widoczny błąd. Podpowiedź formatu jest nad polem.
+
+Rozmiary tekstu są względne, bez nadpisania rozmiaru korzenia. Meta text-scale włącza natywne preferencje OS tam, gdzie są wspierane; zwykły zoom pozostaje dostępny. Układ i kontrolki rosną/zawijają tekst. Dialog i backdrop mają CSS ograniczający przekazywanie przewijania; brak wsparcia w Safari nie jest obchodzony przez ukrywanie scrollbara html/body.
+
+Prywatna powłoka i poszczególne widoki ładują się na żądanie. Błąd pobrania ma komunikat i jawne ponowne wczytanie; powłoka prywatna zachowuje nawigację przy błędzie podstrony. Obszar trasy rezerwuje wysokość początkowego viewportu, a statyczne szkielety zastępują krótki tekst ładowania, aby stopka nie pojawiała się na chwilę w miejscu przyszłej treści. Nie dodajemy animacji szkieletów ani cache prywatnego API.

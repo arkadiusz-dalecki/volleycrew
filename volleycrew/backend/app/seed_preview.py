@@ -4,6 +4,7 @@ import asyncio
 from uuid import UUID, uuid5
 
 from sqlalchemy.engine import make_url
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.clock import SystemClock
 from app.core.config import get_settings
@@ -33,6 +34,50 @@ DEMO_PLAYERS = (
 )
 
 
+async def _seed_profiles(db: AsyncSession):
+    for identifier, name, role, priority in PROFILES:
+        player = await db.get(Player, identifier)
+        if player is None:
+            db.add(
+                Player(
+                    id=identifier,
+                    username=("admin-demo" if role == "admin" else "user-demo"),
+                    first_name=name,
+                    last_name="Demo",
+                    nickname="Podgląd lokalny",
+                    role=role,
+                    priority_status=priority,
+                    password_hash=await hash_password("Preview-test-password-123"),
+                    created_at=SystemClock().now(),
+                )
+            )
+        elif not player.has_password:
+            # Pre-password demo profiles survived migration 0012 with no credentials.
+            player.username = "admin-demo" if role == "admin" else "user-demo"
+            player.password_hash = await hash_password("Preview-test-password-123")
+    password_hash = await hash_password("Preview-test-password-123")
+    for first_name, last_name in DEMO_PLAYERS:
+        identifier = uuid5(PROFILES[0][0], f"{first_name}:{last_name}")
+        player = await db.get(Player, identifier)
+        if player is None:
+            db.add(
+                Player(
+                    id=identifier,
+                    username="demo-" + identifier.hex[:24],
+                    first_name=first_name,
+                    last_name=last_name,
+                    nickname="Podgląd lokalny",
+                    role="player",
+                    priority_status="player",
+                    password_hash=password_hash,
+                    created_at=SystemClock().now(),
+                )
+            )
+        elif not player.has_password:
+            player.username = "demo-" + identifier.hex[:24]
+            player.password_hash = password_hash
+
+
 async def seed():
     settings = get_settings()
     url = make_url(settings.database_url.get_secret_value())
@@ -43,38 +88,7 @@ async def seed():
     database = Database(settings.database_url.get_secret_value())
     try:
         async with database.sessions() as db:
-            for identifier, name, role, priority in PROFILES:
-                if await db.get(Player, identifier) is None:
-                    db.add(
-                        Player(
-                            id=identifier,
-                            username=("admin-demo" if role == "admin" else "user-demo"),
-                            first_name=name,
-                            last_name="Demo",
-                            nickname="Podgląd lokalny",
-                            role=role,
-                            priority_status=priority,
-                            password_hash=await hash_password("Preview-test-password-123"),
-                            created_at=SystemClock().now(),
-                        )
-                    )
-            password_hash = await hash_password("Preview-test-password-123")
-            for first_name, last_name in DEMO_PLAYERS:
-                identifier = uuid5(PROFILES[0][0], f"{first_name}:{last_name}")
-                if await db.get(Player, identifier) is None:
-                    db.add(
-                        Player(
-                            id=identifier,
-                            username="demo-" + identifier.hex[:24],
-                            first_name=first_name,
-                            last_name=last_name,
-                            nickname="Podgląd lokalny",
-                            role="player",
-                            priority_status="player",
-                            password_hash=password_hash,
-                            created_at=SystemClock().now(),
-                        )
-                    )
+            await _seed_profiles(db)
             await db.commit()
         print(
             "Local preview: admin-demo / user-demo + 12 players; "

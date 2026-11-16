@@ -47,16 +47,16 @@ h3,
   font-family: Manrope, sans-serif;
 }
 h1 {
-  font-size: 34px;
+  font-size: 2.125rem;
   line-height: 1.3;
   letter-spacing: -1.3px;
 }
 h2 {
-  font-size: 19px;
+  font-size: 1.1875rem;
   letter-spacing: -0.5px;
 }
 h3 {
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 .app-shell {
   display: grid;
@@ -67,6 +67,7 @@ h3 {
   position: fixed;
   inset: 0 auto 0 0;
   width: 232px;
+  overflow-y: auto;
   padding: 35px 22px 25px;
   background: white;
   border-right: 1px solid var(--line);
@@ -77,7 +78,7 @@ h3 {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 23px;
+  font-size: 1.4375rem;
   font-weight: 700;
   letter-spacing: -1px;
   text-decoration: none;
@@ -88,7 +89,7 @@ h3 {
 }
 .nav-caption {
   margin: 52px 14px 16px;
-  font-size: 10px;
+  font-size: 0.625rem;
   letter-spacing: 1.8px;
   color: var(--muted);
 }
@@ -105,7 +106,7 @@ h3 {
   border-radius: 10px;
   text-decoration: none;
   color: #697764;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 500;
 }
 .side-nav a.active {
@@ -134,7 +135,7 @@ h3 {
   background: #f5f7ee;
   border-radius: 13px;
   color: #52654b;
-  font-size: 12px;
+  font-size: 0.75rem;
   line-height: 1.8;
 }
 .venue strong {
@@ -145,7 +146,7 @@ h3 {
   border-top: 1px solid var(--line);
   margin-top: 24px;
   padding-top: 23px;
-  font-size: 9px;
+  font-size: 0.5625rem;
   letter-spacing: 1.4px;
   color: var(--muted);
 }
@@ -154,12 +155,13 @@ h3 {
   min-width: 0;
 }
 .topbar {
-  height: 89px;
+  min-height: 89px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  padding: 0 44px;
+  flex-wrap: wrap;
+  padding: 0.75rem 44px;
   border-bottom: 1px solid var(--line);
 }
 .breadcrumb {
@@ -167,7 +169,7 @@ h3 {
   gap: 12px;
   align-items: center;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 .breadcrumb span {
   color: #365344;
@@ -176,7 +178,7 @@ h3 {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: var(--muted);
 }
 .mobile-brand,
@@ -194,7 +196,7 @@ h3 {
 .page-heading p {
   margin-top: 11px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 0.8125rem;
   line-height: 1.8;
 }
 .dashboard {
@@ -234,7 +236,7 @@ h3 {
   z-index: 1;
 }
 .eyebrow {
-  font-size: 9px;
+  font-size: 0.5625rem;
   letter-spacing: 1.6px;
   color: #c3d8b4;
   display: flex;
@@ -249,7 +251,7 @@ h3 {
   box-shadow: 0 0 0 4px #ffffff08;
 }
 .hero h2 {
-  font-size: 35px;
+  font-size: 2.1875rem;
   line-height: 1.15;
   letter-spacing: -1.2px;
   margin: 25px 0 23px;
@@ -259,7 +261,7 @@ h3 {
   align-items: center;
   gap: 9px;
   margin-top: 12px;
-  font-size: 12px;
+  font-size: 0.75rem;
   color: #d4e3c9;
 }
 .court-illustration {
@@ -335,7 +337,7 @@ h3 {
 }
 .participation-placeholder p {
   margin-top: 7px;
-  font-size: 12px;
+  font-size: 0.75rem;
   line-height: 1.8;
   color: var(--muted);
 }
@@ -378,18 +380,18 @@ h3 {
   line-height: 1.7;
 }
 .empty-state p {
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--muted);
   line-height: 1.9;
   margin-top: 9px;
   max-width: 360px;
 }
 .upcoming h2 {
-  font-size: 16px;
+  font-size: 1rem;
 }
 .upcoming > p {
   margin: 19px 0;
-  font-size: 12px;
+  font-size: 0.75rem;
   line-height: 1.9;
   color: var(--muted);
 }
@@ -400,7 +402,7 @@ h3 {
   min-height: 44px;
   color: #557740;
   text-decoration: none;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 600;
 }
 .text-link:hover {
@@ -419,12 +421,12 @@ h3 {
   color: #7f9b5a;
 }
 .community-note h3 {
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 .community-note p {
   margin-top: 8px;
   color: #71835e;
-  font-size: 11px;
+  font-size: 0.6875rem;
   line-height: 1.9;
 }
 .full-page-empty {
@@ -445,14 +447,14 @@ h3 {
   color: var(--muted);
 }
 .app-footer > span {
-  font-size: 9px;
+  font-size: 0.5625rem;
   letter-spacing: 1.3px;
 }
 .service-status {
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: var(--muted);
   min-height: 44px;
 }
@@ -492,7 +494,7 @@ h3 {
     transform: rotate(360deg);
   }
 }
-@media (max-width: 1200px) {
+@media (max-width: 75em) {
   .content {
     padding: 30px 28px;
   }
@@ -504,7 +506,7 @@ h3 {
     gap: 20px;
   }
   .hero h2 {
-    font-size: 30px;
+    font-size: 1.875rem;
   }
   .hero-copy {
     padding: 27px 23px;
@@ -516,7 +518,7 @@ h3 {
     right: -80px;
   }
 }
-@media (max-width: 1000px) {
+@media (max-width: 62.5em) {
   .dashboard {
     grid-template-columns: 1fr;
   }
@@ -530,7 +532,7 @@ h3 {
     right: -5px;
   }
 }
-@media (max-width: 700px) {
+@media (max-width: 43.75em) {
   .app-shell {
     display: block;
   }
@@ -538,15 +540,15 @@ h3 {
     display: none;
   }
   .topbar {
-    height: 77px;
-    padding: 0 20px;
+    min-height: 77px;
+    padding: 0.75rem 20px;
     background: #fff;
   }
   .mobile-brand {
     display: block;
   }
   .mobile-brand .brand {
-    font-size: 22px;
+    font-size: 1.375rem;
   }
   .breadcrumb,
   .header-note {
@@ -556,14 +558,14 @@ h3 {
     padding: 27px 18px 110px;
   }
   h1 {
-    font-size: 27px;
+    font-size: 1.6875rem;
     letter-spacing: -1px;
   }
   .page-heading {
     margin-bottom: 23px;
   }
   .page-heading p {
-    font-size: 12px;
+    font-size: 0.75rem;
   }
   .hero {
     min-height: 260px;
@@ -573,13 +575,13 @@ h3 {
     padding: 25px 22px;
   }
   .hero h2 {
-    font-size: 31px;
+    font-size: 1.9375rem;
   }
   .hero p {
-    font-size: 11px;
+    font-size: 0.6875rem;
   }
   .eyebrow {
-    font-size: 8px;
+    font-size: 0.5rem;
     letter-spacing: 1.2px;
   }
   .mini-court {
@@ -602,16 +604,16 @@ h3 {
     padding: 22px 20px;
   }
   .participation-placeholder h3 {
-    font-size: 13px;
+    font-size: 0.8125rem;
   }
   .participation-placeholder p {
-    font-size: 12px;
+    font-size: 0.75rem;
   }
   .card {
     padding: 22px 20px;
   }
   .section-title h2 {
-    font-size: 17px;
+    font-size: 1.0625rem;
   }
   .right-column {
     grid-template-columns: 1fr;
@@ -640,7 +642,7 @@ h3 {
     min-width: 65px;
     min-height: 46px;
     gap: 6px;
-    font-size: 10px;
+    font-size: 0.625rem;
     color: var(--muted);
     text-decoration: none;
   }
@@ -695,7 +697,7 @@ h3 {
 }
 .button.small {
   padding: 8px 12px;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 .button.wide {
   width: 100%;
@@ -719,7 +721,7 @@ h3 {
 }
 .auth-card h1 {
   font-family: Manrope, sans-serif;
-  font-size: 28px;
+  font-size: 1.75rem;
   letter-spacing: -1px;
   margin: 20px 0 12px;
 }
@@ -743,7 +745,7 @@ h3 {
   gap: 8px;
   margin-top: 26px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 .form-field {
   display: flex;
@@ -751,7 +753,7 @@ h3 {
   gap: 8px;
   min-width: 0;
   margin: 0 0 20px;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 500;
 }
 .form-field input {
@@ -769,7 +771,7 @@ h3 {
 .private-status small {
   display: block;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 0.75rem;
   line-height: 1.5;
   font-weight: 400;
 }
@@ -780,7 +782,7 @@ h3 {
 }
 .form-note {
   color: var(--muted);
-  font-size: 13px;
+  font-size: 0.8125rem;
   line-height: 1.7;
   margin: 16px 0;
 }
@@ -790,11 +792,11 @@ h3 {
   border-radius: 10px;
   padding: 12px;
   line-height: 1.6;
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 .form-notice {
   color: #365944;
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 1.6;
   overflow-wrap: anywhere;
 }
@@ -809,7 +811,7 @@ h3 {
 }
 .profile-picker legend {
   margin-bottom: 10px;
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 .profile-options {
   max-height: 280px;
@@ -827,7 +829,7 @@ h3 {
   border-radius: 12px;
   padding: 10px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 0.875rem;
   overflow-wrap: anywhere;
 }
 .profile-option.selected {
@@ -867,7 +869,7 @@ h3 {
   padding: 14px;
   border-radius: 12px;
   margin-bottom: 24px;
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 .header-actions {
   display: flex;
@@ -880,7 +882,7 @@ h3 {
   gap: 10px;
   padding: 16px;
   margin-top: 12px;
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: #587047;
 }
 .admin-settings {
@@ -910,16 +912,16 @@ h3 {
   overflow-wrap: anywhere;
 }
 .invite-list li {
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 .admin-player-list strong {
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 .admin-player-list small {
   display: block;
   color: var(--muted);
   margin-top: 6px;
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 .row-actions {
   display: flex;
@@ -942,12 +944,12 @@ h3 {
     transform: rotate(360deg);
   }
 }
-@media (max-width: 767px) {
+@media (max-width: 47.9375em) {
   .auth-card {
     padding: 26px 22px;
   }
   .auth-card h1 {
-    font-size: 25px;
+    font-size: 1.5625rem;
   }
   .auth-layout {
     padding: 20px 12px;
@@ -976,7 +978,7 @@ h3 {
     padding: 8px;
   }
   .header-actions .button span {
-    font-size: 12px;
+    font-size: 0.75rem;
   }
   .admin-link {
     margin: 8px 0;
@@ -1031,7 +1033,7 @@ input:focus-visible {
   flex-direction: column;
   gap: 5px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 .calendar-jump input {
   max-width: 190px;
@@ -1051,7 +1053,7 @@ input:focus-visible {
 }
 .month-grid th {
   height: 36px;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 500;
   color: var(--muted);
 }
@@ -1071,7 +1073,7 @@ input:focus-visible {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 .calendar-day:disabled {
   cursor: default;
@@ -1108,7 +1110,7 @@ input:focus-visible {
   justify-content: center;
   margin-top: 20px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 0.6875rem;
 }
 .calendar-legend span {
   display: flex;
@@ -1150,13 +1152,13 @@ input:focus-visible {
 }
 .agenda-date > span {
   font-family: Manrope, sans-serif;
-  font-size: 27px;
+  font-size: 1.6875rem;
   font-weight: 700;
   display: block;
   line-height: 1.2;
 }
 .agenda-date small {
-  font-size: 11px;
+  font-size: 0.6875rem;
   text-transform: uppercase;
 }
 .agenda-copy {
@@ -1165,20 +1167,20 @@ input:focus-visible {
 }
 .agenda-copy h3 {
   margin: 8px 0;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 .agenda-copy p {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--muted);
   margin: 5px 0;
 }
 .agenda-copy > small {
   display: block;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 0.6875rem;
   margin-top: 10px;
 }
 .agenda-open {
@@ -1189,7 +1191,7 @@ input:focus-visible {
 .meeting-state {
   display: inline-flex;
   align-items: center;
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 600;
   padding: 5px 9px;
   background: #eef3e5;
@@ -1216,13 +1218,13 @@ input:focus-visible {
   padding: 20px 24px 0;
 }
 .meeting-meta > span:last-child {
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: var(--muted);
 }
 .meeting-message {
   padding: 16px 24px 24px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 0.8125rem;
   line-height: 1.7;
 }
 .meeting-date time {
@@ -1244,11 +1246,11 @@ input:focus-visible {
 .meeting-roster small {
   display: block;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 0.75rem;
   margin-top: 4px;
 }
 .count-badge {
-  font-size: 12px;
+  font-size: 0.75rem;
   background: #f1f4eb;
   border-radius: 8px;
   padding: 5px 9px;
@@ -1260,7 +1262,7 @@ input:focus-visible {
 .meeting-cancelled .hero {
   background: #f1e9df;
 }
-@media (max-width: 1100px) {
+@media (max-width: 68.75em) {
   .calendar-layout {
     grid-template-columns: 1fr;
   }
@@ -1276,7 +1278,7 @@ input:focus-visible {
     min-width: 0;
   }
 }
-@media (max-width: 700px) {
+@media (max-width: 43.75em) {
   .calendar-card {
     padding: 18px 6px;
   }
@@ -1286,7 +1288,7 @@ input:focus-visible {
     margin-right: 10px;
   }
   .calendar-toolbar h2 {
-    font-size: 17px;
+    font-size: 1.0625rem;
   }
   .month-grid td {
     padding: 0;
@@ -1303,10 +1305,10 @@ input:focus-visible {
     width: 46px;
   }
   .agenda-date > span {
-    font-size: 23px;
+    font-size: 1.4375rem;
   }
   .agenda-copy h3 {
-    font-size: 12px;
+    font-size: 0.75rem;
   }
   .agenda-open {
     padding: 10px;
@@ -1318,13 +1320,13 @@ input:focus-visible {
     padding: 14px 20px 20px;
   }
   .hero .meeting-date {
-    font-size: 12px;
+    font-size: 0.75rem;
   }
   .meeting-date time {
     line-height: 1.6;
   }
   .meeting-roster li {
-    font-size: 14px;
+    font-size: 0.875rem;
   }
 }
 .participation-card {
@@ -1339,11 +1341,11 @@ input:focus-visible {
   margin-bottom: 20px;
 }
 .participation-title h3 {
-  font-size: 17px;
+  font-size: 1.0625rem;
   line-height: 1.5;
 }
 .participation-title p {
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--muted);
   margin-top: 5px;
 }
@@ -1354,7 +1356,7 @@ input:focus-visible {
   margin: 14px 0;
 }
 .participation-deadline {
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: var(--muted);
   line-height: 1.7;
   margin-top: 18px;
@@ -1367,7 +1369,7 @@ input:focus-visible {
   margin: 16px 0;
 }
 .inline-confirmation p {
-  font-size: 13px;
+  font-size: 0.8125rem;
   line-height: 1.7;
   margin-top: 8px;
 }
@@ -1383,11 +1385,11 @@ input:focus-visible {
 }
 .offer-list strong {
   display: block;
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 .offer-list small {
   display: block;
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--muted);
   margin-top: 6px;
 }
@@ -1395,7 +1397,7 @@ input:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 5px;
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: var(--muted);
 }
 .priority-select select {
@@ -1406,14 +1408,14 @@ input:focus-visible {
   color: var(--green);
   padding: 8px;
   font: inherit;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
-@media (max-width: 700px) {
+@media (max-width: 43.75em) {
   .participation-card {
     padding: 20px;
   }
   .participation-title h3 {
-    font-size: 15px;
+    font-size: 0.9375rem;
   }
   .participation-title {
     align-items: flex-start;
@@ -1442,7 +1444,7 @@ input:focus-visible {
   border-radius: 16px;
 }
 .schedule-preview > p {
-  font-size: 13px;
+  font-size: 0.8125rem;
   line-height: 1.7;
   margin: 12px 0;
 }
@@ -1457,20 +1459,20 @@ input:focus-visible {
   gap: 6px;
   padding: 12px 0;
   border-top: 1px solid #dfe6d5;
-  font-size: 12px;
+  font-size: 0.75rem;
   line-height: 1.6;
 }
 .schedule-change-list small {
   color: #916044;
 }
 .schedule-examples li {
-  font-size: 12px;
+  font-size: 0.75rem;
   line-height: 1.7;
   margin: 6px 0;
 }
 .scheduled-rules {
   margin-top: 20px;
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--muted);
   line-height: 1.8;
 }
@@ -1484,20 +1486,20 @@ input:focus-visible {
   padding: 18px 24px;
   background: #faf2df;
   color: #745f2d;
-  font-size: 13px;
+  font-size: 0.8125rem;
   line-height: 1.7;
 }
 .term-change-banner strong {
   display: block;
   margin-bottom: 6px;
 }
-@media (max-width: 700px) {
+@media (max-width: 43.75em) {
   .schedule-preview {
     padding: 18px 14px;
   }
   .term-change-banner {
     padding: 18px 20px;
-    font-size: 12px;
+    font-size: 0.75rem;
   }
 }
 
@@ -1529,7 +1531,7 @@ input:focus-visible {
   background: none;
   color: var(--muted);
   font: inherit;
-  font-size: 13px;
+  font-size: 0.8125rem;
   text-align: left;
 }
 .room-steps button[aria-pressed="true"] {
@@ -1569,13 +1571,13 @@ input:focus-visible {
   overflow-wrap: anywhere;
 }
 .attendance-name strong {
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 550;
 }
 .attendance-name small,
 .attendance-name .text-link {
   display: block;
-  font-size: 11px;
+  font-size: 0.6875rem;
   margin-top: 5px;
 }
 .attendance-controls {
@@ -1587,7 +1589,7 @@ input:focus-visible {
 .attendance-controls .button {
   min-height: 44px;
   padding: 8px 12px;
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 .attendance-controls [aria-pressed="true"] {
   background: #e5eedb;
@@ -1595,7 +1597,7 @@ input:focus-visible {
   border-color: #7f976a;
 }
 .presence-label {
-  font-size: 12px;
+  font-size: 0.75rem;
   color: #667b53;
 }
 .presence-label.absent {
@@ -1610,7 +1612,7 @@ input:focus-visible {
 .room-admission summary {
   cursor: pointer;
   padding: 12px 0;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 600;
 }
 .room-reservation {
@@ -1629,7 +1631,7 @@ input:focus-visible {
   background: #fff;
 }
 .room-team-state {
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 600;
   margin: 24px 0 14px;
 }
@@ -1659,7 +1661,7 @@ input:focus-visible {
   border-radius: 10px;
   background: #eaf1e0;
   color: #4e7045;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 700;
 }
 .court-team-summary.side-1 .court-team-letter {
@@ -1667,13 +1669,13 @@ input:focus-visible {
   color: #9a7645;
 }
 .court-team-summary h3 {
-  font-size: 13px;
+  font-size: 0.8125rem;
   line-height: 1.5;
   margin: 0;
 }
 .court-team-summary p {
   margin-top: 3px;
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: var(--muted);
   line-height: 1.6;
 }
@@ -1749,7 +1751,7 @@ input:focus-visible {
   place-items: center;
   width: 36px;
   height: 36px;
-  font-size: 11px;
+  font-size: 0.6875rem;
   background: #fafff3;
   border: 2px solid #fff;
   box-shadow: 0 2px 5px #3d5d3220;
@@ -1762,7 +1764,7 @@ input:focus-visible {
 }
 .court-player-name {
   display: block;
-  font-size: 12px;
+  font-size: 0.75rem;
   line-height: 1.5;
   font-weight: 550;
   overflow-wrap: anywhere;
@@ -1770,7 +1772,7 @@ input:focus-visible {
 }
 .court-player-name small {
   display: block;
-  font-size: 10px;
+  font-size: 0.625rem;
   color: var(--muted);
   font-weight: 400;
 }
@@ -1823,7 +1825,7 @@ button.court-player:disabled {
   border: 1px solid #d8e0cc;
   padding: 4px 9px;
   border-radius: 4px;
-  font-size: 8px;
+  font-size: 0.5rem;
   letter-spacing: 2px;
 }
 .court-rotation {
@@ -1834,10 +1836,10 @@ button.court-player:disabled {
   border-radius: 11px;
 }
 .court-rotation h3 {
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 .court-rotation > p {
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: var(--muted);
   margin-top: 7px;
 }
@@ -1852,7 +1854,7 @@ button.court-player:disabled {
 }
 .rotation-side > small {
   display: block;
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: var(--muted);
   margin-bottom: 7px;
 }
@@ -1864,7 +1866,7 @@ button.court-player:disabled {
   background: #f5ecdf;
 }
 .court-caption {
-  font-size: 11px;
+  font-size: 0.6875rem;
 }
 .history-entry {
   padding: 24px 0;
@@ -1874,7 +1876,7 @@ button.court-player:disabled {
   margin: 12px;
 }
 .history-kind {
-  font-size: 12px;
+  font-size: 0.75rem;
   color: #567446;
 }
 .history-kind.no_show,
@@ -1885,7 +1887,7 @@ button.court-player:disabled {
   border-left: 2px solid #a8ba93;
   padding: 10px 14px;
   margin: 12px 0;
-  font-size: 13px;
+  font-size: 0.8125rem;
   overflow-wrap: anywhere;
 }
 .history-correction p {
@@ -1894,7 +1896,7 @@ button.court-player:disabled {
 .history-correction small {
   color: var(--muted);
 }
-@container (min-width: 560px) {
+@container (min-width: 35rem) {
   .court-surface {
     grid-template-columns: 1fr 1fr;
     grid-template-rows: auto;
@@ -1949,7 +1951,7 @@ button.court-player:disabled {
     min-height: 65px;
   }
 }
-@media (max-width: 480px) {
+@media (max-width: 30em) {
   .attendance-list > li {
     align-items: flex-start;
     flex-direction: column;
@@ -1969,7 +1971,7 @@ button.court-player:disabled {
   }
   .room-steps button,
   .room-steps > span {
-    font-size: 12px;
+    font-size: 0.75rem;
   }
 }
 
@@ -2020,7 +2022,7 @@ button.court-player:disabled {
 }
 .result-form legend {
   font:
-    700 17px Manrope,
+    700 1.0625rem Manrope,
     sans-serif;
   margin-bottom: 14px;
 }
@@ -2035,13 +2037,13 @@ button.court-player:disabled {
   margin: 20px 0;
 }
 .result-inputs input {
-  font-size: 30px;
+  font-size: 1.875rem;
   text-align: center;
   min-height: 70px;
 }
 .result-inputs > span {
   text-align: center;
-  font-size: 24px;
+  font-size: 1.5rem;
 }
 .result-score {
   display: grid;
@@ -2052,12 +2054,12 @@ button.court-player:disabled {
   margin: 24px 0 14px;
 }
 .result-score > span {
-  font-size: 12px;
+  font-size: 0.75rem;
   color: #708164;
 }
 .result-score > strong {
   font:
-    700 42px Manrope,
+    700 2.625rem Manrope,
     sans-serif;
   letter-spacing: -1px;
 }
@@ -2071,10 +2073,10 @@ button.court-player:disabled {
   display: flex;
   gap: 14px;
   align-items: center;
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 .result-deltas strong {
-  font-size: 22px;
+  font-size: 1.375rem;
   color: #536e43;
 }
 .result-revisions,
@@ -2090,14 +2092,14 @@ button.court-player:disabled {
   min-height: 44px;
   cursor: pointer;
   padding: 10px 0;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 .result-revisions ol {
   list-style: none;
   padding: 0;
 }
 .result-revisions li {
-  font-size: 13px;
+  font-size: 0.8125rem;
   padding: 10px 0;
   border-bottom: 1px solid #eceee8;
 }
@@ -2107,7 +2109,7 @@ button.court-player:disabled {
   color: #708164;
 }
 .result-private-reasons p {
-  font-size: 13px;
+  font-size: 0.8125rem;
   margin: 12px 0;
   overflow-wrap: anywhere;
 }
@@ -2160,22 +2162,22 @@ button.court-player:disabled {
   overflow-wrap: anywhere;
 }
 .ranking-list a strong {
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 550;
 }
 .ranking-list small {
   display: block;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 0.6875rem;
   margin-top: 4px;
 }
 .ranking-position {
   display: grid;
   place-items: center;
-  height: 36px;
+  min-height: 36px;
   border-radius: 10px;
   color: #89927f;
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 .ranking-position.place-1 {
   background: #f4ecd5;
@@ -2191,7 +2193,7 @@ button.court-player:disabled {
 }
 .ranking-points {
   text-align: right;
-  font-size: 20px;
+  font-size: 1.25rem;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -2206,17 +2208,17 @@ button.court-player:disabled {
   border-bottom: 1px solid #eceee8;
 }
 .result-history-list li strong {
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 .result-history-list li small {
   display: block;
-  font-size: 11px;
+  font-size: 0.6875rem;
   margin-top: 7px;
   color: var(--muted);
 }
 .result-history-list .result-history-score {
   font:
-    700 25px Manrope,
+    700 1.5625rem Manrope,
     sans-serif;
 }
 .rating-history-list > li {
@@ -2230,7 +2232,7 @@ button.court-player:disabled {
 .rating-history-list p,
 .rating-history-list small {
   display: block;
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: var(--muted);
   margin-top: 6px;
 }
@@ -2240,15 +2242,15 @@ button.court-player:disabled {
 }
 .rating-delta {
   color: #4b7546;
-  font-size: 21px;
+  font-size: 1.3125rem;
 }
 .rating-delta.negative {
   color: #986d58;
 }
-@media (max-width: 480px) {
+@media (max-width: 30em) {
   .ranking-tabs .button {
     flex: 1;
-    font-size: 12px;
+    font-size: 0.75rem;
     padding-inline: 10px;
   }
   .ranking-list > li {
@@ -2256,13 +2258,13 @@ button.court-player:disabled {
     grid-template-columns: 28px minmax(0, 1fr) auto;
   }
   .ranking-list a strong {
-    font-size: 13px;
+    font-size: 0.8125rem;
   }
   .ranking-points {
-    font-size: 17px;
+    font-size: 1.0625rem;
   }
   .result-score > strong {
-    font-size: 34px;
+    font-size: 2.125rem;
   }
   .rating-history-list > li {
     flex-wrap: wrap;
@@ -2332,7 +2334,7 @@ small,
   background: #fffaf0;
   border-radius: 12px;
   margin-bottom: 20px;
-  font-size: 13px;
+  font-size: 0.8125rem;
   line-height: 1.7;
 }
 .confirm-dialog {
@@ -2347,13 +2349,18 @@ small,
   overflow: auto;
   box-shadow: 0 16px 70px #203b3430;
 }
+.confirm-dialog:modal {
+  overscroll-behavior: contain;
+}
 .confirm-dialog::backdrop {
+  overflow: hidden;
+  overscroll-behavior: contain;
   background: #203b3470;
   backdrop-filter: blur(3px);
 }
 .confirm-dialog-body {
   margin-top: 18px;
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 1.8;
 }
 .confirm-dialog-body > p {
@@ -2363,7 +2370,7 @@ small,
 .confirm-dialog .row-actions {
   margin-top: 20px;
 }
-@media (max-width: 700px) {
+@media (max-width: 43.75em) {
   .content {
     padding-bottom: calc(110px + var(--safe-bottom));
   }
@@ -2371,7 +2378,7 @@ small,
   .form-field select,
   .form-field textarea,
   input[type="month"] {
-    font-size: 16px;
+    font-size: 1rem;
   }
   .hero {
     display: block;
@@ -2382,7 +2389,7 @@ small,
     padding-right: 75px;
   }
   .hero h2 {
-    font-size: clamp(28px, 7.8vw, 34px);
+    font-size: clamp(1.75rem, 1rem + 4vw, 2.125rem);
     overflow-wrap: normal;
   }
   .court-illustration {
@@ -2395,7 +2402,7 @@ small,
     z-index: 1;
   }
   .eyebrow {
-    white-space: nowrap;
+    white-space: normal;
     letter-spacing: 0.8px;
   }
   .confirm-dialog .participation-actions > .button,
@@ -2414,7 +2421,7 @@ small,
 .meeting-cancelled .hero p {
   color: var(--text);
 }
-@media (max-width: 700px) {
+@media (max-width: 43.75em) {
   .calendar-card {
     padding-inline: 7px;
   }
@@ -2458,7 +2465,7 @@ select {
   grid-template-columns: minmax(0, 1fr) 220px;
 }
 .hero .hero-date {
-  font-size: clamp(28px, 3vw, 40px);
+  font-size: clamp(1.75rem, 1rem + 2vw, 2.5rem);
   line-height: 1.22;
   margin: 26px 0 20px;
 }
@@ -2466,7 +2473,7 @@ select {
   text-transform: none;
 }
 .hero-copy > p {
-  font-size: 16px;
+  font-size: 1rem;
 }
 .hero-copy > p svg {
   flex-shrink: 0;
@@ -2477,15 +2484,15 @@ select {
 .venue strong {
   line-height: 1.4;
 }
-@media (max-width: 700px) {
+@media (max-width: 43.75em) {
   .hero .hero-date {
-    font-size: 29px;
+    font-size: 1.8125rem;
   }
   .hero-copy {
     padding-right: 26px;
   }
   .hero-copy > p {
-    font-size: 15px;
+    font-size: 0.9375rem;
   }
   .court-illustration {
     opacity: 0.25;
@@ -2504,7 +2511,7 @@ select {
   background: white;
 }
 .preview-profiles > span {
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--muted);
 }
 .preview-profiles .row-actions {
@@ -2585,7 +2592,7 @@ select {
 .view-mode-bar > span,
 .view-mode-bar > small {
   color: var(--muted);
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 .view-mode-bar [aria-pressed="true"] {
   background: var(--green);
@@ -2594,7 +2601,7 @@ select {
 .install-app {
   margin-block: 16px;
 }
-@media (max-width: 700px) {
+@media (max-width: 43.75em) {
   .form-row {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -2642,7 +2649,7 @@ select {
   justify-content: flex-start;
   text-decoration: none;
 }
-@media (max-width: 700px) {
+@media (max-width: 43.75em) {
   .meeting-calendar {
     padding-inline: 20px;
   }
@@ -2657,7 +2664,7 @@ select {
 .agenda-calendar:empty {
   display: none;
 }
-@media (max-width: 700px) {
+@media (max-width: 43.75em) {
   .agenda-calendar > .button {
     width: 100%;
   }
@@ -2713,7 +2720,7 @@ select {
   border-radius: 4px;
   color: #1f1f1f;
   font-family: "Google Sans", Arial, sans-serif;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 500;
   text-decoration: none;
   cursor: pointer;
@@ -2731,4 +2738,70 @@ select {
 }
 .google-connection > p {
   margin-block: 0.75rem;
+}
+
+/* Reserve the first viewport while routes and their data load, so the footer
+   never flashes in the space that will be occupied by the page content. */
+.route-content {
+  min-block-size: 100svh;
+  min-inline-size: 0;
+}
+.loading-card {
+  min-block-size: min(28rem, 70svh);
+}
+.loading-placeholder {
+  display: grid;
+  gap: 1.5rem;
+  margin-block-start: 2rem;
+}
+.loading-placeholder span {
+  display: block;
+  min-block-size: 3rem;
+  border-radius: 0.625rem;
+  background: var(--background);
+}
+.password-control {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0.5rem;
+  min-inline-size: 0;
+}
+.password-control input {
+  flex: 1 1 10rem;
+  inline-size: 0;
+}
+.password-toggle {
+  flex: 0 1 auto;
+  max-inline-size: 100%;
+  font-size: 0.75rem;
+}
+.password-toggle[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: #edf2e7;
+}
+.field-error {
+  color: var(--danger);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+.form-field input[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+/* Text containers grow with browser/OS font preferences. */
+button,
+.button,
+.count-badge,
+.meeting-state,
+.ranking-position {
+  block-size: auto;
+}
+h1,
+h2,
+h3,
+.brand,
+.button,
+.venue,
+.header-note {
+  overflow-wrap: anywhere;
 }

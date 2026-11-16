@@ -1,3 +1,4 @@
+import { LoadingCard } from "../../components/LoadingCard";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams, useSearchParams } from "react-router-dom";
@@ -64,7 +65,9 @@ export function RankingPage() {
           <Trophy size={21} />
         </div>
         {current.isPending ? (
-          <p role="status">Wczytujemy {history ? "spotkania" : "ranking"}…</p>
+          <LoadingCard
+            message={`Wczytujemy ${history ? "spotkania" : "ranking"}…`}
+          />
         ) : current.isError ? (
           <>
             <p role="alert" className="form-error">
