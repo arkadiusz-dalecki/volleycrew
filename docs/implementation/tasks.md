@@ -193,6 +193,8 @@ Commissioned 2026-11-11: left/right gesture and next/previous meeting buttons on
 
 Commissioned and implemented: movement of the entire tile with the finger, return after a short/cancelled gesture, directional transition also from buttons, downloading a new term before the animation and limiting movement according to the system settings. Evidence and limitations: [navigation report](meeting-navigation-report.md#seamless-tile---addition-2026-11-11).
 
+Follow-up 2026-11-16: quieter adjacent-date transitions, retained vertical scroll and stable main-screen layout. Remove shell remounting on URL changes while retaining error recovery. Regression: buttons and swipe at a nonzero scroll position, mounted shell, unchanged card top, normal calendar scroll reset, existing navigation errors and reduced motion. [Report](meeting-navigation-report.md#quieter-transitions---2026-11-16).
+
 ## Supplement E2/E9 - links, monitoring and abuse resistance
 
 Commissioned 2026-11-14 after login review. Scope: removing the secret from the address after opening the link, discarding tokens in the path, Retry-After support, limited and secretless event logs, and limiting bursts of authentication requests before DB access. Acceptance testing: PostgreSQL tests of permanent limits/resets, controlled clock of the additional limiter, checking the logs for the lack of secrets and E2E registration/reset with a clean address and reopening the link. Without deployment and without changing other login decisions.

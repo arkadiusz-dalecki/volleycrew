@@ -181,7 +181,11 @@ test("mobile keyboard viewport hides the bottom nav; short dialogs remain scroll
   test.skip(info.project.name === "desktop", "Mobile viewport behavior");
   await adminLogin(context);
   await page.goto("/profile");
-  await page.getByLabel("Przydomek (opcjonalnie)").focus();
+  // Wait for route focus initialization before focusing the simulated keyboard target.
+  await expect(page.locator("#main")).toBeFocused();
+  const nickname = page.getByLabel("Przydomek (opcjonalnie)");
+  await nickname.focus();
+  await expect(nickname).toBeFocused();
   // Geometry simulation only: actual OS keyboard/safe area needs a physical-device check.
   await page.evaluate(() => {
     Object.defineProperty(visualViewport!, "height", {

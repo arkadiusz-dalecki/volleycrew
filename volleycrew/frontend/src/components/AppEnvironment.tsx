@@ -1,5 +1,5 @@
-import { useEffect, useSyncExternalStore } from "react";
-import { useLocation } from "react-router-dom";
+import { useEffect, useRef, useSyncExternalStore } from "react";
+import { useLocation, useNavigationType } from "react-router-dom";
 import { useSession } from "../features/auth/useSession";
 
 function subscribeOnline(callback: () => void) {
@@ -36,11 +36,23 @@ export function ConnectionNotice() {
 
 export function AppEnvironment() {
   const location = useLocation();
+  const navigationType = useNavigationType();
+  const previousPath = useRef<string | null>(null);
   useEffect(() => {
-    document.getElementById("main")?.focus({ preventScroll: true });
-    window.scrollTo(0, 0);
+    const isMeeting = (path: string | null) =>
+      path === "/" || /^\/meetings\/[^/]+$/.test(path ?? "");
+    const adjacentNavigation =
+      navigationType === "PUSH" &&
+      isMeeting(previousPath.current) &&
+      isMeeting(location.pathname) &&
+      ["previous", "next"].includes(location.state?.meetingDirection);
+    previousPath.current = location.pathname;
+    if (!adjacentNavigation) {
+      document.getElementById("main")?.focus({ preventScroll: true });
+      window.scrollTo(0, 0);
+    }
     document.title = `Volleycrew · ${location.pathname.startsWith("/ranking") ? "Ranking" : location.pathname === "/calendar" ? "Kalendarz" : location.pathname === "/profile" ? "Mój profil" : location.pathname.startsWith("/admin") ? "Organizator" : "Spotkanie"}`;
-  }, [location.pathname]);
+  }, [location.pathname, location.state, navigationType]);
   useEffect(() => {
     const viewport = window.visualViewport;
     let frame = 0;

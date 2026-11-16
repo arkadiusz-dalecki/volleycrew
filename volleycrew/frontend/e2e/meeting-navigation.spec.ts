@@ -18,6 +18,69 @@ async function swipe(
   });
 }
 
+test("changing dates preserves scroll position and the main screen layout", async ({
+  page,
+  context,
+}) => {
+  await adminLogin(context);
+  await page.goto("/");
+  const surface = page.locator(".meeting-navigation-surface");
+  const card = page.locator(".meeting-card");
+  const next = page.getByRole("button", {
+    name: "Następne spotkanie",
+    exact: true,
+  });
+  await expect(next).toBeEnabled();
+  const initialId = await surface.getAttribute("data-meeting-id");
+  await page.locator("#main").evaluate((element) => {
+    element.dataset.navigationTest = "preserved";
+  });
+  const cardTop = await card.evaluate(
+    (element) => element.getBoundingClientRect().top + scrollY,
+  );
+  await page.evaluate(() => window.scrollTo(0, 100));
+  const scroll = await page.evaluate(() => scrollY);
+  expect(scroll).toBeGreaterThan(0);
+  await next.click();
+  await expect(surface).not.toHaveAttribute("data-meeting-id", initialId!);
+  await expect(page.locator("#main")).toHaveAttribute(
+    "data-navigation-test",
+    "preserved",
+  );
+  await expect.poll(() => page.evaluate(() => scrollY)).toBe(scroll);
+  await expect
+    .poll(() =>
+      card.evaluate((element) => element.getBoundingClientRect().top + scrollY),
+    )
+    .toBe(cardTop);
+
+  const previous = page.getByRole("button", {
+    name: "Poprzednie spotkanie",
+    exact: true,
+  });
+  await expect(previous).toBeEnabled();
+  await swipe(
+    page.locator(".hero-date"),
+    { clientX: 80, clientY: 240 },
+    { clientX: 290, clientY: 240 },
+  );
+  await expect(surface).toHaveAttribute("data-meeting-id", initialId!);
+  await expect.poll(() => page.evaluate(() => scrollY)).toBe(scroll);
+
+  await page
+    .getByRole("navigation", { name: "Menu główne" })
+    .getByRole("link", { name: "Kalendarz" })
+    .or(
+      page
+        .getByRole("navigation", { name: "Nawigacja mobilna" })
+        .getByRole("link", { name: "Kalendarz" }),
+    )
+    .filter({ visible: true })
+    .click();
+  await expect(page).toHaveURL(/\/calendar/);
+  await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
+});
+
 test("meeting swipes and buttons preserve declarations and recover from errors", async ({
   page,
   context,

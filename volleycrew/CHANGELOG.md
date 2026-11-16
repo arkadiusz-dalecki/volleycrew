@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.7
+
+- Preserve vertical scroll when switching meeting dates by button or swipe, and keep the home-screen layout stable.
+- Keep the application shell mounted during navigation and use shorter, subtler card transitions without fully fading the card out. Preserve reduced-motion support and route error recovery.
+- No new database migrations. Back up before updating the Home Assistant app normally. Upgrades from 0.3.4 or earlier still require the 0.3.5 login migration and organizer setup described below.
+
 ## 0.3.6
 
 - Restore missing username/password credentials for existing local demo profiles when starting the development preview after the PIN migration; preserve their identity and existing credentials.
