@@ -260,7 +260,9 @@ async def resolve(db: AsyncSession, version_id: UUID, day: date, at: datetime) -
             capacity=14,
             created_at=at,
         )
-        .on_conflict_do_nothing(constraint="meeting_source_unique")
+        # The same occurrence conflicts on its deterministic ID, source pair,
+        # and calendar pair. Concurrent inserts must tolerate all three indexes.
+        .on_conflict_do_nothing()
     )
     return await db.scalar(
         select(Meeting).where(Meeting.schedule_version_id == version_id, Meeting.source_date == day)

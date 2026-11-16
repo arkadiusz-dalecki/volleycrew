@@ -94,10 +94,10 @@ def test_resolve_simultaneous_http_requests_and_database_transactions(calendar_s
                     await db.commit()
                     return row.id
 
-            ids = await asyncio.gather(one(), one())
+            ids = await asyncio.gather(*(one() for _ in range(8)))
             async with database.sessions() as db:
                 count = await db.scalar(select(func.count()).select_from(Meeting))
-            assert ids[0] == ids[1] and count == 2
+            assert len(set(ids)) == 1 and count == 2
         finally:
             await database.engine.dispose()
 

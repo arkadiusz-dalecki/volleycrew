@@ -2,6 +2,9 @@
 
 ## 0.3.6
 
+- Restore missing username/password credentials for existing local demo profiles when starting the development preview after the PIN migration; preserve their identity and existing credentials.
+- Handle all uniqueness conflicts when simultaneous requests materialize the same meeting, preserving one stable meeting ID.
+
 - Improve modal scroll containment without changing the page scrollbar or scroll position. Safari retains native focus isolation where backdrop containment is not supported.
 - Identify mismatched passwords with an accessible field error and native focus handling across registration, reset, profile and Google password setup. Add a password visibility toggle that preserves autocomplete and the entered value.
 - Respect larger browser text preferences, opt into OS text scaling where supported, and let controls and headings grow or wrap.

@@ -219,3 +219,6 @@ Zlecone: minimum hasła 8 znaków bez wymuszania rodzajów znaków oraz otwieran
 ## Uzupełnienie E9 — Modern Web Guidance, 2026-11-15
 
 Zlecone po przeglądzie: wszystkie sześć poprawek UI opisanych w [raporcie](modern-web-guidance-report.md). Odbiór lokalny: formularze rejestracji/resetu/profilu/Google korzystają ze wspólnego sprawdzania zgodności, błędne pole ma fokus i opis, pokazywanie hasła nie zmienia wartości ani autocomplete; dialogi ograniczają przewijanie zgodnie ze wsparciem silnika; tekst rośnie przy 200% preferencji bez poziomego przewijania 320–1440 px; stopka nie przeskakuje przez początkowy viewport przy ładowaniu danych; trasy mają odrębne chunki i obsługę błędu pobierania. Regresja obejmuje Chromium/WebKit, rzeczywiste API i osobną testową PostgreSQL. Bez zmiany backendu/DTO, migracji, dodatkowego cache API i wdrożenia; fizyczny odbiór E9/E11 pozostaje otwarty.
+
+
+Uzupełnienie 2026-11-16 w tej samej paczce 0.3.6: naprawa brakujących danych dostępu istniejących kont demo po migracji PIN oraz obsługi konkurujących indeksów unikalnych przy materializacji terminu (błąd ujawniony przez CI). [Raport](modern-web-guidance-report.md#uzupełnienia-po-utworzeniu-pr--2026-11-16) zawiera diagnozę, zakres i wyniki 216 testów backendu. Bez migracji/zmiany kontraktu i bez zmiany reguł miejsc.

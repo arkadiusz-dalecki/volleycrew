@@ -1,6 +1,6 @@
 # E9 — pakiet poprawek Modern Web Guidance
 
-2026-11-15–16. Gałąź `fix/modern-web-guidance`, baza `origin/main` (`4560ef8`). Zakres: sześć poprawek zatwierdzonych po lokalnym przeglądzie. Wariant A, backend, kontrakt i reguły miejsc pozostają zgodne ze specyfikacją. Na uzupełniające polecenie użytkownika wersja pakietu została podniesiona z 0.3.5 do 0.3.6; brak nowych migracji i zależności. Changelog wydania obejmuje też wcześniejsze, już scalone poprawki haseł i zaproszeń Messenger. Aktualizacja z 0.3.5 jest zwykłą aktualizacją HA po kopii; starsze wersje nadal wymagają procedury migracji logowania z opisu 0.3.5.
+2026-11-15–16. Gałąź `fix/modern-web-guidance`, baza `origin/main` (`4560ef8`). Zakres: sześć poprawek zatwierdzonych po lokalnym przeglądzie. Wariant A, kontrakt i reguły miejsc pozostają zgodne ze specyfikacją. Uzupełnienia po zgłoszeniu podglądu i CI opisano poniżej. Na uzupełniające polecenie użytkownika wersja pakietu została podniesiona z 0.3.5 do 0.3.6; brak nowych migracji i zależności. Changelog wydania obejmuje też wcześniejsze, już scalone poprawki haseł i zaproszeń Messenger. Aktualizacja z 0.3.5 jest zwykłą aktualizacją HA po kopii; starsze wersje nadal wymagają procedury migracji logowania z opisu 0.3.5.
 
 ## Zachowanie i akceptacja
 
@@ -48,3 +48,13 @@ PDF.js i worker pozostają ładowane przy podglądzie PDF. Nie dodano service wo
 ## Modern Web Guidance
 
 Zastosowane poradniki: `prevent-page-scroll-under-modal-dialog`, `forms`, `typography`, `respect-os-text-scale`, `performance`. Przyjęto wymagane stopniowe ulepszanie funkcji z ograniczonym wsparciem. Istotne reguły: backdrop wymaga kontenera przewijania; nie blokować overflow html/body; nie nadpisywać rozmiaru fontu korzenia; nowe/aktualne hasło zachowuje autocomplete; dynamiczne importy oddzielają niepotrzebne początkowo widoki. Ogólne zalecenia dotyczące pracy offline nie zastępują decyzji o niekolejkowaniu deklaracji i ochronie prywatnego API.
+
+
+## Uzupełnienia po utworzeniu PR — 2026-11-16
+
+Użytkownik zgłosił, że „Wejdź jako Admin” w lokalnym devie kończy się limitem prób. Odczyt zweryfikowanej lokalnej bazy `volleycrew_dev` wykazał istniejące, aktywne konta demo z pustymi username/password_hash po migracji 0012. Seeder dodawał wyłącznie nieistniejące ID. Naprawa uzupełnia brakujące dane dostępu tylko dla znanych ID demo, zachowuje istniejące hasła, ID, nazwy, historię i pozostałych użytkowników. Osłona loopback + końcówka `_dev` pozostaje wymagana. Po seedzie rzeczywiste logowanie lokalnego admin-demo zwróciło HTTP 200 i rolę admin; nie kasowano globalnych limitów. Trzy testy sprawdzają idempotencję/ochronę profili i rzeczywiste logowanie na PostgreSQL oraz odmowę seedowania poza developmentem.
+
+Pierwsze CI push ([run 43826248606](https://github.com/arkadiusz-dalecki/volleycrew/actions/runs/43826248606)) ujawniło istniejący wyścig w `resolve`: deterministyczny ID spotkania i dwie pary unikalne mogą konfliktować przy równoczesnych insertach, ale ON CONFLICT obejmowało tylko meeting_source_unique. PostgreSQL zgłosił meetings_pkey. INSERT teraz toleruje wszystkie ograniczenia unikalności tego wpisu, po czym odczytuje ten sam logiczny termin; blokady harmonogramu i reguły uczestnictwa pozostają bez zmian. Wzmocniono próbę osobnych transakcji z 2 do 8 równoczesnych żądań, zachowując asercję jednego ID i liczby wpisów. Wynik dotyczy kodu, nie ukrywania testu ani rerunu bez zmiany. Brak migracji i zmiany DTO.
+
+
+Po obu uzupełnieniach: pełny backend **216 zaliczonych** na PostgreSQL 17.11 (`VOLLEYCREW_TEST_DATABASE_URL=<izolowana_baza_test> VOLLEYCREW_ENV_FILE=/dev/null .venv/bin/python -m pytest -q`, katalog `volleycrew/backend`). Osobna grupa spotkań i seeda: **12 zaliczonych**; lint/formatowanie i OpenAPI check ponownie zaliczone. Pierwsze lokalne uruchomienie całej grupy z katalogu głównego nie potrafiło zaimportować modułu w subprocessie testu operatora; poprawne uruchomienie z katalogu backendu zaliczyło komplet bez zmiany testu. Wersja 0.3.6 obejmuje obie poprawki.
