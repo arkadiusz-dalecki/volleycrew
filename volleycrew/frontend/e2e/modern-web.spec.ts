@@ -113,13 +113,25 @@ test("browser text preferences scale headings and preserve narrow layouts", asyn
       ).toBe(true);
     }
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.screenshot({
-      path: info.outputPath(
-        `${route.replaceAll("/", "_") || "meeting"}-text-200.png`,
-      ),
-      fullPage: true,
-      scale: "css",
-    });
+    // An enlarged administrator list can exceed WebKit's maximum bitmap size.
+    // Keep the complete layout assertions above, and capture bounded viewports.
+    for (const position of ["top", "bottom"]) {
+      await page.evaluate(
+        (edge) =>
+          window.scrollTo(
+            0,
+            edge === "top" ? 0 : document.documentElement.scrollHeight,
+          ),
+        position,
+      );
+      await page.screenshot({
+        path: info.outputPath(
+          `${route.replaceAll("/", "_") || "meeting"}-text-200-${position}.png`,
+        ),
+        fullPage: false,
+        scale: "css",
+      });
+    }
   }
 });
 

@@ -58,3 +58,6 @@ Pierwsze CI push ([run 43826248606](https://github.com/arkadiusz-dalecki/volleyc
 
 
 Po obu uzupełnieniach: pełny backend **216 zaliczonych** na PostgreSQL 17.11 (`VOLLEYCREW_TEST_DATABASE_URL=<izolowana_baza_test> VOLLEYCREW_ENV_FILE=/dev/null .venv/bin/python -m pytest -q`, katalog `volleycrew/backend`). Osobna grupa spotkań i seeda: **12 zaliczonych**; lint/formatowanie i OpenAPI check ponownie zaliczone. Pierwsze lokalne uruchomienie całej grupy z katalogu głównego nie potrafiło zaimportować modułu w subprocessie testu operatora; poprawne uruchomienie z katalogu backendu zaliczyło komplet bez zmiany testu. Wersja 0.3.6 obejmuje obie poprawki.
+
+
+CI z Linux ujawniło też limit bitmap WebKit: pełnostronicowy screenshot rozbudowanej listy administratora przy tekście 200% przekraczał 32767 px (103 inne E2E zaliczone, 1 celowo pominięty). Test nadal sprawdza wszystkie pięć tras i cztery szerokości oraz dwukrotny rozmiar nagłówków. Zapis dowodów zmieniono na osobne screenshoty viewportu na początku i końcu strony, zamiast jednego nieograniczonego obrazu; nie usunięto żadnej asercji układu. Po zmianie lokalne trzy próby skalowania w Chromium/WebKit ponownie zaliczono.
