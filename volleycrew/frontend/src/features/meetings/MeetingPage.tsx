@@ -10,7 +10,7 @@ import { MeetingActions } from "../schedule/MeetingActions";
 import { ParticipationCard } from "./ParticipationCard";
 import { OfferManager } from "./OfferManager";
 import { useQuery } from "@tanstack/react-query";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   ArrowRight,
@@ -73,6 +73,8 @@ function Roster({
 export function MeetingPage() {
   const adminView = useAdminView();
   const { id } = useParams();
+  const location = useLocation();
+  const home = !id || location.state?.meetingHome === true;
   const opener = useOpenMeeting();
   const meeting = useQuery({
     queryKey: id ? ["meeting", id] : ["next-meeting"],
@@ -90,7 +92,7 @@ export function MeetingPage() {
   const item = meeting.data;
   return (
     <>
-      {id && (
+      {!home && (
         <Link
           to={
             item

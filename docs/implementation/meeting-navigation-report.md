@@ -42,3 +42,17 @@ Local verification:
 - Mobile screenshot during the gesture checked visually; files in ignored `volleycrew/frontend/test-results/`.
 
 PR publication and full CI ordered in the next step; results for the final commit will be available in PR. Home Assistant deployment was not performed. The feel of animations and gestures on a physical iPhone/Android is subject to acceptance testing. No backend or infrastructure changes; their full test suites were not run.
+
+## Quieter transitions - 2026-11-16
+
+Requested follow-up E3/E9 on branch `fix/meeting-scroll-continuity`: adjacent navigation by button and swipe retains vertical scroll, and browsing from the home page does not insert the calendar back-link above the card. Details opened from the calendar retain that link. Directional movement is reduced to 24 px (added to the current drag on exit), with opacity 0.94 rather than a fade to zero; durations are 140 ms out and 180 ms in. Reduced-motion handling, fetching before transition, error recovery and declaration rules remain intact.
+
+The regression reproduced the original symptom on mobile Chromium: after starting at scrollY=100, clicking next produced scrollY=0. Two interacting causes were confirmed: `AppEnvironment` explicitly reset scroll on meeting URL changes, and the pathname key on `RouteError` remounted the whole private application. The boundary now resets only its error state when the path changes, preserving healthy children. Adjacent PUSH navigation skips the general scroll/focus reset; other page navigation retains it. A unit test verifies preserved component state and recovery from an actual render error on the next route.
+
+Verification completed locally:
+
+- PostgreSQL 17 in a new temporary instance on port 55439, database `volleycrew_scroll_test`; no development/production database used.
+- `VOLLEYCREW_E2E_DATABASE_URL=<isolated-test-database> npm run test:e2e -- e2e/meeting-navigation.spec.ts e2e/calendar.spec.ts e2e/ui.spec.ts`: 23 passed, 1 intentionally skipped (desktop mobile-keyboard case), Chromium desktop/mobile and WebKit. New checks cover nonzero scroll with buttons/swipe, unchanged card top, preserved shell DOM and normal calendar scroll reset. Existing tests cover native Chromium touch, reduced motion, errors/retry, no declaration mutations, widths, dialogs and session expiration.
+- Frontend lint, typecheck, 16 unit tests, production build and `git diff --check` passed. Mobile navigation screenshot inspected visually.
+
+No API/DTO changes, migrations or package version bump. Backend and HA image suites were not run for this frontend-only change. PR publication and full CI requested in a follow-up; results must apply to the final pushed commit. No deployment requested. Physical iPhone/Android animation acceptance remains open.

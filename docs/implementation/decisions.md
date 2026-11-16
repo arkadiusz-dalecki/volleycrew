@@ -99,6 +99,10 @@ The user instructed to move to the next and previous meeting with a gesture in t
 
 The user ordered a graphical transition between meeting occurrences: the entire meeting tile follows the horizontal gesture; short/cancelled gesture returns to the starting position. After the change, the current tile leaves in the direction of the gesture, and the new one enters from the opposite side. The buttons use the same transition. Fetching details precedes the output animation; error preserves the current deadline. The gesture is limited to the tile, retaining scrolling and excluding controls. The motion restriction preference disables animations.
 
+### Quieter meeting transitions - 2026-11-16
+
+The user requested less visible transitions and removal of the jump to the top when browsing dates by button or swipe. Adjacent navigation preserves scroll and the originating main-screen heading layout. Replace the full-card exit/fade with a short, subtle directional movement. Normal navigation to other pages retains its scroll/focus reset; reduced motion still disables animations.
+
 ## Supplement E2/E9 - links and access protection, 2026-11-14
 
 The user commissioned point 5 of the review: improving links, monitoring and resistance to abuse. Scope: link token only in the fragment, removing it from the current address after reading into the form memory; rejection of old tokens in the path, Retry-After messages, safe and volume-limited security logs and additional limitation of sudden series of requests before the database. This is a complement to E2/E9; PIN policy, profile catalog, validity/multiple invitations and current permanent limits remain in line with previous decisions.

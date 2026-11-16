@@ -3,10 +3,19 @@ import { useLocation } from "react-router-dom";
 import { LoadingCard } from "./LoadingCard";
 
 class RouteError extends Component<
-  { children: ReactNode },
-  { failed: boolean }
+  { children: ReactNode; resetKey: string },
+  { failed: boolean; resetKey: string }
 > {
-  state = { failed: false };
+  state = { failed: false, resetKey: this.props.resetKey };
+
+  static getDerivedStateFromProps(
+    props: { resetKey: string },
+    state: { resetKey: string },
+  ) {
+    return props.resetKey !== state.resetKey
+      ? { failed: false, resetKey: props.resetKey }
+      : null;
+  }
 
   static getDerivedStateFromError() {
     return { failed: true };
@@ -33,7 +42,7 @@ export function RouteContent({ children }: { children: ReactNode }) {
   const location = useLocation();
   return (
     <div className="route-content">
-      <RouteError key={location.pathname}>
+      <RouteError resetKey={location.pathname}>
         <Suspense fallback={<LoadingCard message="Wczytujemy widok…" />}>
           {children}
         </Suspense>

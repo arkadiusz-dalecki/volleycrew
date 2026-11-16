@@ -42,13 +42,13 @@ export function MeetingNavigation({
       window.matchMedia("(prefers-reduced-motion: reduce)").matches
     )
       return;
-    const offset = direction === "next" ? 64 : -64;
+    const offset = direction === "next" ? 24 : -24;
     const animation = element.animate(
       [
-        { transform: `translateX(${offset}px)`, opacity: 0 },
+        { transform: `translateX(${offset}px)`, opacity: 0.94 },
         { transform: "translateX(0)", opacity: 1 },
       ],
-      { duration: 300, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
+      { duration: 180, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
     );
     return () => animation.cancel();
   }, [location.key, location.state]);
@@ -86,16 +86,19 @@ export function MeetingNavigation({
         beforeNavigate: async () => {
           const element = card();
           if (!element || reducedMotion()) return;
+          const transform = getComputedStyle(element).transform;
+          const x = new DOMMatrixReadOnly(transform).m41;
+          const offset = x + (direction === "next" ? -24 : 24);
           const animation = element.animate(
             [
-              { transform: getComputedStyle(element).transform, opacity: 1 },
+              { transform, opacity: 1 },
               {
-                transform: `translateX(${direction === "next" ? -100 : 100}%)`,
-                opacity: 0,
+                transform: `translateX(${offset}px)`,
+                opacity: 0.94,
               },
             ],
             {
-              duration: 220,
+              duration: 140,
               easing: "cubic-bezier(0.4, 0, 1, 1)",
               fill: "forwards",
             },

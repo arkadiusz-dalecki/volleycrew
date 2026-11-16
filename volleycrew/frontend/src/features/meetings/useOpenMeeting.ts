@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { api, message, unwrap } from "../../lib/api/client";
 import type { components } from "../../lib/api/schema";
@@ -9,6 +9,7 @@ export function useOpenMeeting() {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
   const client = useQueryClient();
   async function open(
     item: Meeting,
@@ -52,7 +53,12 @@ export function useOpenMeeting() {
       }
       await transition?.beforeNavigate();
       navigate(`/meetings/${result.id}`, {
-        state: { meetingDirection: transition?.direction },
+        state: {
+          meetingDirection: transition?.direction,
+          meetingHome:
+            !!transition &&
+            (location.pathname === "/" || location.state?.meetingHome === true),
+        },
       });
     } catch (e) {
       setError(message(e));
