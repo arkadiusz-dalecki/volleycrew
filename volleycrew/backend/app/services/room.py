@@ -20,7 +20,7 @@ from app.domain.teams import split_teams, validate_teams
 from app.models.auth import Player
 from app.models.meetings import Enrollment, Meeting
 from app.models.room import Attendance, AttendanceEvent, RoomMutation, TeamMember, TeamSheet
-from app.services import enrollment
+from app.services import enrollment, settlements
 from app.services.auth import audit
 
 
@@ -116,6 +116,7 @@ async def attendance_view(db, meeting, at):
         if entry.declaration == "going" and entry.allocation == "reserved"
     ]
     return AttendanceView(
+        cost_grosz=meeting.cost_grosz,
         meeting_id=meeting.id,
         version=meeting.version,
         status=meeting.status,
@@ -203,6 +204,7 @@ async def confirm_attendance(db, meeting, actor_id, at):
     meeting.attendance_confirmed_at = at
     meeting.status = "attendance_checked"
     meeting.version += 1
+    await settlements.post_charges(db, meeting, actor_id, at, "Zatwierdzenie obecności")
     audit(db, actor_id, "confirm_attendance", meeting.id, at)
 
 
@@ -272,6 +274,7 @@ async def admit(db, meeting, player_id, actor_id, at):
         row.root_event_id = history.id
         meeting.attendance_revision += 1
         await archive_draft(db, meeting)
+        await settlements.post_charges(db, meeting, actor_id, at, "Dopisanie obecności")
     enrollment.event(db, meeting, player_id, actor_id, "admitted_on_site", at)
     meeting.version += 1
 
@@ -370,6 +373,8 @@ async def correct(db, meeting, body, actor_id, at):
             created_at=at,
         )
     )
+    if meeting.attendance_confirmed_at:
+        await settlements.post_charges(db, meeting, actor_id, at, body.reason)
     audit(db, actor_id, "correct_attendance_history", source.id, at)
     meeting.version += 1
 

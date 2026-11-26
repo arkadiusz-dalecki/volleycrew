@@ -15,6 +15,7 @@ class ScheduleInput(Input):
     local_time: time
     duration_minutes: int = Field(ge=1, le=1440)
     venue: str = Field(min_length=1, max_length=160)
+    cost_grosz: int = Field(default=0, ge=0, le=100_000_000, strict=True)
 
     @field_validator("local_time")
     @classmethod
@@ -64,11 +65,20 @@ class RescheduleInput(Input):
     local_date: date
     local_time: time
     duration_minutes: int = Field(ge=1, le=1440)
+    venue: str | None = Field(default=None, min_length=1, max_length=160)
+    cost_grosz: int | None = Field(default=None, ge=0, le=100_000_000, strict=True)
+
+    @field_validator("venue")
+    @classmethod
+    def optional_venue(cls, value):
+        return clean_text(value) if value is not None else None
+
     _precision = field_validator("local_time")(ScheduleInput.minute_precision.__func__)
 
 
 class CreateMeetingInput(RescheduleInput):
     venue: str = Field(min_length=1, max_length=160)
+    cost_grosz: int = Field(default=0, ge=0, le=100_000_000, strict=True)
     _venue = field_validator("venue")(ScheduleInput.venue_text.__func__)
 
 

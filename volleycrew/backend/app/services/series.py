@@ -249,7 +249,10 @@ async def apply(db, rule_id, body, actor_id, clock, remove=False):
     await db.flush()
     new = None
     if not remove:
-        proposed = changes.proposed_occurrence(body, uuid4())
+        chosen_cost = body.cost_grosz if "cost_grosz" in body.model_fields_set else old.cost_grosz
+        proposed = changes.proposed_occurrence(
+            body.model_copy(update={"cost_grosz": chosen_cost}), uuid4()
+        )
         new = ScheduleVersion(
             **{key: getattr(proposed, key) for key in proposed.__dataclass_fields__}, created_at=at
         )
@@ -261,6 +264,9 @@ async def apply(db, rule_id, body, actor_id, clock, remove=False):
             continue
         day, start, end = targets[row.id]
         row.calendar_schedule_id, row.calendar_source_date = new.id, day
+        if not row.deleted_at and not row.cost_overridden and row.cost_grosz != new.cost_grosz:
+            row.cost_grosz = new.cost_grosz
+            row.version += 1
         if (
             not row.deleted_at
             and not row.is_exception

@@ -18,6 +18,7 @@ class Rule:
     duration_minutes: int
     timezone: str
     venue: str
+    cost_grosz: int = 0
 
 
 @dataclass(frozen=True)
@@ -29,6 +30,7 @@ class Occurrence:
     ends_at: datetime
     timezone: str
     venue: str
+    cost_grosz: int = 0
 
 
 def first_date_on_or_after(day: date, weekday: int) -> date:
@@ -62,6 +64,7 @@ def occurrence(rule: Rule, day: date) -> Occurrence:
         start + timedelta(minutes=rule.duration_minutes),
         rule.timezone,
         rule.venue,
+        rule.cost_grosz,
     )
 
 

@@ -6,6 +6,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { api, message, unwrap } from "../../lib/api/client";
 import type { components } from "../../lib/api/schema";
 import { dateLabel, hour, localDate } from "../meetings/dates";
+import { CostField } from "../settlements/CostField";
+import { money, toGrosz, amountText } from "../settlements/money";
 import { refreshSchedule } from "./refresh";
 
 type Meeting = components["schemas"]["MeetingDetail"];
@@ -40,6 +42,17 @@ export function MeetingActions({
       (Date.parse(meeting.ends_at) - Date.parse(meeting.starts_at)) / 60000,
     ),
   );
+  const [venue, setVenue] = useState(meeting.venue);
+  const [cost, setCost] = useState("");
+  const [costEdited, setCostEdited] = useState(false);
+  const termChanged =
+    day !== localDate(meeting.starts_at) ||
+    time !== hour(meeting.starts_at) ||
+    duration !==
+      Math.round(
+        (Date.parse(meeting.ends_at) - Date.parse(meeting.starts_at)) / 60000,
+      ) ||
+    venue !== meeting.venue;
   const [reviewed, setReviewed] = useState<number | null>(null);
   const [release, setRelease] = useState<string | null>(null);
   const [busy, setBusy] = useState(false),
@@ -51,22 +64,23 @@ export function MeetingActions({
     try {
       // Calendar slots may not yet have a persistent Meeting. Resolve only
       // after an organizer chooses an action, without leaving the calendar.
-      const current = isDetail(source)
-        ? source
-        : source.persisted
-          ? unwrap(
-              await api.GET("/api/v1/meetings/{meeting_id}", {
-                params: { path: { meeting_id: source.id } },
-              }),
-            )
-          : unwrap(
-              await api.POST("/api/v1/meetings/resolve", {
-                body: {
-                  schedule_version_id: source.schedule_version_id,
-                  source_date: source.source_date,
-                },
-              }),
-            );
+      const current =
+        source.persisted && isDetail(source)
+          ? source
+          : source.persisted
+            ? unwrap(
+                await api.GET("/api/v1/meetings/{meeting_id}", {
+                  params: { path: { meeting_id: source.id } },
+                }),
+              )
+            : unwrap(
+                await api.POST("/api/v1/meetings/resolve", {
+                  body: {
+                    schedule_version_id: source.schedule_version_id,
+                    source_date: source.source_date,
+                  },
+                }),
+              );
       setPrepared(current);
       setDay(localDate(current.starts_at));
       setTime(hour(current.starts_at));
@@ -75,6 +89,9 @@ export function MeetingActions({
           (Date.parse(current.ends_at) - Date.parse(current.starts_at)) / 60000,
         ),
       );
+      setVenue(current.venue);
+      setCost(amountText(current.cost_grosz));
+      setCostEdited(false);
       setMode(nextMode);
       setReviewed(nextMode !== "edit" ? current.version : null);
     } catch (e) {
@@ -123,6 +140,10 @@ export function MeetingActions({
                 local_date: day,
                 local_time: time,
                 duration_minutes: duration,
+                venue,
+                ...(costEdited
+                  ? { cost_grosz: cost ? toGrosz(cost) : null }
+                  : {}),
               },
             }),
           );
@@ -130,7 +151,9 @@ export function MeetingActions({
       setReviewed(null);
       const resultNotice = cancel
         ? "Spotkanie odwołane. Poinformuj grupę na Messengerze."
-        : "Termin zmieniony. Poinformuj grupę na Messengerze o nowym terminie i potwierdzeniach.";
+        : termChanged
+          ? "Termin zmieniony. Poinformuj grupę na Messengerze o nowym terminie i potwierdzeniach."
+          : "Koszt spotkania został zaktualizowany.";
       setPrepared(null);
       setNotice(compact ? "" : resultNotice);
       onChanged?.(updated, resultNotice);
@@ -191,7 +214,7 @@ export function MeetingActions({
               onClick={() => void begin("edit")}
             >
               {compact && <Pencil size={16} />}
-              {compact ? "Zmień termin" : "Zmień ten termin"}
+              Edytuj to spotkanie
             </button>
             <button
               className="button"
@@ -263,12 +286,36 @@ export function MeetingActions({
               }}
             />
           </label>
+          <label className="form-field">
+            Miejsce spotkania
+            <input
+              name="venue"
+              required
+              maxLength={160}
+              value={venue}
+              disabled={busy}
+              onChange={(e) => {
+                setVenue(e.target.value);
+                setReviewed(null);
+              }}
+            />
+          </label>
+          <CostField
+            value={cost}
+            optional
+            disabled={busy}
+            onChange={(value) => {
+              setCost(value);
+              setCostEdited(true);
+              setReviewed(null);
+            }}
+          />
           <button
             className="button"
             disabled={busy}
             onClickCapture={(event) => event.currentTarget.focus()}
           >
-            Pokaż zmianę terminu
+            Pokaż podgląd zmian
           </button>
           <button
             className="button"
@@ -290,7 +337,7 @@ export function MeetingActions({
               ? "Usunąć spotkanie?"
               : mode === "cancel"
                 ? "Odwołać spotkanie?"
-                : "Zatwierdzić nowy termin?"
+                : "Zapisać zmiany spotkania?"
           }
           busy={busy}
           onDismiss={() => {
@@ -309,8 +356,8 @@ export function MeetingActions({
           </p>
           {mode === "edit" && (
             <p>
-              Nowy termin: {day.split("-").reverse().join(".")}, {time} ·{" "}
-              {duration} min.
+              {day.split("-").reverse().join(".")}, {time} · {duration} min ·{" "}
+              {venue} · {cost ? money(toGrosz(cost)) : "koszt z serii"}.
             </p>
           )}
           <p>
@@ -318,7 +365,9 @@ export function MeetingActions({
               ? "Spotkanie zniknie z kalendarza i nie pojawi się ponownie w serii. Zapisy i propozycje zostaną zamknięte, bez oznaczeń nieobecności. Pozostałe terminy serii pozostaną."
               : mode === "cancel"
                 ? "Spotkanie pozostanie w kalendarzu jako odwołane. Miejsca i propozycje zostaną zwolnione; bez oznaczeń nieobecności."
-                : "Wszyscy zapisani potwierdzają udział od nowa. Dotychczasowe miejsca pozostają zarezerwowane bez automatycznego timeoutu; stare propozycje przestają obowiązywać."}
+                : !termChanged
+                  ? "Zapisy i propozycje miejsc pozostają bez zmian."
+                  : "Wszyscy zapisani potwierdzają udział od nowa. Dotychczasowe miejsca pozostają zarezerwowane bez automatycznego timeoutu; stare propozycje przestają obowiązywać."}
           </p>
           <div className="participation-actions">
             <button
@@ -340,7 +389,7 @@ export function MeetingActions({
                 ? "Usuń spotkanie"
                 : mode === "cancel"
                   ? "Potwierdzam odwołanie"
-                  : "Zatwierdź nowy termin"}
+                  : "Zapisz zmiany spotkania"}
             </button>
           </div>
         </ConfirmDialog>

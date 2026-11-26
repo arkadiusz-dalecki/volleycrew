@@ -3,6 +3,7 @@ export async function refreshSchedule(client: QueryClient) {
   await Promise.all(
     [
       "admin-schedule",
+      "settlements",
       "calendar",
       "meeting",
       "next-meeting",

@@ -33,6 +33,7 @@ def summary(row, persisted: bool) -> MeetingSummary:
             "ends_at",
             "timezone",
             "venue",
+            "cost_grosz",
         )
     }
     return MeetingSummary(
@@ -49,6 +50,7 @@ def summary(row, persisted: bool) -> MeetingSummary:
                     "previous_starts_at",
                     "previous_ends_at",
                     "is_exception",
+                    "cost_overridden",
                 )
             }
             if persisted

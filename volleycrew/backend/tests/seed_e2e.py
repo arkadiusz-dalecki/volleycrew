@@ -18,6 +18,7 @@ from app.models.auth import Invite, Player
 from app.services.enrollment import declare
 from app.services.meetings import resolve
 from tests.calendar_support import DEFAULT_ID, reset_calendar
+from tests.settlements_seed import seed_settlements
 
 
 async def main():
@@ -120,6 +121,7 @@ async def main():
                 room_meeting.ends_at = at + timedelta(minutes=105)
                 room_meeting.is_exception = True
                 room_meetings[project] = {"id": str(room_meeting.id), "players": attendees}
+            settlements = await seed_settlements(db, player, at)
             await db.commit()
             print(
                 json.dumps(
@@ -130,6 +132,7 @@ async def main():
                         "cancelled_id": str(cancelled.id),
                         "enrollment_meetings": enrollment_meetings,
                         "room_meetings": room_meetings,
+                        "settlements": settlements,
                     }
                 )
             )

@@ -28,6 +28,8 @@ The technical architecture is the foundation of the plan based on a previous pro
 
 ## Progress and handover of work
 
+2026-11-26 post-release follow-up: meeting cost, per-occurrence edits and private settlements. [Verification report](settlements-report.md)
+
 2026-11-16 E3/E9 follow-up: [quieter meeting transitions](meeting-navigation-report.md#quieter-transitions---2026-11-16) implemented and verified locally: preserved scroll/layout, no shell remount on date changes, shorter subtle animation; 23 E2E passed + 1 intentional skip, 16 unit tests, lint/types/build passed. Physical phone and HA acceptance remain open.
 
 | Stage                                                    | Condition                                                                                       | Evidence / other dependencies                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |

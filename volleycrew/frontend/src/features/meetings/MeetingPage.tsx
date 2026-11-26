@@ -1,3 +1,4 @@
+import { money } from "../settlements/money";
 import { LoadingCard } from "../../components/LoadingCard";
 import { MeetingNavigation } from "./MeetingNavigation";
 import { PreliminaryCourt } from "../room/PreliminaryCourt";
@@ -166,6 +167,8 @@ export function MeetingPage() {
                       <p>
                         <MapPin size={16} />
                         {item.venue}
+                        {item.cost_grosz > 0 &&
+                          " · Koszt spotkania " + money(item.cost_grosz)}
                       </p>
                     </div>
                     <div className="court-illustration" aria-hidden="true">
@@ -223,9 +226,7 @@ export function MeetingPage() {
                     termVersion={item.term_version}
                   />
                 )}
-                {adminView && item.persisted && (
-                  <MeetingActions key={item.id} meeting={item} />
-                )}
+                {adminView && <MeetingActions key={item.id} meeting={item} />}
                 {item.persisted &&
                   item.status !== "cancelled" &&
                   (adminView ? (

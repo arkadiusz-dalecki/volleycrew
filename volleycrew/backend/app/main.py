@@ -13,6 +13,7 @@ from app.api.meetings import router as meetings_router
 from app.api.results import router as results_router
 from app.api.room import router as room_router
 from app.api.schedule_changes import router as schedule_router
+from app.api.settlements import router as settlements_router
 from app.core.auth_protection import AuthProtection, SecurityMonitor
 from app.core.clock import Clock, SystemClock
 from app.core.config import Settings, get_settings
@@ -48,6 +49,7 @@ def create_app(settings: Settings | None = None, clock: Clock | None = None) -> 
     app.include_router(meetings_router, prefix="/api/v1")
     app.include_router(enrollment_router, prefix="/api/v1")
     app.include_router(schedule_router, prefix="/api/v1")
+    app.include_router(settlements_router, prefix="/api/v1")
     app.include_router(room_router, prefix="/api/v1")
     app.include_router(documents_router, prefix="/api/v1")
     app.include_router(results_router, prefix="/api/v1")

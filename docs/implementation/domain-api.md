@@ -1,5 +1,13 @@
 # Domain, data and API
 
+## Meeting settlements
+
+- Store costs and shares in whole grosz. A series supplies a default for each occurrence. An individual price can be set to zero or reset to the default. A series edit updates inherited prices on future occurrences. Changes to price alone increase the data version and preserve the term version, declarations and offers.
+- Confirming actual attendance posts the shares in the same transaction as attendance. Allocate leftover grosz in player ID order so the shares add up to the meeting cost. Confirming attendance for a meeting with no cost or a cost of zero creates no charge. A canceled or unattended meeting has no charge. Existing meetings and series migrate with a zero cost.
+- A payment report selects outstanding meeting charges and includes the amount the player saw. Serialize settlement writes per player. Validate the selection and amount again on the server. A report may be pending, paid or rejected. The administrator can record an already received payment, confirm a report or reject it with a reason. A repeated command cannot post a new payment or alter a finalized review.
+- Corrections recalculate the shares, record the differences and preserve the original payments. Confirmed overpayments offset the oldest outstanding charges first. Pending transfers retain their submitted amounts until review. Reminders use the remaining payable balance after credits and pending transfers, with strict thresholds of PLN 100 and 30 days from the oldest unpaid charge.
+- Players can read their own balances and payments. The organizer's BLIK number or Revolut link appears to players with an amount due. The administrative dashboard and profile payment settings are restricted to administrators. Payment details do not appear in the ordinary player, roster or ranking responses.
+
 ## Common rules
 
 - One group. Meeting limit: 14 participants. Administrator and priority status are independent properties. The priority status is not visible to other players: your own status is available in the profile, the administrator can see everyone's status. Own view remains the current assumption; the new instruction excludes public markings.

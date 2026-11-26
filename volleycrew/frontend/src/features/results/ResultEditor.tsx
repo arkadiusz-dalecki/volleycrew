@@ -1,3 +1,4 @@
+import { money } from "../settlements/money";
 import { useId, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api, unwrap } from "../../lib/api/client";
@@ -609,6 +610,25 @@ function Editor({
                     {points(Number(preview.outcome.expected_a) * 100)}%.
                   </p>
                 </>
+              )}
+              {!!preview.settlement_deltas?.length && (
+                <ul aria-label="Zmiany opłat">
+                  {preview.settlement_deltas.map((share) => {
+                    const person = people.data?.find(
+                      (item) => item.id === share.player_id,
+                    );
+                    return (
+                      <li key={share.player_id}>
+                        {person
+                          ? person.first_name + " " + person.last_name
+                          : "Uczestnik"}
+                        {" · "}
+                        {share.delta > 0 ? "+" : ""}
+                        {money(share.delta)}
+                      </li>
+                    );
+                  })}
+                </ul>
               )}
               <p className="form-note">
                 Przeliczone spotkania od tego meczu:{" "}

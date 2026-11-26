@@ -51,12 +51,12 @@ test("single exception, schedule preview, reconfirmation, stale organizer tab an
   moved.setUTCDate(moved.getUTCDate() + 1);
   const movedDay = moved.toISOString().slice(0, 10);
   await organizer.goto(`/meetings/${exceptionId}`);
-  await organizer.getByRole("button", { name: "Zmień ten termin" }).click();
+  await organizer.getByRole("button", { name: "Edytuj to spotkanie" }).click();
   await organizer.getByLabel("Nowa data spotkania").fill(movedDay);
   await organizer.getByLabel("Nowa godzina").fill("19:00");
-  await organizer.getByRole("button", { name: "Pokaż zmianę terminu" }).click();
+  await organizer.getByRole("button", { name: "Pokaż podgląd zmian" }).click();
   await organizer
-    .getByRole("button", { name: "Zatwierdź nowy termin" })
+    .getByRole("button", { name: "Zapisz zmiany spotkania" })
     .click();
   await expect(
     organizer.getByText(
@@ -254,7 +254,7 @@ test("organizer changes and cancels a generated slot directly on its calendar ca
   await page.goto(`/calendar?month=${month}`);
   const first = page.locator(".agenda-card").first();
   await expect(
-    first.getByRole("button", { name: "Zmień termin", exact: true }),
+    first.getByRole("button", { name: "Edytuj to spotkanie", exact: true }),
   ).toBeVisible();
   await expect(
     first.getByRole("button", { name: "Odwołaj", exact: true }),
@@ -267,7 +267,7 @@ test("organizer changes and cancels a generated slot directly on its calendar ca
     })
     .click();
   await first
-    .getByRole("button", { name: "Zmień termin", exact: true })
+    .getByRole("button", { name: "Edytuj to spotkanie", exact: true })
     .click();
   const original = await first.getByLabel("Nowa data spotkania").inputValue();
   const moved = new Date(`${original}T12:00:00Z`);
@@ -275,8 +275,8 @@ test("organizer changes and cancels a generated slot directly on its calendar ca
   const movedDate = moved.toISOString().slice(0, 10);
   await first.getByLabel("Nowa data spotkania").fill(movedDate);
   await first.getByLabel("Nowa godzina", { exact: true }).fill("19:00");
-  await first.getByRole("button", { name: "Pokaż zmianę terminu" }).click();
-  await page.getByRole("button", { name: "Zatwierdź nowy termin" }).click();
+  await first.getByRole("button", { name: "Pokaż podgląd zmian" }).click();
+  await page.getByRole("button", { name: "Zapisz zmiany spotkania" }).click();
   await expect(page.getByText(/^Termin zmieniony\./)).toBeVisible();
   await expect(first.locator(".agenda-date > span")).toHaveText(
     movedDate.slice(-2),
@@ -330,7 +330,10 @@ test("organizer changes and cancels a generated slot directly on its calendar ca
   await memberPage.goto(`/calendar?month=${month}`);
   await expect(memberPage.locator(".agenda-card").first()).toBeVisible();
   await expect(
-    memberPage.getByRole("button", { name: "Zmień termin", exact: true }),
+    memberPage.getByRole("button", {
+      name: "Edytuj to spotkanie",
+      exact: true,
+    }),
   ).toHaveCount(0);
   await expect(
     memberPage.getByRole("button", { name: "Odwołaj", exact: true }),

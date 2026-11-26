@@ -12,6 +12,7 @@ export default function setup() {
     env: { ...process.env, VOLLEYCREW_DATABASE_URL: url },
   });
   const seed = JSON.parse(result.trim());
+  process.env.E2E_SETTLEMENTS = JSON.stringify(seed.settlements);
   process.env.E2E_ROOM_MEETINGS = JSON.stringify(seed.room_meetings);
   process.env.E2E_ADMIN_ID = seed.admin_id;
   process.env.E2E_INVITE = seed.invite;

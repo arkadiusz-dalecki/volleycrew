@@ -1,3 +1,4 @@
+import { money } from "../settlements/money";
 import { AddToCalendar } from "./AddToCalendar";
 import { useAdminView } from "../auth/ViewMode";
 import { useQuery } from "@tanstack/react-query";
@@ -330,6 +331,8 @@ export function CalendarPage() {
                         <p>
                           <MapPin size={14} />
                           {item.venue}
+                          {item.cost_grosz > 0 &&
+                            " · Koszt spotkania " + money(item.cost_grosz)}
                         </p>
                         <small>
                           {item.participant_count} / {item.capacity} uczestników

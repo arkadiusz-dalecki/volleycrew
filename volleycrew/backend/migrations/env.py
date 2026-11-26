@@ -12,6 +12,7 @@ from app.models import (
     results,  # noqa: F401 — register results/rating metadata
     room,  # noqa: F401 — register room metadata
     schedule,  # noqa: F401 — register schedule change metadata
+    settlements,  # noqa: F401 — register settlement metadata
 )
 
 target_metadata = Base.metadata

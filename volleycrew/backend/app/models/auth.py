@@ -25,6 +25,8 @@ class Player(Base):
     priority_status: Mapped[str] = mapped_column(
         String(12), default="guest", server_default="guest"
     )
+    blik_phone: Mapped[str | None] = mapped_column(String(12))
+    revolut_link: Mapped[str | None] = mapped_column(String(200))
     role: Mapped[str] = mapped_column(String(12), default="player", server_default="player")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
     username: Mapped[str | None] = mapped_column(String(32), unique=True)

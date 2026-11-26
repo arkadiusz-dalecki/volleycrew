@@ -2,6 +2,8 @@ import { useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, message, unwrap } from "../../lib/api/client";
 import { localDate, dateLabel, hour } from "../meetings/dates";
+import { CostField } from "../settlements/CostField";
+import { money, toGrosz } from "../settlements/money";
 import { refreshSchedule } from "./refresh";
 
 export function CreateMeeting({ date }: { date: string }) {
@@ -13,6 +15,7 @@ export function CreateMeeting({ date }: { date: string }) {
   const [day, setDay] = useState(date);
   const [time, setTime] = useState("18:00");
   const [duration, setDuration] = useState(120);
+  const [cost, setCost] = useState("0.00");
   const [venue, setVenue] = useState("I LO w Gdańsku");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
@@ -35,6 +38,7 @@ export function CreateMeeting({ date }: { date: string }) {
             local_time: time,
             duration_minutes: duration,
             venue,
+            cost_grosz: toGrosz(cost),
           },
         }),
       );
@@ -56,8 +60,8 @@ export function CreateMeeting({ date }: { date: string }) {
       <h2>Dodaj pojedyncze spotkanie</h2>
       <p className="form-note">
         Dodatkowy termin nie zmienia cotygodniowej serii. Aby przenieść
-        istniejące spotkanie, otwórz je w kalendarzu i wybierz „Zmień ten
-        termin”.
+        istniejące spotkanie, otwórz je w kalendarzu i wybierz „Edytuj to
+        spotkanie”.
       </p>
       <form
         onSubmit={(event) => void submit(event)}
@@ -111,10 +115,12 @@ export function CreateMeeting({ date }: { date: string }) {
               />
             </label>
           </div>
+          <CostField value={cost} onChange={setCost} />
           {confirm && (
             <p role="status">
               Nowe spotkanie: {day.split("-").reverse().join(".")}, {time} ·{" "}
-              {duration} min · {venue}. Pozostałe terminy bez zmian.
+              {duration} min · {venue} · {money(toGrosz(cost))}. Pozostałe
+              terminy bez zmian.
             </p>
           )}
           <div className="row-actions">
