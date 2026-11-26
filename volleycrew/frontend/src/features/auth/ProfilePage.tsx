@@ -1,3 +1,4 @@
+import { PaymentDetails } from "../settlements/PaymentDetails";
 import { useAdminView } from "./ViewMode";
 import { HistoryPanel } from "../room/HistoryPanel";
 import { useState } from "react";
@@ -194,6 +195,7 @@ export function ProfilePage() {
           )}
         </section>
       </div>
+      {adminView && <PaymentDetails />}
       <GoogleConnection />
       <HistoryPanel />
     </>

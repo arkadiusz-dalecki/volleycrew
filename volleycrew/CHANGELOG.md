@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.8
+
+- Set a default cost per meeting in a recurring series and edit the date, venue or cost of an individual occurrence. Confirmed attendance splits the cost among attendees to the grosz. Free meetings create no charges.
+- View private balances, highlight overdue amounts, and report payment for selected charges or all amounts due. The organizer can save a BLIK phone number and Revolut.me link for players to use when paying.
+- Review pending transfers and record received payments in the administrator dashboard. The team summary shows outstanding, reported and confirmed amounts, with totals visible while scrolling.
+- Migration `0014_settlements` adds prices and settlement records. The app applies it on startup. Existing meetings and series start with a zero cost. Back up the app and database before updating. To roll back, restore the backup alongside its matching app version. Upgrades from 0.3.4 or earlier also require the 0.3.5 login migration and organizer setup described below.
+
 ## 0.3.7
 
 - Preserve vertical scroll when switching meeting dates by button or swipe, and keep the home-screen layout stable.

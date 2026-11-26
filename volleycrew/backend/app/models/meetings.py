@@ -34,8 +34,10 @@ class ScheduleVersion(Base):
     duration_minutes: Mapped[int] = mapped_column(Integer)
     timezone: Mapped[str] = mapped_column(String(64))
     venue: Mapped[str] = mapped_column(String(160))
+    cost_grosz: Mapped[int] = mapped_column(Integer, server_default="0")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     __table_args__ = (
+        CheckConstraint("cost_grosz BETWEEN 0 AND 100000000", name="schedule_versions_valid_cost"),
         CheckConstraint("weekday BETWEEN 0 AND 6"),
         CheckConstraint("duration_minutes BETWEEN 1 AND 1440"),
         CheckConstraint("effective_until IS NULL OR effective_until > effective_from"),
@@ -57,8 +59,10 @@ class Meeting(Base):
     ends_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     timezone: Mapped[str] = mapped_column(String(64))
     venue: Mapped[str] = mapped_column(String(160))
+    cost_grosz: Mapped[int] = mapped_column(Integer, server_default="0")
     calendar_schedule_id: Mapped[UUID] = mapped_column(ForeignKey("schedule_versions.id"))
     calendar_source_date: Mapped[date] = mapped_column(Date)
+    cost_overridden: Mapped[bool] = mapped_column(Boolean, server_default="false")
     is_additional: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     is_exception: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -77,6 +81,7 @@ class Meeting(Base):
         UniqueConstraint(
             "calendar_schedule_id", "calendar_source_date", name="meeting_calendar_unique"
         ),
+        CheckConstraint("cost_grosz BETWEEN 0 AND 100000000", name="meetings_valid_cost"),
         CheckConstraint("ends_at > starts_at"),
         CheckConstraint("capacity = 14"),
         CheckConstraint("term_version > 0 AND version > 0"),

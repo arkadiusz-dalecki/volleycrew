@@ -2,7 +2,7 @@
 
 ## Reference
 
-Accepted variant A in `prototype/index.html?variant=A`. `prototype/phone.html` shows it on the phone. Keep the background light, greenery, typography, tab rhythm, desktop side navigation and four mobile tabs. A/B/C switch and fictional scenarios belong to prototype/development only.
+Accepted variant A in `prototype/index.html?variant=A`. `prototype/phone.html` shows it on the phone. Keep the background light, greenery, typography, tab rhythm, desktop side navigation and five mobile tabs. A/B/C switch and fictional scenarios belong to prototype/development only.
 
 Recreate UI as components with real data. Main structure: `AppShell`, `MeetingHeader`, `ParticipationCard`, `ParticipantList`, `Waitlist`, `Calendar`, `Court`, `AttendanceChecklist`, `ResultForm`, `RankingTable`, `ProfileForm`. Match directory names to `architecture.md`.
 
@@ -15,12 +15,14 @@ Recreate UI as components with real data. Main structure: `AppShell`, `MeetingHe
 | `/calendar`             | Month and list of meeting occurrences, navigation further without limit of weeks |
 | `/ranking`              | Ranking and results with link to the match                                       |
 | `/profile`              | Data, status, password change and private history                                |
+| `/settlements`          | Personal charges, payment reporting and payment history                          |
+| `/admin/settlements`    | Team balances and payment review                                                |
 | `/join?token=token`     | Invitation validation, name/surname, login, password and its repetition          |
 | `/login`                | Username and password entry, optional Google button                              |
 | `/reset-password#token` | Setting a login and a new password via a one-time grant                          |
 | `/admin/settings`       | Statuses and locks, invitation link, password reset                              |
 
-Administrative settings are an additional route, not a fifth main tab. The control panel for a specific match remains in its details. Permissions are data from the API; the frontend does not broadcast them through the switch. Before locking the profile, the administrator sees a summary: logging out the player, blocking access and releasing future places/bookings/offers while maintaining history and results. Once approved, the UI downloads the current lists.
+Administrative settings are available through a separate link. The control panel for a specific match remains in its details. Permissions are data from the API; the frontend does not broadcast them through the switch. Before locking the profile, the administrator sees a summary: logging out the player, blocking access and releasing future places/bookings/offers while maintaining history and results. Once approved, the UI downloads the current lists.
 
 Status „założyciel/zawodnik/gość” is not a public label. Participants and ranking in the player view do not show other people's statuses. Your own status stays in your profile and your own summary, and the admin can access the statuses in their view. Precedence rules can be explained in general terms, without specifying who has what status. The new profile receives the status „gość”; The registration form does not offer status selection. The administrator selects one of three levels. Selecting a profile distinguishes identical names and surnames with an additional nickname on the login screen, e.g. „Michał N*****k — Misiek”; the school printout contains only the name and surname. The player sets and changes his own nickname in a separate profile field. The field is independent of name and surname; saving does not change the account's identity or status. Approved 2026-11-06.
 
@@ -221,3 +223,11 @@ Common access data fields have explicit labels linked by for/id and retain usern
 Text sizes are relative, without overriding the root size. Meta text-scale enables native OS preferences where supported; regular zoom remains available. Layout and controls grow/wrap text. Dialog and backdrop have CSS to limit scroll forwarding; lack of support in Safari is not circumvented by hiding the html/body scrollbar.
 
 The private shell and individual views load on demand. Download error has message and explicit reload; private shell preserves navigation on subpage error. The route area reserves the height of the initial viewport, and static skeletons replace the short loading text to prevent the footer from momentarily appearing in place of future content. We do not add skeleton animations or private API cache.
+
+## Settlement payment actions
+
+„Rozliczenia” is a main navigation item on desktop and mobile. The organizer can reach „Rozliczenia ekipy” from this screen. The overview lists each player with settlement activity, the amount due, reports awaiting confirmation, and total confirmed payments. Player names link to their detailed balances. The final row, „Razem”, shows team totals for all three amount columns and stays visible at the bottom while the list scrolls. The charges table stays visible and shows the meeting date, amount, and status. Clicking an outstanding row or activating its date button highlights the selection. „Zapłać wszystko” selects all outstanding amounts and opens a payment dialog for their total. „Przejdź do płatności” appears alongside „Zapłać wszystko” above the table when the player selects some of the outstanding rows. When all outstanding rows are selected, only „Zapłać wszystko” is shown. A successful report closes the dialog. The first close request asks for confirmation. Pressing Escape from that confirmation closes the dialog and returns focus to the payment button. The payment history starts collapsed. It groups each payment description and its review actions in a single row with separate spacing.
+
+The private overdue reminder displays the amount due in a red card with a link to „Rozliczenia”. On desktop it is above the next-meeting card in the sidebar. On mobile it appears above the page content.
+
+The profile shows „Dane do wpłat” only in the administrator view. „Rozliczenia” shows the recipient and total for the selected charges. „Otwórz Revolut” opens the recipient's saved Revolut.me link. „Kopiuj numer BLIK” copies the recipient's phone number for use in the payer's bank app. Show each action when the recipient has set up that method. The payer reports the completed transfer separately with „Zgłoś wpłatę”.

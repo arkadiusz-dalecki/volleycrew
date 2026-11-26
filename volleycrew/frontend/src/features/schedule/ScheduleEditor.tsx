@@ -5,6 +5,8 @@ import { CalendarDays } from "lucide-react";
 import { api, message, unwrap } from "../../lib/api/client";
 import type { components } from "../../lib/api/schema";
 import { dateLabel, hour, localDate } from "../meetings/dates";
+import { CostField } from "../settlements/CostField";
+import { money, toGrosz, amountText } from "../settlements/money";
 import { refreshSchedule } from "./refresh";
 
 type Settings = components["schemas"]["ScheduleSettings"];
@@ -67,6 +69,7 @@ function ScheduleForm({
   const [weekday, setWeekday] = useState(current?.weekday ?? 1);
   const [time, setTime] = useState(current?.local_time.slice(0, 5) ?? "18:00");
   const [duration, setDuration] = useState(current?.duration_minutes ?? 120);
+  const [cost, setCost] = useState(amountText(current?.cost_grosz ?? 0));
   const [venue, setVenue] = useState(current?.venue ?? "I LO w Gdańsku");
   const [preview, setPreview] = useState<
     | components["schemas"]["SchedulePreview"]
@@ -88,6 +91,7 @@ function ScheduleForm({
     local_time: time,
     duration_minutes: duration,
     venue,
+    cost_grosz: toGrosz(cost),
   };
   function edit() {
     setPreview(null);
@@ -244,6 +248,14 @@ function ScheduleForm({
             disabled={busy}
           />
         </label>
+        <CostField
+          value={cost}
+          disabled={busy}
+          onChange={(value) => {
+            edit();
+            setCost(value);
+          }}
+        />
         <button className="button" disabled={busy}>
           Pokaż podgląd harmonogramu
         </button>
@@ -261,7 +273,8 @@ function ScheduleForm({
               {until
                 ? `${until.split("-").reverse().join(".")} (włącznie)`
                 : "bez końca"}{" "}
-              · {weekdays[weekday]}, {time} · {duration} min · {venue}
+              · {weekdays[weekday]}, {time} · {duration} min · {venue} ·{" "}
+              {money(toGrosz(cost))}
             </strong>
           </p>
           {"existing" in preview ? (
@@ -276,7 +289,8 @@ function ScheduleForm({
                 Zmiana dotyczy także kolejnych, jeszcze nieotwartych terminów.
                 Zastępuje zaplanowane reguły w wybranym zakresie. Po końcu serii
                 wraca wcześniejszy harmonogram. Odwołane pozostają odwołane;
-                indywidualne terminy pozostają bez zmian.
+                indywidualne terminy zachowują swoje daty i miejsca. Nowy koszt
+                obejmuje terminy bez indywidualnej ceny.
               </p>
               <ul className="schedule-change-list">
                 {preview.existing
@@ -318,15 +332,17 @@ function ScheduleForm({
               </p>
               <p>
                 Nowy zakres zastąpi przyszłą część tej serii. Usunięte wcześniej
-                spotkania nie wrócą. Inne serie i dodatkowe spotkania pozostaną
-                bez zmian.
+                spotkania nie wrócą. Nowy koszt obejmuje terminy bez
+                indywidualnej ceny.
               </p>
             </>
           )}
-          <p className="form-note">
-            Dotychczasowe miejsca czekają na potwierdzenie bez limitu czasu.
-            Propozycje z rezerwy wymagają ponownej akceptacji nowego terminu.
-          </p>
+          {preview.reconfirmation_count > 0 && (
+            <p className="form-note">
+              Dotychczasowe miejsca czekają na potwierdzenie bez limitu czasu.
+              Propozycje z rezerwy wymagają ponownej akceptacji nowego terminu.
+            </p>
+          )}
           <div className="participation-actions">
             <button
               className="button"

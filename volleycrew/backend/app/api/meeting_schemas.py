@@ -35,6 +35,7 @@ class ScheduleView(BaseModel):
     duration_minutes: int
     timezone: str
     venue: str
+    cost_grosz: int
 
 
 class ResolveOccurrence(Input):
@@ -50,6 +51,7 @@ class MeetingSummary(BaseModel):
     ends_at: datetime
     timezone: str
     venue: str
+    cost_grosz: int
     status: MeetingStatus
     term_version: int
     version: int
@@ -57,6 +59,7 @@ class MeetingSummary(BaseModel):
     previous_starts_at: datetime | None = None
     previous_ends_at: datetime | None = None
     is_exception: bool = False
+    cost_overridden: bool = False
     persisted: bool
     participant_count: int = 0
     waitlist_count: int = 0

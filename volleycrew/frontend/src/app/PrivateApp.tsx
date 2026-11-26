@@ -10,6 +10,8 @@ import { useSession } from "../features/auth/useSession";
 import { NavLink, Route, Routes, useLocation, Link } from "react-router-dom";
 import {
   CalendarDays,
+  CircleAlert,
+  Wallet,
   House,
   Trophy,
   UserRound,
@@ -21,9 +23,20 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { dateLabel, hour } from "../features/meetings/dates";
+import { money } from "../features/settlements/money";
 import { ServiceStatus } from "../features/system/ServiceStatus";
 
 import { RouteContent } from "../components/RouteContent";
+const SettlementsPage = lazy(() =>
+  import("../features/settlements/SettlementsPage").then((module) => ({
+    default: module.SettlementsPage,
+  })),
+);
+const AdminSettlementsPage = lazy(() =>
+  import("../features/settlements/SettlementsPage").then((module) => ({
+    default: module.AdminSettlementsPage,
+  })),
+);
 const MeetingPage = lazy(() =>
   import("../features/meetings/MeetingPage").then((module) => ({
     default: module.MeetingPage,
@@ -69,6 +82,7 @@ const navigation: { path: string; label: string; icon: LucideIcon }[] = [
   { path: "/", label: "Spotkanie", icon: House },
   { path: "/calendar", label: "Kalendarz", icon: CalendarDays },
   { path: "/ranking", label: "Ranking", icon: Trophy },
+  { path: "/settlements", label: "Rozliczenia", icon: Wallet },
   { path: "/profile", label: "Mój profil", icon: UserRound },
 ];
 
@@ -80,7 +94,7 @@ function Navigation({ mobile = false }: { mobile?: boolean }) {
     >
       {navigation.map(({ path, label, icon: Icon }) => (
         <NavLink to={path} end={path === "/"} key={path}>
-          <Icon size={20} />
+          <Icon size={20} aria-hidden="true" />
           <span>{label}</span>
         </NavLink>
       ))}
@@ -130,12 +144,40 @@ function EmptyPage({
   );
 }
 
+function SettlementReminder({
+  due,
+  mobile = false,
+}: {
+  due: number;
+  mobile?: boolean;
+}) {
+  return (
+    <article
+      className={`venue settlement-reminder${mobile ? " settlement-reminder-mobile" : ""}`}
+    >
+      <CircleAlert size={20} aria-hidden="true" />
+      <span>Zaległe rozliczenia</span>
+      <strong>{money(due)}</strong>
+      <span>Do zapłaty</span>
+      <Link className="text-link" to="/settlements">
+        Przejdź do rozliczeń
+      </Link>
+    </article>
+  );
+}
+
 export function PrivateApp() {
   const adminView = useAdminView();
   const next = useQuery({
     queryKey: ["next-meeting"],
     queryFn: async ({ signal }) =>
       unwrap(await api.GET("/api/v1/meetings/next", { signal })),
+    refetchInterval: 30_000,
+  });
+  const settlements = useQuery({
+    queryKey: ["settlements", "mine"],
+    queryFn: async ({ signal }) =>
+      unwrap(await api.GET("/api/v1/me/settlements", { signal })),
     refetchInterval: 30_000,
   });
   const session = useSession();
@@ -159,6 +201,10 @@ export function PrivateApp() {
     }
   }
   const location = useLocation();
+  const overdueAmount =
+    settlements.data?.reminder && location.pathname !== "/settlements"
+      ? settlements.data.due
+      : null;
   const current = navigation.find((item) => item.path === location.pathname);
   return (
     <div className="app-shell">
@@ -175,7 +221,13 @@ export function PrivateApp() {
             <Settings size={18} /> Ustawienia ekipy
           </Link>
         )}
+        {adminView && (
+          <Link className="admin-link" to="/admin/settlements">
+            Rozliczenia ekipy
+          </Link>
+        )}
         <div className="sidebar-bottom">
+          {overdueAmount !== null && <SettlementReminder due={overdueAmount} />}
           <div className="venue">
             <MapPin size={20} />
             <span>Najbliższe spotkanie</span>
@@ -224,13 +276,15 @@ export function PrivateApp() {
             Twoja ekipa <ArrowRight size={13} />
             <span>
               {current?.label ??
-                (location.pathname.startsWith("/meetings/")
-                  ? "Spotkanie"
-                  : location.pathname.startsWith("/ranking/")
-                    ? "Ranking"
-                    : location.pathname.startsWith("/admin/")
-                      ? "Ustawienia ekipy"
-                      : "Nie znaleziono strony")}
+                (location.pathname.endsWith("/settlements")
+                  ? "Rozliczenia"
+                  : location.pathname.startsWith("/meetings/")
+                    ? "Spotkanie"
+                    : location.pathname.startsWith("/ranking/")
+                      ? "Ranking"
+                      : location.pathname.startsWith("/admin/")
+                        ? "Ustawienia ekipy"
+                        : "Nie znaleziono strony")}
             </span>
           </div>
           <div className="header-actions">
@@ -248,6 +302,9 @@ export function PrivateApp() {
         <main id="main" className="content" tabIndex={-1}>
           <ViewModeSwitch />
           <ConnectionNotice />
+          {overdueAmount !== null && (
+            <SettlementReminder due={overdueAmount} mobile />
+          )}
           <PreviewProfiles />
           {logoutError && (
             <p role="alert" className="form-error">
@@ -277,6 +334,15 @@ export function PrivateApp() {
                 element={
                   <Protected admin>
                     <PlayerHistoryPage />
+                  </Protected>
+                }
+              />
+              <Route path="/settlements" element={<SettlementsPage />} />
+              <Route
+                path="/admin/settlements"
+                element={
+                  <Protected admin>
+                    <AdminSettlementsPage />
                   </Protected>
                 }
               />

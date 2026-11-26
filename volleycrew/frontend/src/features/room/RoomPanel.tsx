@@ -7,6 +7,8 @@ import { Link } from "react-router-dom";
 import { api, unwrap } from "../../lib/api/client";
 import type { components } from "../../lib/api/schema";
 import { Court, type Teams, type TeamPlayer } from "./Court";
+import { CostCorrection } from "../settlements/CostCorrection";
+import { money, splitShares } from "../settlements/money";
 import { useRoomAction } from "./useRoomAction";
 type Attendance = components["schemas"]["AttendanceView"];
 type State = "present" | "absent" | "unknown";
@@ -125,6 +127,27 @@ function RoomEditor({
     Object.fromEntries(
       attendance.players.map((p) => [p.player.id, p.draft_state]),
     );
+  const cost = attendance.cost_grosz ?? 0;
+  const present = attendance.players
+    .filter((row) => row.confirmed_state === "present")
+    .map((row) => row.player.id);
+  const initialShares = splitShares(
+    cost,
+    Object.keys(values).filter((id) => values[id] === "present"),
+  );
+  const currentShares = splitShares(cost, present);
+  const changed = attendance.players.find(
+    (row) => row.event_id === correction?.event,
+  )?.player.id;
+  const correctedShares =
+    changed && correction
+      ? splitShares(
+          cost,
+          correction.value === "present"
+            ? [...present.filter((id) => id !== changed), changed]
+            : present.filter((id) => id !== changed),
+        )
+      : currentShares;
   const currentTeams =
     teams && teamEdit
       ? {
@@ -260,6 +283,7 @@ function RoomEditor({
           </button>
         </div>
       )}
+      {attendance.confirmed_at && <CostCorrection attendance={attendance} />}
       {tab === "result" ? (
         <ResultEditor
           meetingId={attendance.meeting_id}
@@ -460,6 +484,24 @@ function RoomEditor({
               aria-label="Potwierdzenie obecności"
             >
               <h3>Zapisać faktyczną obecność?</h3>
+              {cost > 0 && (
+                <div>
+                  <p>
+                    Koszt spotkania {money(cost)} · obecnych{" "}
+                    {initialShares.size}
+                  </p>
+                  <ul aria-label="Podział kosztu">
+                    {attendance.players
+                      .filter((row) => initialShares.has(row.player.id))
+                      .map(({ player }) => (
+                        <li key={player.id}>
+                          {player.first_name} {player.last_name} ·{" "}
+                          {money(initialShares.get(player.id)!)}
+                        </li>
+                      ))}
+                  </ul>
+                </div>
+              )}
               <p>
                 Nieobecni z potwierdzonym miejscem otrzymają prywatny wpis
                 „nieobecność bez odwołania”. Ich miejsca przejdą do obsługi
@@ -556,6 +598,13 @@ function RoomEditor({
                   </option>
                 </select>
               </label>
+              {cost > 0 && (
+                <ChargeChanges
+                  people={attendance.players.map((row) => row.player)}
+                  before={currentShares}
+                  after={correctedShares}
+                />
+              )}
               <label className="form-field">
                 Powód korekty
                 <textarea
@@ -719,6 +768,16 @@ function RoomEditor({
                       ))}
                     </select>
                   </label>
+                  {cost > 0 && attendance.confirmed_at && admitId && (
+                    <ChargeChanges
+                      people={[
+                        ...attendance.players.map((row) => row.player),
+                        ...eligible.filter((person) => person.id === admitId),
+                      ]}
+                      before={currentShares}
+                      after={splitShares(cost, [...present, admitId])}
+                    />
+                  )}
                   <button
                     className="button"
                     disabled={locked || !admitId || !attendance.free_count}
@@ -924,5 +983,31 @@ function RoomEditor({
         </>
       )}
     </section>
+  );
+}
+
+function ChargeChanges({
+  people,
+  before,
+  after,
+}: {
+  people: components["schemas"]["PublicPlayer"][];
+  before: Map<string, number>;
+  after: Map<string, number>;
+}) {
+  const changes = people.filter(
+    (player) => (before.get(player.id) ?? 0) !== (after.get(player.id) ?? 0),
+  );
+  if (!changes.length) return null;
+  return (
+    <ul aria-label="Zmiany opłat">
+      {changes.map((player) => (
+        <li key={player.id}>
+          {player.first_name} {player.last_name} ·{" "}
+          {money(before.get(player.id) ?? 0)} →{" "}
+          {money(after.get(player.id) ?? 0)}
+        </li>
+      ))}
+    </ul>
   );
 }

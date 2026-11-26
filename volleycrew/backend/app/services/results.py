@@ -35,7 +35,7 @@ from app.models.results import (
     ResultRevision,
 )
 from app.models.room import Attendance, AttendanceEvent, TeamMember, TeamSheet
-from app.services import enrollment, room
+from app.services import enrollment, room, settlements
 from app.services.auth import audit
 
 
@@ -200,7 +200,17 @@ async def preview(db, meeting_id, body, correction=False):
                     after=apply_delta(target.before[identifier], delta),
                 )
             )
+    settlement_deltas = (
+        settlements.compare_shares(
+            meeting.cost_grosz,
+            target.match.team_a + target.match.team_b,
+            await settlements.meeting_charges(db, meeting.id),
+        )
+        if correction
+        else []
+    )
     return ResultPreview(
+        settlement_deltas=[share for share in settlement_deltas if share.delta],
         meeting_version=meeting.version,
         rating_version=state.version,
         sets_a=body.sets_a,
@@ -314,6 +324,7 @@ async def save(db, meeting_id, body, actor_id, key, clock, correction=False):
     sheet = await room.active_sheet(db, meeting_id)
     if correction:
         await correct_presence(db, meeting, body.presence_changes, actor_id, at)
+        await settlements.post_charges(db, meeting, actor_id, at, body.reason)
         sheet.state = "archived"
         await db.flush()
         meeting.team_revision += 1

@@ -68,6 +68,7 @@ def proposed_occurrence(body, identifier=None):
         body.duration_minutes,
         "Europe/Warsaw",
         body.venue,
+        body.cost_grosz,
     )
 
 
@@ -223,10 +224,23 @@ async def reschedule(db, meeting_id, body, actor_id, clock):
         ) from exc
     if item.starts_at <= at:
         raise DomainError(422, "past_term", "Nowy termin musi być w przyszłości.")
+    venue = body.venue if body.venue is not None else row.venue
+    changed_term = (row.starts_at, row.ends_at, row.venue) != (item.starts_at, item.ends_at, venue)
+    if "cost_grosz" in body.model_fields_set:
+        schedule = await db.get(ScheduleVersion, row.calendar_schedule_id)
+        cost = body.cost_grosz if body.cost_grosz is not None else schedule.cost_grosz
+        overridden = body.cost_grosz is not None
+        if (row.cost_grosz, row.cost_overridden) != (cost, overridden):
+            row.cost_grosz, row.cost_overridden = cost, overridden
+            row.version += 1
+            audit(db, actor_id, "edit_meeting_cost", row.id, at)
+    if not changed_term:
+        return row
     overlap = await db.scalar(
         select(Meeting.id)
         .where(
             Meeting.id != row.id,
+            Meeting.deleted_at.is_(None),
             Meeting.status != "cancelled",
             Meeting.starts_at < item.ends_at,
             Meeting.ends_at > item.starts_at,
@@ -235,12 +249,10 @@ async def reschedule(db, meeting_id, body, actor_id, clock):
     )
     if overlap:
         raise DomainError(409, "schedule_collision", "Nowy termin nakłada się na inne spotkanie.")
-    if row.starts_at == item.starts_at and row.ends_at == item.ends_at:
-        return row
     row.is_exception = True
     # A generated slot is still an occupied schedule slot, even before materialization.
     await check_virtual_overlap(db, row, item.starts_at, item.ends_at)
-    await change_term(db, row, item.starts_at, item.ends_at, actor_id, at)
+    await change_term(db, row, item.starts_at, item.ends_at, actor_id, at, venue=venue)
     return row
 
 
@@ -512,6 +524,7 @@ async def apply(db, body, actor_id, clock):
                 duration_minutes=old.duration_minutes,
                 timezone=old.timezone,
                 venue=old.venue,
+                cost_grosz=old.cost_grosz,
                 created_at=at,
             )
         if old.effective_from >= body.effective_from:
@@ -544,6 +557,7 @@ async def apply(db, body, actor_id, clock):
         duration_minutes=body.duration_minutes,
         timezone="Europe/Warsaw",
         venue=body.venue,
+        cost_grosz=body.cost_grosz,
         created_at=at,
     )
     db.add(new)
@@ -556,6 +570,9 @@ async def apply(db, body, actor_id, clock):
             else await enrollment.lock_meeting(db, item.id)
         )
         row.calendar_schedule_id, row.calendar_source_date = new.id, dates[row.id]
+        if not row.deleted_at and not row.cost_overridden and row.cost_grosz != new.cost_grosz:
+            row.cost_grosz = new.cost_grosz
+            row.version += 1
         if (
             not row.deleted_at
             and not item.kept_exception
@@ -614,6 +631,7 @@ async def create_meeting(db, body, actor_id, clock):
             body.duration_minutes,
             "Europe/Warsaw",
             body.venue,
+            body.cost_grosz,
         )
         item = occurrence(rule, body.local_date)
     except (ValueError, OverflowError) as exc:

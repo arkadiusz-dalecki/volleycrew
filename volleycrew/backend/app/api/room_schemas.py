@@ -71,6 +71,7 @@ class ReservedPlayer(BaseModel):
 
 
 class AttendanceView(BaseModel):
+    cost_grosz: int = 0
     meeting_id: UUID
     version: int
     status: str

@@ -219,6 +219,13 @@
       "ApplySchedule": {
         "additionalProperties": false,
         "properties": {
+          "cost_grosz": {
+            "default": 0,
+            "maximum": 100000000.0,
+            "minimum": 0.0,
+            "title": "Cost Grosz",
+            "type": "integer"
+          },
           "duration_minutes": {
             "maximum": 1440.0,
             "minimum": 1.0,
@@ -402,6 +409,11 @@
             ],
             "title": "Confirmed At"
           },
+          "cost_grosz": {
+            "default": 0,
+            "title": "Cost Grosz",
+            "type": "integer"
+          },
           "free_count": {
             "title": "Free Count",
             "type": "integer"
@@ -520,6 +532,52 @@
         "title": "ChangePassword",
         "type": "object"
       },
+      "ChargeView": {
+        "properties": {
+          "amount": {
+            "title": "Amount",
+            "type": "integer"
+          },
+          "due": {
+            "title": "Due",
+            "type": "integer"
+          },
+          "meeting_id": {
+            "format": "uuid",
+            "title": "Meeting Id",
+            "type": "string"
+          },
+          "paid": {
+            "title": "Paid",
+            "type": "integer"
+          },
+          "pending": {
+            "title": "Pending",
+            "type": "integer"
+          },
+          "posted_at": {
+            "format": "date-time",
+            "title": "Posted At",
+            "type": "string"
+          },
+          "starts_at": {
+            "format": "date-time",
+            "title": "Starts At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "meeting_id",
+          "starts_at",
+          "posted_at",
+          "amount",
+          "due",
+          "pending",
+          "paid"
+        ],
+        "title": "ChargeView",
+        "type": "object"
+      },
       "CloseOffer": {
         "additionalProperties": false,
         "properties": {
@@ -539,6 +597,35 @@
           "term_version"
         ],
         "title": "CloseOffer",
+        "type": "object"
+      },
+      "CorrectCost": {
+        "additionalProperties": false,
+        "properties": {
+          "cost_grosz": {
+            "maximum": 100000000.0,
+            "minimum": 0.0,
+            "title": "Cost Grosz",
+            "type": "integer"
+          },
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "reason": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "expected_version",
+          "cost_grosz",
+          "reason"
+        ],
+        "title": "CorrectCost",
         "type": "object"
       },
       "CorrectResult": {
@@ -762,9 +849,48 @@
         "title": "CorrectionView",
         "type": "object"
       },
+      "CostPreview": {
+        "properties": {
+          "cost_grosz": {
+            "title": "Cost Grosz",
+            "type": "integer"
+          },
+          "meeting_id": {
+            "format": "uuid",
+            "title": "Meeting Id",
+            "type": "string"
+          },
+          "shares": {
+            "items": {
+              "$ref": "#/components/schemas/Share"
+            },
+            "title": "Shares",
+            "type": "array"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "meeting_id",
+          "version",
+          "cost_grosz",
+          "shares"
+        ],
+        "title": "CostPreview",
+        "type": "object"
+      },
       "CreateMeetingInput": {
         "additionalProperties": false,
         "properties": {
+          "cost_grosz": {
+            "default": 0,
+            "maximum": 100000000.0,
+            "minimum": 0.0,
+            "title": "Cost Grosz",
+            "type": "integer"
+          },
           "duration_minutes": {
             "maximum": 1440.0,
             "minimum": 1.0,
@@ -1379,6 +1505,15 @@
             "title": "Capacity",
             "type": "integer"
           },
+          "cost_grosz": {
+            "title": "Cost Grosz",
+            "type": "integer"
+          },
+          "cost_overridden": {
+            "default": false,
+            "title": "Cost Overridden",
+            "type": "boolean"
+          },
           "ends_at": {
             "format": "date-time",
             "title": "Ends At",
@@ -1507,6 +1642,7 @@
           "ends_at",
           "timezone",
           "venue",
+          "cost_grosz",
           "status",
           "term_version",
           "version",
@@ -1523,6 +1659,15 @@
           "capacity": {
             "title": "Capacity",
             "type": "integer"
+          },
+          "cost_grosz": {
+            "title": "Cost Grosz",
+            "type": "integer"
+          },
+          "cost_overridden": {
+            "default": false,
+            "title": "Cost Overridden",
+            "type": "boolean"
           },
           "ends_at": {
             "format": "date-time",
@@ -1638,6 +1783,7 @@
           "ends_at",
           "timezone",
           "venue",
+          "cost_grosz",
           "status",
           "term_version",
           "version",
@@ -1753,6 +1899,85 @@
           "priority_locked"
         ],
         "title": "MyParticipation",
+        "type": "object"
+      },
+      "MySettlements": {
+        "properties": {
+          "charges": {
+            "items": {
+              "$ref": "#/components/schemas/ChargeView"
+            },
+            "title": "Charges",
+            "type": "array"
+          },
+          "credit": {
+            "title": "Credit",
+            "type": "integer"
+          },
+          "due": {
+            "title": "Due",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "oldest_due_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Oldest Due At"
+          },
+          "pending": {
+            "title": "Pending",
+            "type": "integer"
+          },
+          "player_id": {
+            "format": "uuid",
+            "title": "Player Id",
+            "type": "string"
+          },
+          "recipient": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Recipient"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reminder": {
+            "title": "Reminder",
+            "type": "boolean"
+          },
+          "reports": {
+            "items": {
+              "$ref": "#/components/schemas/ReportView"
+            },
+            "title": "Reports",
+            "type": "array"
+          }
+        },
+        "required": [
+          "player_id",
+          "name",
+          "due",
+          "pending",
+          "credit",
+          "oldest_due_at",
+          "reminder",
+          "charges",
+          "reports",
+          "recipient"
+        ],
+        "title": "MySettlements",
         "type": "object"
       },
       "OfferView": {
@@ -1887,6 +2112,37 @@
           "password"
         ],
         "title": "PasswordInput",
+        "type": "object"
+      },
+      "PaymentDetails": {
+        "additionalProperties": false,
+        "properties": {
+          "blik_phone": {
+            "anyOf": [
+              {
+                "maxLength": 30,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Blik Phone"
+          },
+          "revolut_link": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revolut Link"
+          }
+        },
+        "title": "PaymentDetails",
         "type": "object"
       },
       "PlannedMeeting": {
@@ -2024,6 +2280,74 @@
           "next_offset"
         ],
         "title": "PlayerRatingHistory",
+        "type": "object"
+      },
+      "PlayerSettlements": {
+        "properties": {
+          "charges": {
+            "items": {
+              "$ref": "#/components/schemas/ChargeView"
+            },
+            "title": "Charges",
+            "type": "array"
+          },
+          "credit": {
+            "title": "Credit",
+            "type": "integer"
+          },
+          "due": {
+            "title": "Due",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "oldest_due_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Oldest Due At"
+          },
+          "pending": {
+            "title": "Pending",
+            "type": "integer"
+          },
+          "player_id": {
+            "format": "uuid",
+            "title": "Player Id",
+            "type": "string"
+          },
+          "reminder": {
+            "title": "Reminder",
+            "type": "boolean"
+          },
+          "reports": {
+            "items": {
+              "$ref": "#/components/schemas/ReportView"
+            },
+            "title": "Reports",
+            "type": "array"
+          }
+        },
+        "required": [
+          "player_id",
+          "name",
+          "due",
+          "pending",
+          "credit",
+          "oldest_due_at",
+          "reminder",
+          "charges",
+          "reports"
+        ],
+        "title": "PlayerSettlements",
         "type": "object"
       },
       "PlayerView": {
@@ -2543,6 +2867,44 @@
         "title": "ReasonInput",
         "type": "object"
       },
+      "Recipient": {
+        "additionalProperties": false,
+        "properties": {
+          "blik_phone": {
+            "anyOf": [
+              {
+                "maxLength": 30,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Blik Phone"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "revolut_link": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revolut Link"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "Recipient",
+        "type": "object"
+      },
       "Registration": {
         "additionalProperties": false,
         "properties": {
@@ -2622,9 +2984,122 @@
         "title": "ReleaseReservation",
         "type": "object"
       },
+      "ReportPayment": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "exclusiveMinimum": 0.0,
+            "title": "Amount",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "meeting_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Meeting Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "meeting_ids",
+          "amount"
+        ],
+        "title": "ReportPayment",
+        "type": "object"
+      },
+      "ReportView": {
+        "properties": {
+          "amount": {
+            "title": "Amount",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "meeting_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Meeting Ids",
+            "type": "array"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "reviewed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed At"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "paid",
+              "rejected"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "amount",
+          "created_at",
+          "reviewed_at",
+          "meeting_ids",
+          "reason"
+        ],
+        "title": "ReportView",
+        "type": "object"
+      },
       "RescheduleInput": {
         "additionalProperties": false,
         "properties": {
+          "cost_grosz": {
+            "anyOf": [
+              {
+                "maximum": 100000000.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Grosz"
+          },
           "duration_minutes": {
             "maximum": 1440.0,
             "minimum": 1.0,
@@ -2645,6 +3120,19 @@
             "format": "time",
             "title": "Local Time",
             "type": "string"
+          },
+          "venue": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Venue"
           }
         },
         "required": [
@@ -2757,6 +3245,14 @@
           "sets_b": {
             "title": "Sets B",
             "type": "integer"
+          },
+          "settlement_deltas": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Share"
+            },
+            "title": "Settlement Deltas",
+            "type": "array"
           }
         },
         "required": [
@@ -2942,6 +3438,36 @@
         "title": "ResultsPage",
         "type": "object"
       },
+      "ReviewPayment": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "status": {
+            "enum": [
+              "paid",
+              "rejected"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "ReviewPayment",
+        "type": "object"
+      },
       "RevisionView": {
         "properties": {
           "actor": {
@@ -3013,6 +3539,13 @@
       "ScheduleInput": {
         "additionalProperties": false,
         "properties": {
+          "cost_grosz": {
+            "default": 0,
+            "maximum": 100000000.0,
+            "minimum": 0.0,
+            "title": "Cost Grosz",
+            "type": "integer"
+          },
           "duration_minutes": {
             "maximum": 1440.0,
             "minimum": 1.0,
@@ -3138,6 +3671,10 @@
       },
       "ScheduleView": {
         "properties": {
+          "cost_grosz": {
+            "title": "Cost Grosz",
+            "type": "integer"
+          },
           "duration_minutes": {
             "title": "Duration Minutes",
             "type": "integer"
@@ -3190,7 +3727,8 @@
           "local_time",
           "duration_minutes",
           "timezone",
-          "venue"
+          "venue",
+          "cost_grosz"
         ],
         "title": "ScheduleView",
         "type": "object"
@@ -3260,6 +3798,30 @@
           "kept_exception_count"
         ],
         "title": "SeriesChangePreview",
+        "type": "object"
+      },
+      "Share": {
+        "properties": {
+          "amount": {
+            "title": "Amount",
+            "type": "integer"
+          },
+          "delta": {
+            "default": 0,
+            "title": "Delta",
+            "type": "integer"
+          },
+          "player_id": {
+            "format": "uuid",
+            "title": "Player Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "player_id",
+          "amount"
+        ],
+        "title": "Share",
         "type": "object"
       },
       "TeamPlayer": {
@@ -4607,6 +5169,222 @@
         "summary": "Cancel",
         "tags": [
           "schedule-changes"
+        ]
+      }
+    },
+    "/api/v1/admin/meetings/{meeting_id}/cost": {
+      "put": {
+        "operationId": "correctCost",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "meeting_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Meeting Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CorrectCost"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CostPreview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Correct Cost",
+        "tags": [
+          "settlements"
+        ]
+      }
+    },
+    "/api/v1/admin/meetings/{meeting_id}/cost/preview": {
+      "post": {
+        "operationId": "previewCostCorrection",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "meeting_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Meeting Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CorrectCost"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CostPreview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Preview Cost",
+        "tags": [
+          "settlements"
         ]
       }
     },
@@ -7666,6 +8444,283 @@
         ]
       }
     },
+    "/api/v1/admin/settlements": {
+      "get": {
+        "operationId": "getAdminSettlements",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PlayerSettlements"
+                  },
+                  "title": "Response Getadminsettlements",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Dashboard",
+        "tags": [
+          "settlements"
+        ]
+      }
+    },
+    "/api/v1/admin/settlements/payments/{report_id}": {
+      "post": {
+        "operationId": "reviewPayment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "report_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Report Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewPayment"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Review",
+        "tags": [
+          "settlements"
+        ]
+      }
+    },
+    "/api/v1/admin/settlements/players/{player_id}/payments": {
+      "post": {
+        "operationId": "recordPayment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "player_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Player Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportPayment"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Record",
+        "tags": [
+          "settlements"
+        ]
+      }
+    },
     "/api/v1/auth/bootstrap": {
       "post": {
         "operationId": "bootstrapAdmin",
@@ -9602,6 +10657,341 @@
         "summary": "Change Password",
         "tags": [
           "auth"
+        ]
+      }
+    },
+    "/api/v1/me/payment-details": {
+      "get": {
+        "operationId": "getPaymentDetails",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentDetails"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Payment Details",
+        "tags": [
+          "settlements"
+        ]
+      },
+      "put": {
+        "operationId": "savePaymentDetails",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentDetails"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentDetails"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Save Details",
+        "tags": [
+          "settlements"
+        ]
+      }
+    },
+    "/api/v1/me/settlements": {
+      "get": {
+        "operationId": "getMySettlements",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MySettlements"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "My Settlements",
+        "tags": [
+          "settlements"
+        ]
+      }
+    },
+    "/api/v1/me/settlements/payments": {
+      "post": {
+        "operationId": "reportPayment",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportPayment"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Report",
+        "tags": [
+          "settlements"
         ]
       }
     },

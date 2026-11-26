@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field, field_validator
 from app.api.auth_schemas import Input, clean_text
 from app.api.meeting_schemas import PublicPlayer
 from app.api.room_schemas import ReasonInput, TeamsDraft, VersionInput
+from app.api.settlement_schemas import Share
 
 
 class ScoreInput(VersionInput):
@@ -56,6 +57,7 @@ class RatingChange(BaseModel):
 
 
 class ResultPreview(BaseModel):
+    settlement_deltas: list[Share] = []
     meeting_version: int
     rating_version: int
     sets_a: int
